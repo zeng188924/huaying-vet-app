@@ -460,31 +460,72 @@ if st.session_state.get('show_results', False):
     """, unsafe_allow_html=True)
 
 # 产品目录展示
-with st.expander("📋 查看完整产品目录 (共111个产品)"):
-    try:
-        # 读取所有工作表
-        excel_file = pd.ExcelFile("合并产品信息表修改后.xlsx")
+st.markdown("---")
+st.subheader("📋 产品目录展示")
+st.info("💡 本产品目录严格按照Excel文件中的分类结构展示，共111个产品，分为三个独立类别")
+
+try:
+    excel_file = pd.ExcelFile("合并产品信息表修改后.xlsx")
+    
+    # 创建三个独立标签页
+    tab_base, tab_star, tab_info = st.tabs([
+        "📦 底价目录 (22个)", 
+        "⭐ 明星产品 (23个)", 
+        "🏭 产品信息-华英 (66个)"
+    ])
+    
+    # 底价目录
+    with tab_base:
+        st.markdown("### 📦 底价目录产品")
+        st.caption("来源：底价目录_20260112 工作表")
+        st.markdown("---")
         
-        # 创建标签页
-        tab1, tab2, tab3 = st.tabs(["底价目录(22个)", "明星产品(23个)", "产品信息-华英(66个)"])
+        df_base = pd.read_excel(excel_file, sheet_name='底价目录_20260112')
+        # 过滤有效产品行（序号为数字的行）
+        df_base_filtered = df_base[df_base['序号'].apply(lambda x: str(x).isdigit() if pd.notna(x) else False)]
         
-        with tab1:
-            df1 = pd.read_excel(excel_file, sheet_name='底价目录_20260112')
-            df1 = df1[df1['序号'].apply(lambda x: str(x).isdigit() if pd.notna(x) else False)]
-            st.dataframe(df1, use_container_width=True)
+        st.write(f"**共 {len(df_base_filtered)} 个底价目录产品**")
+        st.dataframe(df_base_filtered, use_container_width=True, height=600)
         
-        with tab2:
-            df2 = pd.read_excel(excel_file, sheet_name='明星产品_20260512')
-            st.dataframe(df2, use_container_width=True)
+        st.markdown("---")
+        st.caption("⚠️ 底价产品均不抵任务量，运费需客户自行承担")
+    
+    # 明星产品
+    with tab_star:
+        st.markdown("### ⭐ 明星产品")
+        st.caption("来源：明星产品_20260512 工作表")
+        st.markdown("---")
         
-        with tab3:
-            df3 = pd.read_excel(excel_file, sheet_name='产品信息_华英')
-            st.dataframe(df3, use_container_width=True)
+        df_star = pd.read_excel(excel_file, sheet_name='明星产品_20260512')
         
-        # 下载按钮
-        st.info("💡 系统已整合所有111个产品，包括：底价目录22个、明星产品23个、产品信息-华英66个")
-    except Exception as e:
-        st.error(f"加载产品目录失败: {str(e)}")
+        st.write(f"**共 {len(df_star)} 个明星产品**")
+        st.dataframe(df_star, use_container_width=True, height=600)
+    
+    # 产品信息-华英
+    with tab_info:
+        st.markdown("### 🏭 产品信息-华英")
+        st.caption("来源：产品信息_华英 工作表")
+        st.markdown("---")
+        
+        df_info = pd.read_excel(excel_file, sheet_name='产品信息_华英')
+        
+        st.write(f"**共 {len(df_info)} 个华英产品信息**")
+        st.dataframe(df_info, use_container_width=True, height=600)
+    
+    # 分类说明
+    st.markdown("---")
+    st.markdown("""
+    **📌 产品分类说明：**
+    - **底价目录**：基础价格产品，共22个，价格随原料变动，有效期10天
+    - **明星产品**：重点推荐产品，共23个，涵盖中药、饲料添加剂、维生素等类别
+    - **产品信息-华英**：完整产品信息库，共66个，包含详细的产品规格、功效、用法用量等信息
+    
+    ⚠️ **注意**：三个类别的产品信息相互独立，不可混淆使用
+    """)
+
+except Exception as e:
+    st.error(f"加载产品目录失败: {str(e)}")
+    st.info("请确保'合并产品信息表修改后.xlsx'文件存在于当前目录")
 
 # 页脚
 st.markdown("---")
