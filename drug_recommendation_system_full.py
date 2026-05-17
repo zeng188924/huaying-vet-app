@@ -249,60 +249,16 @@ class DrugDatabase:
                 if generic_name == "/":
                     generic_name = ""
                 
-                # 从"产品信息_华英" sheet 获取更完整的信息
-                # 尝试多种匹配方式：1. 商品名 2. 产品名称
+                # 明星产品完全独立，不从"产品信息_华英"获取任何信息
+                # 避免任何匹配导致的商品名混淆
                 info_product = None
                 
-                # 方式1：通过商品名匹配
-                if name in info_products:
-                    info_product = info_products[name]
-                
-                # 方式2：通过产品名称匹配
-                if info_product is None and generic_name in info_products:
-                    info_product = info_products[generic_name]
-                
-                # 方式3和方式4已禁用：避免规格或成分匹配导致商品名混淆
-                # 明星产品只通过商品名或产品名称直接匹配，保持数据独立性
-                
-                # 获取时机（只从 Excel 获取，找不到保持空缺）
-                timing = ""
-                if info_product is not None:
-                    val = get_column_value(info_product, '时机')
-                    if val and str(val) != '/':
-                        timing = str(val)
-                
-                # 获取商品名（明星产品保持自己的商品名，不通过规格匹配覆盖）
-                # 只有通过商品名或产品名称直接匹配到的，才考虑使用产品信息_华英中的商品名
+                # 直接使用明星产品自己的数据
                 brand_name = name
-                if info_product is not None:
-                    # 只有通过商品名或产品名称直接匹配到的，才考虑使用产品信息_华英中的商品名
-                    # 通过规格匹配的不覆盖商品名
-                    if name in info_products or generic_name in info_products:
-                        brand_val = get_column_value(info_product, '商品名')
-                        if brand_val and str(brand_val) != '/':
-                            brand_name = str(brand_val)
-                
-                # 获取用法用量（只从 Excel 获取，找不到保持空缺）
-                usage_info = ""
-                if info_product is not None:
-                    val = get_column_value(info_product, '用法用量')
-                    if val and str(val) != '/':
-                        usage_info = str(val)
-                
-                # 获取兑水量（只从 Excel 获取，找不到保持空缺）
+                timing = knowledge.get("timing", "")
+                usage_info = knowledge.get("usage", "")
                 water = ""
-                if info_product is not None:
-                    val = get_column_value(info_product, '兑水量')
-                    if val and str(val) != '/':
-                        water = str(val)
-                
-                # 获取适应症状（只从 Excel 获取，找不到保持空缺）
-                indications = []
-                if info_product is not None:
-                    val = get_column_value(info_product, '适应症状或产品功效')
-                    if val and str(val) != '/':
-                        indications_str = str(val)
-                        indications = [i.strip() for i in indications_str.split('、')] if '、' in indications_str else [indications_str]
+                indications = knowledge.get("indications", [])
                 
                 drug = DrugInfo(
                     id=f"S{idx+1}",
