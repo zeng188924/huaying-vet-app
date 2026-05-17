@@ -191,14 +191,27 @@ class DrugDatabase:
         
         # 加载"产品信息_华英" sheet 用于匹配详细信息
         info_df = pd.read_excel(excel_file, sheet_name='产品信息_华英')
+        
+        # 创建列名映射函数（处理特殊字符如不间断空格）
+        def get_column_value(row, target_name, default=None):
+            """根据目标列名模糊匹配获取值"""
+            for col in row.index:
+                if target_name in str(col):
+                    val = row[col]
+                    if pd.notna(val):
+                        return val
+            return default
+        
         info_products = {}
         for _, info_row in info_df.iterrows():
             # 通过商品名匹配
-            if pd.notna(info_row['商品名']) and info_row['商品名'] != '/':
-                info_products[str(info_row['商品名'])] = info_row
+            brand = get_column_value(info_row, '商品名')
+            if brand and str(brand) != '/':
+                info_products[str(brand)] = info_row
             # 通过产品名称匹配
-            if pd.notna(info_row['产品名称']) and info_row['产品名称'] != '/':
-                info_products[str(info_row['产品名称'])] = info_row
+            product = get_column_value(info_row, '产品名称')
+            if product and str(product) != '/':
+                info_products[str(product)] = info_row
         
         # 明星产品知识库
         star_knowledge = {
@@ -268,32 +281,42 @@ class DrugDatabase:
                 
                 # 获取时机（只从 Excel 获取，找不到保持空缺）
                 timing = ""
-                if info_product is not None and pd.notna(info_product['时机']):
-                    val = str(info_product['时机'])
-                    if val and val != '/':
-                        timing = val
+                if info_product is not None:
+                    val = get_column_value(info_product, '时机')
+                    if val and str(val) != '/':
+                        timing = str(val)
                 
                 # 获取商品名（优先从 Excel 获取）
-                if info_product is not None and pd.notna(info_product['商品名']) and str(info_product['商品名']) != '/':
-                    brand_name = str(info_product['商品名'])
+                if info_product is not None:
+                    brand_val = get_column_value(info_product, '商品名')
+                    if brand_val and str(brand_val) != '/':
+                        brand_name = str(brand_val)
+                    else:
+                        brand_name = name
                 else:
                     brand_name = name
                 
                 # 获取用法用量（只从 Excel 获取，找不到保持空缺）
                 usage_info = ""
-                if info_product is not None and pd.notna(info_product['用法用量']) and str(info_product['用法用量']) != '/':
-                    usage_info = str(info_product['用法用量'])
+                if info_product is not None:
+                    val = get_column_value(info_product, '用法用量')
+                    if val and str(val) != '/':
+                        usage_info = str(val)
                 
                 # 获取兑水量（只从 Excel 获取，找不到保持空缺）
                 water = ""
-                if info_product is not None and pd.notna(info_product['兑水量']) and str(info_product['兑水量']) != '/':
-                    water = str(info_product['兑水量'])
+                if info_product is not None:
+                    val = get_column_value(info_product, '兑水量')
+                    if val and str(val) != '/':
+                        water = str(val)
                 
                 # 获取适应症状（只从 Excel 获取，找不到保持空缺）
                 indications = []
-                if info_product is not None and pd.notna(info_product['适应症状或产品功效']) and str(info_product['适应症状或产品功效']) != '/':
-                    indications_str = str(info_product['适应症状或产品功效'])
-                    indications = [i.strip() for i in indications_str.split('、')] if '、' in indications_str else [indications_str]
+                if info_product is not None:
+                    val = get_column_value(info_product, '适应症状或产品功效')
+                    if val and str(val) != '/':
+                        indications_str = str(val)
+                        indications = [i.strip() for i in indications_str.split('、')] if '、' in indications_str else [indications_str]
                 
                 drug = DrugInfo(
                     id=f"S{idx+1}",
