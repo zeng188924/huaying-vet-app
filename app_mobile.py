@@ -517,92 +517,167 @@ elif page == 'catalog':
     </div>
     """, unsafe_allow_html=True)
     
-    # 加载数据
+    st.info("💡 产品目录严格按Excel分类展示，三个类别相互独立")
+    
+    # 读取Excel文件
     try:
-        recommender = get_recommender()
-        all_drugs = recommender.db.get_all_drugs()
+        excel_file = pd.ExcelFile("合并产品信息表修改后.xlsx")
         
-        # 分类统计
-        sources = {}
-        for drug in all_drugs:
-            source = drug.source
-            if source not in sources:
-                sources[source] = []
-            sources[source].append(drug)
+        # 创建三个独立标签页
+        tab_base, tab_star, tab_info, tab_search = st.tabs([
+            "📦 底价目录", 
+            "⭐ 明星产品", 
+            "🏭 华英产品",
+            "🔍 搜索"
+        ])
         
-        # 标签页
-        tabs = st.tabs(["全部", "明星产品", "华英产品"])
-        
-        # 全部产品
-        with tabs[0]:
-            st.write(f"共 {len(all_drugs)} 个产品")
+        # 底价目录
+        with tab_base:
+            st.markdown("### 📦 底价目录")
+            st.caption("来源：底价目录_20260112")
             
-            # 搜索框
-            search = st.text_input("🔍 搜索产品", placeholder="输入产品名称或成分...")
+            df_base = pd.read_excel(excel_file, sheet_name='底价目录_20260112')
+            df_base_filtered = df_base[df_base['序号'].apply(lambda x: str(x).isdigit() if pd.notna(x) else False)]
             
-            # 过滤产品
-            filtered = all_drugs
-            if search:
-                filtered = [d for d in all_drugs if search.lower() in d.name.lower() or search.lower() in d.main_component.lower()]
+            st.write(f"**共 {len(df_base_filtered)} 个产品**")
             
-            # 显示产品列表
-            for drug in filtered[:20]:  # 限制显示数量
+            for idx, drug_row in df_base_filtered.iterrows():
+                name = str(drug_row.get('品名', ''))
+                spec = str(drug_row.get('规格型号', ''))
+                price = str(drug_row.get('单价        元/袋/瓶', ''))
+                
                 with st.container():
                     st.markdown(f"""
-                    <div class="mobile-card">
-                        <h3>{drug.name}</h3>
+                    <div class="mobile-card" style="border-left-color: #2196f3;">
+                        <h3 style="color: #1565c0;">{name}</h3>
                         <div class="info-row">
-                            <span class="info-tag">{drug.source}</span>
-                            <span class="info-tag info-tag-green">¥{drug.price:.1f}</span>
+                            <span class="info-tag">底价目录</span>
+                            <span class="info-tag info-tag-green">¥{price}</span>
                         </div>
                         <p style="color: #666; font-size: 0.85em; margin: 8px 0;">
-                            <b>成分:</b> {drug.main_component[:20]}...<br>
-                            <b>规格:</b> {drug.spec}
+                            <b>规格:</b> {spec}
                         </p>
                     </div>
                     """, unsafe_allow_html=True)
         
         # 明星产品
-        with tabs[1]:
-            star_drugs = sources.get('明星产品', [])
-            st.write(f"共 {len(star_drugs)} 个明星产品")
+        with tab_star:
+            st.markdown("### ⭐ 明星产品")
+            st.caption("来源：明星产品_20260512")
             
-            for drug in star_drugs:
+            df_star = pd.read_excel(excel_file, sheet_name='明星产品_20260512')
+            
+            st.write(f"**共 {len(df_star)} 个明星产品**")
+            
+            for idx, drug_row in df_star.iterrows():
+                name = str(drug_row.get('商品名', ''))
+                if name == '/' or name == 'nan' or not name:
+                    name = str(drug_row.get('产品名称', ''))
+                
+                spec = str(drug_row.get('规格', ''))
+                price = str(drug_row.get('价格', ''))
+                timing = str(drug_row.get('时机', ''))
+                
                 with st.container():
                     st.markdown(f"""
                     <div class="mobile-card" style="border-left-color: #ff9500;">
-                        <h3 style="color: #e67700;">⭐ {drug.name}</h3>
+                        <h3 style="color: #e67700;">⭐ {name}</h3>
                         <div class="info-row">
-                            <span class="info-tag info-tag-orange">¥{drug.price:.1f}</span>
-                            <span class="info-tag">{drug.timing[:15] if drug.timing else '详见说明'}</span>
+                            <span class="info-tag info-tag-orange">¥{price}</span>
+                            <span class="info-tag">{timing}</span>
                         </div>
                         <p style="color: #666; font-size: 0.85em; margin: 8px 0;">
-                            <b>成分:</b> {drug.main_component}<br>
-                            <b>规格:</b> {drug.spec}
+                            <b>规格:</b> {spec}
                         </p>
                     </div>
                     """, unsafe_allow_html=True)
         
         # 华英产品
-        with tabs[2]:
-            huaying_drugs = sources.get('产品信息_华英', [])
-            st.write(f"共 {len(huaying_drugs)} 个华英产品")
+        with tab_info:
+            st.markdown("### 🏭 产品信息-华英")
+            st.caption("来源：产品信息_华英")
             
-            for drug in huaying_drugs[:30]:  # 限制显示数量
+            df_info = pd.read_excel(excel_file, sheet_name='产品信息_华英')
+            
+            st.write(f"**共 {len(df_info)} 个华英产品**")
+            
+            for idx, drug_row in df_info.iterrows():
+                name = str(drug_row.get('产品名称', ''))
+                if name == '/' or name == 'nan' or not name:
+                    continue
+                    
+                spec = str(drug_row.get('包装规格', ''))
+                price = str(drug_row.get('价格', ''))
+                category = str(drug_row.get('类别', ''))
+                timing = str(drug_row.get('时机', ''))
+                
                 with st.container():
                     st.markdown(f"""
                     <div class="mobile-card" style="border-left-color: #43a047;">
-                        <h3 style="color: #2e7d32;">{drug.name}</h3>
+                        <h3 style="color: #2e7d32;">{name}</h3>
                         <div class="info-row">
-                            <span class="info-tag info-tag-green">¥{drug.price:.1f}</span>
-                            <span class="info-tag">{drug.category}</span>
+                            <span class="info-tag info-tag-green">¥{price}</span>
+                            <span class="info-tag">{category}</span>
+                            <span class="info-tag">{timing}</span>
                         </div>
                         <p style="color: #666; font-size: 0.85em; margin: 8px 0;">
-                            <b>成分:</b> {drug.main_component[:25]}...<br>
-                            <b>规格:</b> {drug.spec}
+                            <b>规格:</b> {spec}
                         </p>
                     </div>
                     """, unsafe_allow_html=True)
+        
+        # 搜索功能
+        with tab_search:
+            st.markdown("### 🔍 产品搜索")
+            st.caption("在三个类别中搜索产品")
+            
+            search_text = st.text_input("输入产品名称搜索", placeholder="例如：氟苯尼考...")
+            
+            if search_text:
+                # 在三个类别中分别搜索
+                results_base = df_base[df_base['品名'].str.contains(search_text, na=False, case=False)]
+                results_star = df_star[df_star['商品名'].str.contains(search_text, na=False, case=False) | 
+                                       df_star['产品名称'].str.contains(search_text, na=False, case=False)]
+                results_info = df_info[df_info['产品名称'].str.contains(search_text, na=False, case=False)]
+                
+                st.write(f"**搜索结果：**")
+                
+                if len(results_base) > 0:
+                    st.markdown(f"**底价目录 ({len(results_base)} 个)**")
+                    for _, row in results_base.iterrows():
+                        name = row['品名']
+                        price = row['单价        元/袋/瓶']
+                        st.write(f"- {name} - ¥{price}")
+                
+                if len(results_star) > 0:
+                    st.markdown(f"**明星产品 ({len(results_star)} 个)**")
+                    for _, row in results_star.iterrows():
+                        name = row['商品名'] if row['商品名'] != '/' else row['产品名称']
+                        price = row['价格']
+                        st.write(f"- {name} - ¥{price}")
+                
+                if len(results_info) > 0:
+                    st.markdown(f"**华英产品 ({len(results_info)} 个)**")
+                    for _, row in results_info.iterrows():
+                        name = row['产品名称']
+                        price = row['价格']
+                        st.write(f"- {name} - ¥{price}")
+                
+                if len(results_base) == 0 and len(results_star) == 0 and len(results_info) == 0:
+                    st.info("未找到匹配的产品")
+            else:
+                st.info("请输入搜索关键词")
+        
+        # 分类说明
+        st.markdown("---")
+        st.markdown("""
+        **📌 产品分类说明：**
+        - **底价目录**：基础价格产品，共22个
+        - **明星产品**：重点推荐产品，共23个
+        - **产品信息-华英**：完整产品信息库，共66个
+        
+        ⚠️ 三个类别的产品信息相互独立，不可混淆
+        """)
     
     except Exception as e:
         st.error(f"加载产品目录失败: {str(e)}")
