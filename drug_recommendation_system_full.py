@@ -342,21 +342,43 @@ class DrugDatabase:
         """加载产品信息_华英（66个）"""
         df = pd.read_excel(excel_file, sheet_name='产品信息_华英')
         
-        # 产蛋期禁用药物清单（根据用户提供的清单）
+        # 产蛋期禁用药物清单（根据GB 31650-2019和兽药质量标准）
+        # 包含所有变体名称和商品名
         egg_unsafe_products = [
-            # 抗生素类
-            "氟苯尼考粉", "30%氟苯尼考可溶性粉", "盐酸多西环素可溶性粉", "10%盐酸多西环素可溶性粉",
-            "卡巴匹林钙粉", "阿莫西林可溶性粉", "硫酸黏菌素预混剂", "硫酸新霉素可溶性粉",
-            "盐酸恩诺沙星可溶性粉", "硫酸庆大霉素可溶性粉", "盐酸林可霉素可溶性粉",
-            "地美硝唑预混剂", "单硫酸卡那霉素可溶性粉", "硫酸安普霉素可溶性粉",
-            "替米考星预混剂", "替米考星溶液", "复方磺胺间甲氧嘧啶钠可溶性粉",
-            "酒石酸泰万菌素预混剂", "磺胺喹噁啉钠可溶性粉", "磺胺氯吡嗪钠可溶性粉",
-            "80%延胡索酸泰妙菌素", "盐酸大观霉素可溶性粉", "盐酸金霉素可溶性粉",
-            "复方阿莫西林粉",
-            # 其他药物类
+            # 氨基糖苷类
+            "硫酸庆大霉素可溶性粉", "盐酸大观霉素可溶性粉", "盐酸大观霉素盐酸林可霉素可溶性粉",
+            "硫酸新霉素可溶性粉", "硫酸安普霉素可溶性粉", "单硫酸卡那霉素可溶性粉",
+            # 林可胺类
+            "盐酸林可霉素可溶性粉",
+            # 四环素类
+            "盐酸多西环素可溶性粉", "10%盐酸多西环素可溶性粉", "盐酸金霉素可溶性粉",
+            # 大环内酯类
+            "替米考星溶液", "替米考星预混剂", "酒石酸泰万菌素预混剂", "20%酒石酸泰万菌素预混剂",
+            "80%延胡索酸泰妙菌素",
+            # 酰胺醇类
+            "氟苯尼考粉", "30%氟苯尼考可溶性粉", "10%氟苯尼考溶液",
+            # β-内酰胺类
+            "阿莫西林可溶性粉", "10%阿莫西林可溶性粉", "复方阿莫西林粉",
+            # 喹诺酮类
+            "盐酸恩诺沙星可溶性粉", "恩诺沙星溶液", "5%盐酸沙拉沙星溶液",
+            # 头孢类
+            "硫酸头孢喹肟注射液",
+            # 磺胺类
+            "复方磺胺间甲氧嘧啶钠可溶性粉", "磺胺喹噁啉钠可溶性粉", "磺胺氯吡嗪钠可溶性粉",
+            # 其他
+            "卡巴匹林钙粉", "硫酸黏菌素预混剂", "地美硝唑预混剂",
             "地克珠利预混剂", "地克珠利溶液",
-            # 明星产品中的禁用药物
-            "严立康", "超吉拍档",
+            # 明星产品中的禁用药物（商品名）
+            "严立康", "超吉拍档", "新达罗", "杆福",
+        ]
+        
+        # 补充匹配规则：通过活性成分判断
+        egg_unsafe_ingredients = [
+            "庆大霉素", "大观霉素", "林可霉素", "新霉素", "安普霉素", "卡那霉素",
+            "多西环素", "金霉素", "替米考星", "泰万菌素", "泰妙菌素",
+            "氟苯尼考", "阿莫西林", "恩诺沙星", "沙拉沙星", "头孢喹肟",
+            "磺胺间甲氧嘧啶", "磺胺喹噁啉", "磺胺氯吡嗪",
+            "卡巴匹林钙", "黏菌素", "地美硝唑", "地克珠利"
         ]
         
         for idx, row in df.iterrows():
@@ -364,12 +386,22 @@ class DrugDatabase:
                 name = str(row['产品名称'])
                 category = str(row['类别']) if pd.notna(row['类别']) else "其他"
                 
-                # 根据禁用清单判断产蛋期安全性
+                # 根据禁用清单判断产蛋期安全性（双重检查：产品名称 + 活性成分）
                 egg_safe = True  # 默认安全
+                
+                # 第一重：检查产品名称是否匹配禁用清单
                 for unsafe_name in egg_unsafe_products:
                     if unsafe_name in name or name in unsafe_name:
                         egg_safe = False
                         break
+                
+                # 第二重：如果产品名称未匹配，检查成分是否包含禁用活性成分
+                if egg_safe:
+                    component = str(row['成分']) if pd.notna(row.get('成分')) else ""
+                    for unsafe_ingredient in egg_unsafe_ingredients:
+                        if unsafe_ingredient in component:
+                            egg_safe = False
+                            break
                 
                 # 根据类别判断疾病类型
                 if category == '抗生素':
@@ -414,6 +446,8 @@ class DrugDatabase:
                         break
                 
                 # 检查产品是否已存在（从明星产品加载的）
+                # 注意：为了保持三个类别的独立性，不更新已存在的产品
+                # 而是跳过重复项，保持原有分类
                 existing_drug = None
                 for drug in self.drugs:
                     if drug.name == name:
@@ -421,19 +455,11 @@ class DrugDatabase:
                         break
                 
                 if existing_drug:
-                    # 更新现有产品的信息（使用产品信息_华英的更详细数据）
-                    existing_drug.price = price
-                    existing_drug.spec = str(row['包装规格']) if pd.notna(row['包装规格']) else existing_drug.spec
-                    existing_drug.water = water_amount
-                    existing_drug.indications = indications
-                    existing_drug.usage_info = str(row['用法用量']) if pd.notna(row['用法用量']) else existing_drug.usage_info
-                    existing_drug.source = "产品信息_华英"
-                    existing_drug.timing = timing
-                    existing_drug.brand_name = brand_name
-                    existing_drug.product_name = name
-                    existing_drug.category = category
+                    # 产品已存在，跳过以保持分类独立性
+                    # 不更新 source 字段，保持原有分类（底价目录/明星产品）
+                    continue
                 else:
-                    # 添加新产品
+                    # 添加新产品（仅产品信息_华英独有的产品）
                     drug = DrugInfo(
                         id=f"H{idx+1}",
                         name=name,
@@ -837,43 +863,48 @@ class DrugRecommender:
         # 定义组合方案库
         combination_schemes = {
             "PARASITIC": [
-                {"name": "经典抗球虫方案", "drugs": ["磺胺喹噁啉钠可溶性粉（去球虫）", "地美硝唑预混剂"], "description": "磺胺类联合抗原虫药，对各类球虫效果显著", "priority": 1},
-                {"name": "强化止血方案", "drugs": ["磺胺氯吡嗪钠可溶性粉（去球虫）", "地美硝唑预混剂"], "description": "针对盲肠球虫特效，快速止血止痢", "priority": 2},
-                {"name": "全面抗虫方案", "drugs": ["磺胺喹噁啉钠可溶性粉（去球虫）", "硫酸新霉素可溶性粉"], "description": "抗球虫同时预防继发细菌感染", "priority": 3}
+                {"name": "经典抗球虫方案", "drugs": ["磺胺喹噁啉钠可溶性粉（去球虫）", "地美硝唑预混剂"], "description": "磺胺类联合抗原虫药，对各类球虫效果显著", "priority": 1, "egg_safe": False},
+                {"name": "强化止血方案", "drugs": ["磺胺氯吡嗪钠可溶性粉（去球虫）", "地美硝唑预混剂"], "description": "针对盲肠球虫特效，快速止血止痢", "priority": 2, "egg_safe": False},
+                {"name": "全面抗虫方案", "drugs": ["磺胺喹噁啉钠可溶性粉（去球虫）", "硫酸新霉素可溶性粉"], "description": "抗球虫同时预防继发细菌感染", "priority": 3, "egg_safe": False},
+                {"name": "产蛋期安全抗球方案", "drugs": ["（中药）畅健", "海健素"], "description": "中药调理肠道，增强免疫力，产蛋期安全", "priority": 4, "egg_safe": True}
             ],
             "RESPIRATORY": [
                 {"name": "经典呼吸道方案", "drugs": ["替米考星溶液", "盐酸多西环素可溶性粉"], "description": "大环内酯类联合四环素类，对支原体和细菌双重作用", "priority": 1, "egg_safe": False},
                 {"name": "强化呼吸道方案", "drugs": ["80%延胡索酸泰妙菌素（呼吸道）", "盐酸多西环素可溶性粉"], "description": "高含量泰妙菌素，针对顽固性呼吸道病", "priority": 2, "egg_safe": False},
-                {"name": "中西结合方案", "drugs": ["盐酸多西环素可溶性粉", "桑仁清肺口服液"], "description": "抗生素联合中药口服液，标本兼治", "priority": 3, "egg_safe": True},
-                {"name": "产蛋期安全方案1", "drugs": ["盐酸多西环素可溶性粉", "盐酸林可霉素可溶性粉"], "description": "产蛋期可用，针对呼吸道和肠道感染", "priority": 4, "egg_safe": True},
-                {"name": "产蛋期安全方案2", "drugs": ["10%盐酸多西环素可溶性粉", "双黄连口服液250ml"], "description": "高含量多西环素配合中药抗病毒", "priority": 5, "egg_safe": True},
-                {"name": "产蛋期安全方案3", "drugs": ["盐酸多西环素可溶性粉", "盐酸林可霉素可溶性粉", "双黄连口服液250ml"], "description": "三重组合，全面覆盖呼吸道病原", "priority": 6, "egg_safe": True}
+                {"name": "中西结合方案", "drugs": ["盐酸多西环素可溶性粉", "桑仁清肺口服液"], "description": "抗生素联合中药口服液，标本兼治", "priority": 3, "egg_safe": False},
+                {"name": "产蛋期安全方案1", "drugs": ["桑仁清肺口服液", "麻杏石甘口服液"], "description": "纯中药组合，产蛋期安全，针对呼吸道症状", "priority": 4, "egg_safe": True},
+                {"name": "产蛋期安全方案2", "drugs": ["双黄连口服液250ml", "银黄口服液"], "description": "中药抗病毒组合，产蛋期可用", "priority": 5, "egg_safe": True},
+                {"name": "产蛋期安全方案3", "drugs": ["清解合剂", "双黄连口服液250ml"], "description": "清热解毒组合，全面覆盖呼吸道病原", "priority": 6, "egg_safe": True}
             ],
             "DIGESTIVE": [
-                {"name": "经典肠道方案", "drugs": ["硫酸黏菌素预混剂1000g", "阿莫西林可溶性粉"], "description": "黏菌素针对革兰氏阴性菌，阿莫西林广谱抗菌", "priority": 1},
-                {"name": "强化杀菌方案", "drugs": ["硫酸新霉素可溶性粉", "地美硝唑预混剂"], "description": "新霉素肠道浓度高，配合抗原虫药", "priority": 2},
-                {"name": "微生态调理方案", "drugs": ["严立康", "（中药）畅健"], "description": "益生菌调理肠道，中药辅助治疗", "priority": 3},
-                {"name": "全面肠道方案", "drugs": ["硫酸黏菌素预混剂1000g", "硫酸新霉素可溶性粉", "地美硝唑预混剂"], "description": "三重杀菌，针对顽固性肠道感染", "priority": 4}
+                {"name": "经典肠道方案", "drugs": ["硫酸黏菌素预混剂1000g", "阿莫西林可溶性粉"], "description": "黏菌素针对革兰氏阴性菌，阿莫西林广谱抗菌", "priority": 1, "egg_safe": False},
+                {"name": "强化杀菌方案", "drugs": ["硫酸新霉素可溶性粉", "地美硝唑预混剂"], "description": "新霉素肠道浓度高，配合抗原虫药", "priority": 2, "egg_safe": False},
+                {"name": "微生态调理方案", "drugs": ["严立康", "（中药）畅健"], "description": "益生菌调理肠道，中药辅助治疗", "priority": 3, "egg_safe": False},
+                {"name": "全面肠道方案", "drugs": ["硫酸黏菌素预混剂1000g", "硫酸新霉素可溶性粉", "地美硝唑预混剂"], "description": "三重杀菌，针对顽固性肠道感染", "priority": 4, "egg_safe": False},
+                {"name": "产蛋期安全肠道方案", "drugs": ["（中药）双胃康", "（中药）羡康100g"], "description": "纯中药调理肠胃，产蛋期安全", "priority": 5, "egg_safe": True}
             ],
             "BACTERIAL": [
-                {"name": "广谱杀菌方案", "drugs": ["氟苯尼考粉", "盐酸多西环素可溶性粉"], "description": "广谱抗菌，对大多数细菌性疾病有效", "priority": 1},
-                {"name": "肠道细菌方案", "drugs": ["硫酸黏菌素预混剂1000g", "阿莫西林可溶性粉"], "description": "针对肠道细菌感染", "priority": 2},
-                {"name": "强化抗菌方案", "drugs": ["盐酸恩诺沙星可溶性粉", "硫酸黏菌素预混剂1000g"], "description": "氟喹诺酮类联合多肽类，杀菌效果强", "priority": 3},
-                {"name": "全面抗菌方案", "drugs": ["氟苯尼考粉", "盐酸多西环素可溶性粉", "硫酸黏菌素预混剂1000g"], "description": "三重广谱抗菌，覆盖各类细菌", "priority": 4}
+                {"name": "广谱杀菌方案", "drugs": ["氟苯尼考粉", "盐酸多西环素可溶性粉"], "description": "广谱抗菌，对大多数细菌性疾病有效", "priority": 1, "egg_safe": False},
+                {"name": "肠道细菌方案", "drugs": ["硫酸黏菌素预混剂1000g", "阿莫西林可溶性粉"], "description": "针对肠道细菌感染", "priority": 2, "egg_safe": False},
+                {"name": "强化抗菌方案", "drugs": ["盐酸恩诺沙星可溶性粉", "硫酸黏菌素预混剂1000g"], "description": "氟喹诺酮类联合多肽类，杀菌效果强", "priority": 3, "egg_safe": False},
+                {"name": "全面抗菌方案", "drugs": ["氟苯尼考粉", "盐酸多西环素可溶性粉", "硫酸黏菌素预混剂1000g"], "description": "三重广谱抗菌，覆盖各类细菌", "priority": 4, "egg_safe": False},
+                {"name": "产蛋期安全抗菌方案", "drugs": ["（中药）金舒利（小柴胡）100g", "肽芪剑（蛋鸡）"], "description": "中药抗菌增强免疫，产蛋期安全", "priority": 5, "egg_safe": True}
             ],
             "VIRAL": [
-                {"name": "抗病毒中药方案", "drugs": ["（中药）金舒利（小柴胡）100g", "肽芪剑（蛋鸡）"], "description": "中药清热解毒，增强免疫力", "priority": 1},
-                {"name": "防继发感染方案", "drugs": ["阿莫西林可溶性粉", "卡巴匹林钙粉"], "description": "预防细菌继发感染，缓解症状", "priority": 2},
-                {"name": "综合抗病毒方案", "drugs": ["（中药）金舒利（小柴胡）100g", "肽芪剑（蛋鸡）", "阿莫西林可溶性粉"], "description": "中药+抗生素，抗病毒防继发", "priority": 3}
+                {"name": "抗病毒中药方案", "drugs": ["（中药）金舒利（小柴胡）100g", "肽芪剑（蛋鸡）"], "description": "中药清热解毒，增强免疫力", "priority": 1, "egg_safe": True},
+                {"name": "防继发感染方案", "drugs": ["阿莫西林可溶性粉", "卡巴匹林钙粉"], "description": "预防细菌继发感染，缓解症状", "priority": 2, "egg_safe": False},
+                {"name": "综合抗病毒方案", "drugs": ["（中药）金舒利（小柴胡）100g", "肽芪剑（蛋鸡）", "阿莫西林可溶性粉"], "description": "中药+抗生素，抗病毒防继发", "priority": 3, "egg_safe": False},
+                {"name": "产蛋期安全抗病毒方案", "drugs": ["（中药）金舒利（小柴胡）100g", "双黄连口服液250ml"], "description": "纯中药抗病毒，产蛋期安全", "priority": 4, "egg_safe": True}
             ],
             "MIXED": [
-                {"name": "全面覆盖方案", "drugs": ["氟苯尼考粉", "盐酸多西环素可溶性粉", "卡巴匹林钙粉"], "description": "广谱抗菌+解热镇痛，应对复杂病情", "priority": 1},
-                {"name": "肠道呼吸道混合", "drugs": ["替米考星溶液", "硫酸黏菌素预混剂1000g"], "description": "同时覆盖呼吸道和肠道病原", "priority": 2},
-                {"name": "抗菌消炎方案", "drugs": ["阿莫西林可溶性粉", "卡巴匹林钙粉"], "description": "抗菌+消炎，适合混合感染", "priority": 3}
+                {"name": "全面覆盖方案", "drugs": ["氟苯尼考粉", "盐酸多西环素可溶性粉", "卡巴匹林钙粉"], "description": "广谱抗菌+解热镇痛，应对复杂病情", "priority": 1, "egg_safe": False},
+                {"name": "肠道呼吸道混合", "drugs": ["替米考星溶液", "硫酸黏菌素预混剂1000g"], "description": "同时覆盖呼吸道和肠道病原", "priority": 2, "egg_safe": False},
+                {"name": "抗菌消炎方案", "drugs": ["阿莫西林可溶性粉", "卡巴匹林钙粉"], "description": "抗菌+消炎，适合混合感染", "priority": 3, "egg_safe": False},
+                {"name": "产蛋期安全混合方案", "drugs": ["（中药）金舒利（小柴胡）100g", "甘舒乐", "海健素"], "description": "中药+营养支持，产蛋期安全", "priority": 4, "egg_safe": True}
             ],
             "NUTRITIONAL": [
-                {"name": "营养支持方案", "drugs": ["海健素", "甘舒乐"], "description": "补充营养，保肝护肾", "priority": 1},
-                {"name": "全面营养方案", "drugs": ["海健素", "甘舒乐", "肽芪剑（蛋鸡）"], "description": "营养+免疫，全面调理", "priority": 2}
+                {"name": "营养支持方案", "drugs": ["海健素", "甘舒乐"], "description": "补充营养，保肝护肾", "priority": 1, "egg_safe": True},
+                {"name": "全面营养方案", "drugs": ["海健素", "甘舒乐", "肽芪剑（蛋鸡）"], "description": "营养+免疫，全面调理", "priority": 2, "egg_safe": True}
             ]
         }
         
