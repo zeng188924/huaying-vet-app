@@ -191,6 +191,7 @@ class DrugDatabase:
         
         # 加载 huaying_products_full.json 获取更完整的信息
         huaying_data = {}
+        huaying_products = []
         try:
             with open('huaying_products_full.json', 'r', encoding='utf-8') as f:
                 huaying_products = json.load(f)
