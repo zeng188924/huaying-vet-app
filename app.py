@@ -167,7 +167,6 @@ st.markdown("""
 
 # 侧边栏 - 输入表单
 with st.sidebar:
-    st.markdown("<div class='sidebar-section'>", unsafe_allow_html=True)
     st.header("📝 病情信息录入")
     
     # 动物种类
@@ -218,8 +217,6 @@ with st.sidebar:
         ["小规模(1000只以下)", "中规模(1000-10000只)", "大规模(10000只以上)"],
         help="选择养殖规模以推荐合适规格"
     )
-    
-    st.markdown("</div>", unsafe_allow_html=True)
     
     # 推荐按钮
     recommend_clicked = st.button("🔍 获取用药推荐", use_container_width=True)
