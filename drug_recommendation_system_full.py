@@ -189,19 +189,16 @@ class DrugDatabase:
         """加载明星产品（23个）"""
         df = pd.read_excel(excel_file, sheet_name='明星产品_20260512')
         
-        # 加载 huaying_products_full.json 获取更完整的信息
-        huaying_data = {}
-        huaying_products = []
-        try:
-            with open('huaying_products_full.json', 'r', encoding='utf-8') as f:
-                huaying_products = json.load(f)
-                for product in huaying_products:
-                    # 使用产品名称作为键
-                    product_name = product.get('产品名称', '')
-                    if product_name:
-                        huaying_data[product_name] = product
-        except Exception as e:
-            print(f"[警告] 无法加载 huaying_products_full.json: {e}")
+        # 加载"产品信息_华英" sheet 用于匹配详细信息
+        info_df = pd.read_excel(excel_file, sheet_name='产品信息_华英')
+        info_products = {}
+        for _, info_row in info_df.iterrows():
+            # 通过商品名匹配
+            if pd.notna(info_row['商品名']) and info_row['商品名'] != '/':
+                info_products[str(info_row['商品名'])] = info_row
+            # 通过产品名称匹配
+            if pd.notna(info_row['产品名称']) and info_row['产品名称'] != '/':
+                info_products[str(info_row['产品名称'])] = info_row
         
         # 明星产品知识库
         star_knowledge = {
@@ -239,94 +236,42 @@ class DrugDatabase:
                 if generic_name == "/" or not generic_name:
                     generic_name = name
                 
-                # 从 huaying_products_full.json 获取更完整的信息
-                # 尝试多种匹配方式：1. 产品名称 2. 商品名 3. 通用名称
-                huaying_product = None
+                # 从"产品信息_华英" sheet 获取更完整的信息
+                # 尝试多种匹配方式：1. 商品名 2. 产品名称
+                info_product = None
                 
-                # 方式1：通过产品名称+规格联合匹配
-                spec = str(row['规格型号']) if pd.notna(row['规格型号']) else ""
-                for product in huaying_products:
-                    if product.get('产品名称') == generic_name:
-                        # 如果产品名称匹配，再检查规格是否匹配（避免100g和500g混淆）
-                        json_spec = product.get('包装规格', '')
-                        if spec and json_spec and spec == json_spec:
-                            huaying_product = product
-                            break
-                        # 如果没有规格信息，或者只有一个匹配，先记录下来
-                        elif not huaying_product:
-                            huaying_product = product
+                # 方式1：通过商品名匹配
+                if name in info_products:
+                    info_product = info_products[name]
                 
-                # 如果方式1找到多个匹配（如金舒利100g和500g），优先选择规格匹配的
-                if huaying_product and spec:
-                    for product in huaying_products:
-                        if product.get('产品名称') == generic_name:
-                            json_spec = product.get('包装规格', '')
-                            if spec == json_spec:
-                                huaying_product = product
-                                break
+                # 方式2：通过产品名称匹配
+                if info_product is None and generic_name in info_products:
+                    info_product = info_products[generic_name]
                 
-                # 方式2：通过规格+商品名联合匹配（spec已在方式1中定义）
-                if not huaying_product:
-                    # 第一遍：找规格匹配且商品名包含在明星产品名称中的（最精确）
+                # 方式3：通过规格+商品名联合匹配
+                if info_product is None:
+                    spec = str(row['规格型号']) if pd.notna(row['规格型号']) else ""
                     if spec:
-                        for product in huaying_products:
-                            json_spec = product.get('包装规格', '')
-                            json_brand = product.get('商品名', '')
-                            if spec == json_spec and json_brand and json_brand != '/' and json_brand in name:
-                                huaying_product = product
-                                break
-                    
-                    # 第二遍：找规格匹配且明星产品名称包含在商品名中的
-                    if not huaying_product and spec:
-                        for product in huaying_products:
-                            json_spec = product.get('包装规格', '')
-                            json_brand = product.get('商品名', '')
-                            if spec == json_spec and json_brand and json_brand != '/' and name in json_brand:
-                                huaying_product = product
-                                break
-                    
-                    # 第三遍：找商品名包含在明星产品名称中的（不检查规格）
-                    if not huaying_product:
-                        for product in huaying_products:
-                            json_brand = product.get('商品名', '')
-                            if json_brand and json_brand != '/' and json_brand in name:
-                                huaying_product = product
-                                break
-                    
-                    # 第四遍：找明星产品名称包含在商品名中的（不检查规格）
-                    if not huaying_product:
-                        for product in huaying_products:
-                            json_brand = product.get('商品名', '')
-                            if json_brand and json_brand != '/' and name in json_brand:
-                                huaying_product = product
-                                break
-                    
-                    # 第五遍：找规格完全匹配（允许商品名为 "/"）
-                    if not huaying_product and spec:
-                        for product in huaying_products:
-                            json_spec = product.get('包装规格', '')
-                            if spec == json_spec:
-                                huaying_product = product
+                        for key, product in info_products.items():
+                            if pd.notna(product['包装规格']) and str(product['包装规格']) == spec:
+                                info_product = product
                                 break
                 
-                # 方式3：通过知识库中的 component 匹配
-                if not huaying_product:
+                # 方式4：通过知识库中的 component 匹配
+                if info_product is None:
                     component = knowledge.get("component", "")
-                    for product in huaying_products:
-                        if component and component in product.get('产品名称', ''):
-                            huaying_product = product
-                            break
-                
-                # 获取时机（优先从 JSON 获取，其次从知识库）
-                timing_value = None
-                if huaying_product:
-                    # 尝试获取时机（处理列名中的不间断空格）
-                    for key in huaying_product.keys():
-                        if '时机' in key or '时' in key:
-                            val = huaying_product[key]
-                            if val and val != '/':
-                                timing_value = str(val)
+                    if component:
+                        for key, product in info_products.items():
+                            if pd.notna(product['产品名称']) and component in str(product['产品名称']):
+                                info_product = product
                                 break
+                
+                # 获取时机（优先从 Excel 获取，其次从知识库）
+                timing_value = None
+                if info_product is not None and pd.notna(info_product['时机']):
+                    val = str(info_product['时机'])
+                    if val and val != '/':
+                        timing_value = val
                 if timing_value:
                     timing = timing_value
                 elif 'timing' in knowledge:
@@ -334,29 +279,29 @@ class DrugDatabase:
                 else:
                     timing = "详见产品说明"
                 
-                # 获取商品名（优先从 JSON 获取）
-                if huaying_product and '商品名' in huaying_product and huaying_product['商品名'] and huaying_product['商品名'] != '/':
-                    brand_name = str(huaying_product['商品名'])
+                # 获取商品名（优先从 Excel 获取）
+                if info_product is not None and pd.notna(info_product['商品名']) and str(info_product['商品名']) != '/':
+                    brand_name = str(info_product['商品名'])
                 else:
                     brand_name = name
                 
-                # 获取用法用量（优先从 JSON 获取，其次从知识库）
-                if huaying_product and '用法用量' in huaying_product and huaying_product['用法用量'] and huaying_product['用法用量'] != '/':
-                    usage_info = str(huaying_product['用法用量'])
+                # 获取用法用量（优先从 Excel 获取，其次从知识库）
+                if info_product is not None and pd.notna(info_product['用法用量']) and str(info_product['用法用量']) != '/':
+                    usage_info = str(info_product['用法用量'])
                 elif 'usage' in knowledge:
                     usage_info = knowledge['usage']
                 else:
-                    usage_info = str(row['政策']) if pd.notna(row['政策']) and str(row['政策']) != '/' else "详见产品说明"
+                    usage_info = "详见产品说明"
                 
-                # 获取兑水量（优先从 JSON 获取）
-                if huaying_product and '兑水量' in huaying_product and huaying_product['兑水量'] and str(huaying_product['兑水量']) != '/':
-                    water = str(huaying_product['兑水量'])
+                # 获取兑水量（优先从 Excel 获取）
+                if info_product is not None and pd.notna(info_product['兑水量']) and str(info_product['兑水量']) != '/':
+                    water = str(info_product['兑水量'])
                 else:
                     water = "详见说明书"
                 
-                # 获取适应症状（优先从 JSON 获取，其次从知识库）
-                if huaying_product and '适应症状或产品功效' in huaying_product and huaying_product['适应症状或产品功效'] and huaying_product['适应症状或产品功效'] != '/':
-                    indications_str = str(huaying_product['适应症状或产品功效'])
+                # 获取适应症状（优先从 Excel 获取，其次从知识库）
+                if info_product is not None and pd.notna(info_product['适应症状或产品功效']) and str(info_product['适应症状或产品功效']) != '/':
+                    indications_str = str(info_product['适应症状或产品功效'])
                     indications = [i.strip() for i in indications_str.split('、')] if '、' in indications_str else [indications_str]
                 else:
                     indications = knowledge.get("indications", ["详见产品说明"])
