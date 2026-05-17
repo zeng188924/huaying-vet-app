@@ -29,6 +29,17 @@ def get_recommender():
     recommender = create_recommender(excel_path)
     return recommender
 
+# 价格格式化函数
+def format_price(price_value):
+    """格式化价格，只显示小数点后一位"""
+    if pd.isna(price_value) or str(price_value) in ['/', '-', '', 'nan', 'None']:
+        return '/'
+    try:
+        price_float = float(price_value)
+        return f"{price_float:.1f}"
+    except (ValueError, TypeError):
+        return str(price_value)
+
 # 移动端自定义CSS
 def mobile_css():
     st.markdown("""
@@ -543,8 +554,14 @@ elif page == 'catalog':
             
             for idx, drug_row in df_base_filtered.iterrows():
                 name = str(drug_row.get('品名', ''))
+                content = str(drug_row.get('含量', ''))
                 spec = str(drug_row.get('规格型号', ''))
-                price = str(drug_row.get('单价        元/袋/瓶', ''))
+                water = str(drug_row.get('兑水量', ''))
+                price = format_price(drug_row.get('单价        元/袋/瓶', ''))
+                spec2 = str(drug_row.get('规格型号.1', ''))
+                water2 = str(drug_row.get('兑水量.1', ''))
+                price2 = format_price(drug_row.get('单价        元/袋/瓶.1', ''))
+                remark = str(drug_row.get('备注', ''))
                 
                 with st.container():
                     st.markdown(f"""
@@ -555,7 +572,13 @@ elif page == 'catalog':
                             <span class="info-tag info-tag-green">¥{price}</span>
                         </div>
                         <p style="color: #666; font-size: 0.85em; margin: 8px 0;">
-                            <b>规格:</b> {spec}
+                            <b>含量:</b> {content}<br>
+                            <b>规格:</b> {spec}<br>
+                            <b>兑水量:</b> {water}<br>
+                            <b>规格2:</b> {spec2}<br>
+                            <b>兑水量2:</b> {water2}<br>
+                            <b>单价2:</b> ¥{price2}<br>
+                            <b>备注:</b> {remark}
                         </p>
                     </div>
                     """, unsafe_allow_html=True)
@@ -570,24 +593,26 @@ elif page == 'catalog':
             st.write(f"**共 {len(df_star)} 个明星产品**")
             
             for idx, drug_row in df_star.iterrows():
-                name = str(drug_row.get('商品名', ''))
-                if name == '/' or name == 'nan' or not name:
-                    name = str(drug_row.get('产品名称', ''))
+                brand_name = str(drug_row.get('商品名', ''))
+                product_name = str(drug_row.get('产品名称', ''))
+                spec = str(drug_row.get('规格型号', ''))
+                price = format_price(drug_row.get('经销商单价', ''))
+                policy = str(drug_row.get('政策', ''))
                 
-                spec = str(drug_row.get('规格', ''))
-                price = str(drug_row.get('价格', ''))
-                timing = str(drug_row.get('时机', ''))
+                display_name = brand_name if brand_name != '/' and brand_name != 'nan' and brand_name else product_name
                 
                 with st.container():
                     st.markdown(f"""
                     <div class="mobile-card" style="border-left-color: #ff9500;">
-                        <h3 style="color: #e67700;">⭐ {name}</h3>
+                        <h3 style="color: #e67700;">⭐ {display_name}</h3>
                         <div class="info-row">
                             <span class="info-tag info-tag-orange">¥{price}</span>
-                            <span class="info-tag">{timing}</span>
                         </div>
                         <p style="color: #666; font-size: 0.85em; margin: 8px 0;">
-                            <b>规格:</b> {spec}
+                            <b>商品名:</b> {brand_name}<br>
+                            <b>产品名称:</b> {product_name}<br>
+                            <b>规格:</b> {spec}<br>
+                            <b>政策:</b> {policy}
                         </p>
                     </div>
                     """, unsafe_allow_html=True)
@@ -606,10 +631,16 @@ elif page == 'catalog':
                 if name == '/' or name == 'nan' or not name:
                     continue
                     
-                spec = str(drug_row.get('包装规格', ''))
-                price = str(drug_row.get('价格', ''))
                 category = str(drug_row.get('类别', ''))
-                timing = str(drug_row.get('时机', ''))
+                timing = str(drug_row.get('时\xa0机', ''))
+                brand_name = str(drug_row.get('商品名', ''))
+                spec = str(drug_row.get('包装规格', ''))
+                efficacy = str(drug_row.get('适应症状或产品功效', ''))
+                usage = str(drug_row.get('用法用量', ''))
+                water = str(drug_row.get('兑水量', ''))
+                price = format_price(drug_row.get('价\xa0格', ''))
+                remark = str(drug_row.get('备注', ''))
+                retail_price = format_price(drug_row.get('建议零售价', ''))
                 
                 with st.container():
                     st.markdown(f"""
@@ -621,7 +652,16 @@ elif page == 'catalog':
                             <span class="info-tag">{timing}</span>
                         </div>
                         <p style="color: #666; font-size: 0.85em; margin: 8px 0;">
-                            <b>规格:</b> {spec}
+                            <b>商品名:</b> {brand_name}<br>
+                            <b>类别:</b> {category}<br>
+                            <b>时机:</b> {timing}<br>
+                            <b>包装规格:</b> {spec}<br>
+                            <b>适应症状或产品功效:</b> {efficacy}<br>
+                            <b>用法用量:</b> {usage}<br>
+                            <b>兑水量:</b> {water}<br>
+                            <b>价格:</b> ¥{price}<br>
+                            <b>备注:</b> {remark}<br>
+                            <b>建议零售价:</b> ¥{retail_price}
                         </p>
                     </div>
                     """, unsafe_allow_html=True)
@@ -646,21 +686,21 @@ elif page == 'catalog':
                     st.markdown(f"**底价目录 ({len(results_base)} 个)**")
                     for _, row in results_base.iterrows():
                         name = row['品名']
-                        price = row['单价        元/袋/瓶']
+                        price = format_price(row['单价        元/袋/瓶'])
                         st.write(f"- {name} - ¥{price}")
                 
                 if len(results_star) > 0:
                     st.markdown(f"**明星产品 ({len(results_star)} 个)**")
                     for _, row in results_star.iterrows():
                         name = row['商品名'] if row['商品名'] != '/' else row['产品名称']
-                        price = row['价格']
+                        price = format_price(row['价格'])
                         st.write(f"- {name} - ¥{price}")
                 
                 if len(results_info) > 0:
                     st.markdown(f"**华英产品 ({len(results_info)} 个)**")
                     for _, row in results_info.iterrows():
                         name = row['产品名称']
-                        price = row['价格']
+                        price = format_price(row['价格'])
                         st.write(f"- {name} - ¥{price}")
                 
                 if len(results_base) == 0 and len(results_star) == 0 and len(results_info) == 0:
