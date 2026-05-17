@@ -261,23 +261,8 @@ class DrugDatabase:
                 if info_product is None and generic_name in info_products:
                     info_product = info_products[generic_name]
                 
-                # 方式3：通过规格+商品名联合匹配
-                if info_product is None:
-                    spec = str(row['规格型号']) if pd.notna(row['规格型号']) else ""
-                    if spec:
-                        for key, product in info_products.items():
-                            if pd.notna(product['包装规格']) and str(product['包装规格']) == spec:
-                                info_product = product
-                                break
-                
-                # 方式4：通过知识库中的 component 匹配
-                if info_product is None:
-                    component = knowledge.get("component", "")
-                    if component:
-                        for key, product in info_products.items():
-                            if pd.notna(product['产品名称']) and component in str(product['产品名称']):
-                                info_product = product
-                                break
+                # 方式3和方式4已禁用：避免规格或成分匹配导致商品名混淆
+                # 明星产品只通过商品名或产品名称直接匹配，保持数据独立性
                 
                 # 获取时机（只从 Excel 获取，找不到保持空缺）
                 timing = ""
