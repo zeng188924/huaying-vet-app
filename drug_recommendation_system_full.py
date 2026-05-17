@@ -266,18 +266,12 @@ class DrugDatabase:
                                 info_product = product
                                 break
                 
-                # 获取时机（优先从 Excel 获取，其次从知识库）
-                timing_value = None
+                # 获取时机（只从 Excel 获取，找不到保持空缺）
+                timing = ""
                 if info_product is not None and pd.notna(info_product['时机']):
                     val = str(info_product['时机'])
                     if val and val != '/':
-                        timing_value = val
-                if timing_value:
-                    timing = timing_value
-                elif 'timing' in knowledge:
-                    timing = knowledge['timing']
-                else:
-                    timing = "详见产品说明"
+                        timing = val
                 
                 # 获取商品名（优先从 Excel 获取）
                 if info_product is not None and pd.notna(info_product['商品名']) and str(info_product['商品名']) != '/':
@@ -285,26 +279,21 @@ class DrugDatabase:
                 else:
                     brand_name = name
                 
-                # 获取用法用量（优先从 Excel 获取，其次从知识库）
+                # 获取用法用量（只从 Excel 获取，找不到保持空缺）
+                usage_info = ""
                 if info_product is not None and pd.notna(info_product['用法用量']) and str(info_product['用法用量']) != '/':
                     usage_info = str(info_product['用法用量'])
-                elif 'usage' in knowledge:
-                    usage_info = knowledge['usage']
-                else:
-                    usage_info = "详见产品说明"
                 
-                # 获取兑水量（优先从 Excel 获取）
+                # 获取兑水量（只从 Excel 获取，找不到保持空缺）
+                water = ""
                 if info_product is not None and pd.notna(info_product['兑水量']) and str(info_product['兑水量']) != '/':
                     water = str(info_product['兑水量'])
-                else:
-                    water = "详见说明书"
                 
-                # 获取适应症状（优先从 Excel 获取，其次从知识库）
+                # 获取适应症状（只从 Excel 获取，找不到保持空缺）
+                indications = []
                 if info_product is not None and pd.notna(info_product['适应症状或产品功效']) and str(info_product['适应症状或产品功效']) != '/':
                     indications_str = str(info_product['适应症状或产品功效'])
                     indications = [i.strip() for i in indications_str.split('、')] if '、' in indications_str else [indications_str]
-                else:
-                    indications = knowledge.get("indications", ["详见产品说明"])
                 
                 drug = DrugInfo(
                     id=f"S{idx+1}",
