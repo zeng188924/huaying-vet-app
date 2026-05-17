@@ -117,7 +117,7 @@ class DrugDatabase:
         
         base_knowledge = {
             "氟苯尼考粉": {"component": "氟苯尼考", "indications": ["鸡霍乱", "鸡白痢", "大肠杆菌病", "慢性呼吸道病"], "types": ["BACTERIAL", "RESPIRATORY"], "egg_safe": False, "usage": "混饮：每袋兑水2000斤，连用3-5日", "timing": "发病期间治疗使用"},
-            "盐酸多西环素可溶性粉": {"component": "盐酸多西环素", "indications": ["鸡慢性呼吸道病", "大肠杆菌病", "巴氏杆菌病", "沙门氏菌病"], "types": ["BACTERIAL", "RESPIRATORY"], "egg_safe": True, "usage": "混饮：每袋兑水1500斤，连用3-5日", "timing": "发病期间治疗使用"},
+            "盐酸多西环素可溶性粉": {"component": "盐酸多西环素", "indications": ["鸡慢性呼吸道病", "大肠杆菌病", "巴氏杆菌病", "沙门氏菌病"], "types": ["BACTERIAL", "RESPIRATORY"], "egg_safe": False, "usage": "混饮：每袋兑水1500斤，连用3-5日", "timing": "发病期间治疗使用"},
             "卡巴匹林钙粉": {"component": "卡巴匹林钙", "indications": ["解热", "镇痛", "消炎", "退热"], "types": ["MIXED"], "egg_safe": True, "usage": "混饮：每袋兑水2000斤，连用3日", "timing": "发热时使用"},
             "阿莫西林可溶性粉": {"component": "阿莫西林", "indications": ["大肠杆菌病", "沙门氏菌病", "葡萄球菌病", "链球菌病"], "types": ["BACTERIAL", "DIGESTIVE"], "egg_safe": True, "usage": "混饮：每袋兑水900斤，连用3-5日", "timing": "发病期间治疗使用"},
             "硫酸黏菌素预混剂1000g": {"component": "硫酸黏菌素", "indications": ["革兰氏阴性菌引起的肠道感染", "大肠杆菌病", "沙门氏菌病"], "types": ["BACTERIAL", "DIGESTIVE"], "egg_safe": False, "usage": "混饲：每袋拌料1000斤，连用3-5日", "timing": "发病期间治疗使用"},
@@ -125,7 +125,7 @@ class DrugDatabase:
             "硫酸新霉素可溶性粉": {"component": "硫酸新霉素", "indications": ["禽大肠杆菌病", "沙门氏菌病", "禽霍乱", "鸡白痢"], "types": ["BACTERIAL", "DIGESTIVE"], "egg_safe": False, "usage": "混饮：每袋兑水800斤，连用3-5日", "timing": "发病期间治疗使用"},
             "盐酸恩诺沙星可溶性粉": {"component": "盐酸恩诺沙星", "indications": ["禽大肠杆菌病", "鸡白痢", "禽霍乱", "慢性呼吸道病"], "types": ["BACTERIAL", "RESPIRATORY", "DIGESTIVE"], "egg_safe": False, "usage": "混饮：每袋兑水1000斤，连用3-5日", "timing": "发病期间治疗使用"},
             "硫酸庆大霉素可溶性粉": {"component": "硫酸庆大霉素", "indications": ["革兰氏阴性菌和阳性菌感染", "大肠杆菌病", "沙门氏菌病"], "types": ["BACTERIAL", "DIGESTIVE"], "egg_safe": False, "usage": "混饮：每袋兑水800斤，连用3-5日", "timing": "发病期间治疗使用"},
-            "盐酸林可霉素可溶性粉": {"component": "盐酸林可霉素", "indications": ["革兰氏阳性菌感染", "支原体感染", "坏死性肠炎"], "types": ["BACTERIAL", "DIGESTIVE", "RESPIRATORY"], "egg_safe": True, "usage": "混饮：每袋兑水1000斤，连用3-5日", "timing": "发病期间治疗使用"},
+            "盐酸林可霉素可溶性粉": {"component": "盐酸林可霉素", "indications": ["革兰氏阳性菌感染", "支原体感染", "坏死性肠炎"], "types": ["BACTERIAL", "DIGESTIVE", "RESPIRATORY"], "egg_safe": False, "usage": "混饮：每袋兑水1000斤，连用3-5日", "timing": "发病期间治疗使用"},
             "地美硝唑预混剂": {"component": "地美硝唑", "indications": ["禽组织滴虫病", "禽毛滴虫病", "坏死性肠炎", "球虫病辅助治疗"], "types": ["PARASITIC", "DIGESTIVE"], "egg_safe": False, "usage": "混饲：每袋拌料1000斤，连用3-5日", "timing": "发病期间治疗使用"},
             "单硫酸卡那霉素可溶性粉": {"component": "单硫酸卡那霉素", "indications": ["禽大肠杆菌病", "沙门氏菌病", "禽霍乱"], "types": ["BACTERIAL", "DIGESTIVE", "RESPIRATORY"], "egg_safe": False, "usage": "混饮：每袋兑水800斤，连用3-5日", "timing": "发病期间治疗使用"},
             "替米考星溶液": {"component": "替米考星", "indications": ["鸡慢性呼吸道病", "传染性鼻炎", "禽霍乱"], "types": ["RESPIRATORY", "BACTERIAL"], "egg_safe": False, "usage": "混饮：每瓶兑水1000斤，连用3-5日", "timing": "发病期间治疗使用"},
