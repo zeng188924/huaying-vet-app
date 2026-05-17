@@ -36,6 +36,17 @@ if st.sidebar.button("🔄 清除缓存并刷新"):
     st.cache_resource.clear()
     st.rerun()
 
+# 价格格式化函数
+def format_price(price_value):
+    """格式化价格，只显示小数点后一位"""
+    if pd.isna(price_value) or str(price_value) in ['/', '-', '', 'nan', 'None']:
+        return '/'
+    try:
+        price_float = float(price_value)
+        return f"{price_float:.1f}"
+    except (ValueError, TypeError):
+        return str(price_value)
+
 # 自定义CSS样式
 def local_css():
     st.markdown("""
@@ -462,16 +473,16 @@ if st.session_state.get('show_results', False):
 # 产品目录展示
 st.markdown("---")
 st.subheader("📋 产品目录展示")
-st.info("💡 本产品目录严格按照Excel文件中的分类结构展示，共111个产品，分为三个独立类别")
+st.info("💡 本产品目录严格按照Excel文件中的分类结构展示，所有数据完整显示")
 
 try:
     excel_file = pd.ExcelFile("合并产品信息表修改后.xlsx")
     
     # 创建三个独立标签页
     tab_base, tab_star, tab_info = st.tabs([
-        "📦 底价目录 (22个)", 
-        "⭐ 明星产品 (23个)", 
-        "🏭 产品信息-华英 (66个)"
+        " 底价目录", 
+        "⭐ 明星产品", 
+        "🏭 产品信息-华英"
     ])
     
     # 底价目录
@@ -485,10 +496,40 @@ try:
         df_base_filtered = df_base[df_base['序号'].apply(lambda x: str(x).isdigit() if pd.notna(x) else False)]
         
         st.write(f"**共 {len(df_base_filtered)} 个底价目录产品**")
-        st.dataframe(df_base_filtered, use_container_width=True, height=600)
+        
+        for idx, drug_row in df_base_filtered.iterrows():
+            name = str(drug_row.get('品名', ''))
+            content = str(drug_row.get('含量', ''))
+            spec = str(drug_row.get('规格型号', ''))
+            water = str(drug_row.get('兑水量', ''))
+            price = format_price(drug_row.get('单价        元/袋/瓶', ''))
+            spec2 = str(drug_row.get('规格型号.1', ''))
+            water2 = str(drug_row.get('兑水量.1', ''))
+            price2 = format_price(drug_row.get('单价        元/袋/瓶.1', ''))
+            remark = str(drug_row.get('备注', ''))
+            
+            with st.container():
+                st.markdown(f"""
+                <div class="drug-card">
+                    <h3>{name}</h3>
+                    <div>
+                        <span class="info-badge badge-blue">底价目录</span>
+                        <span class="info-badge badge-green">¥{price}</span>
+                    </div>
+                    <p style="color: #666; margin: 10px 0;">
+                        <b>含量:</b> {content}<br>
+                        <b>规格:</b> {spec}<br>
+                        <b>兑水量:</b> {water}<br>
+                        <b>规格2:</b> {spec2}<br>
+                        <b>兑水量2:</b> {water2}<br>
+                        <b>单价2:</b> ¥{price2}<br>
+                        <b>备注:</b> {remark}
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
         
         st.markdown("---")
-        st.caption("⚠️ 底价产品均不抵任务量，运费需客户自行承担")
+        st.caption("️ 底价产品均不抵任务量，运费需客户自行承担")
     
     # 明星产品
     with tab_star:
@@ -499,7 +540,31 @@ try:
         df_star = pd.read_excel(excel_file, sheet_name='明星产品_20260512')
         
         st.write(f"**共 {len(df_star)} 个明星产品**")
-        st.dataframe(df_star, use_container_width=True, height=600)
+        
+        for idx, drug_row in df_star.iterrows():
+            brand_name = str(drug_row.get('商品名', ''))
+            product_name = str(drug_row.get('产品名称', ''))
+            spec = str(drug_row.get('规格型号', ''))
+            price = format_price(drug_row.get('经销商单价', ''))
+            policy = str(drug_row.get('政策', ''))
+            
+            display_name = brand_name if brand_name != '/' and brand_name != 'nan' and brand_name else product_name
+            
+            with st.container():
+                st.markdown(f"""
+                <div class="drug-card" style="border-left-color: #f57c00;">
+                    <h3 style="color: #e65100;">⭐ {display_name}</h3>
+                    <div>
+                        <span class="info-badge badge-orange">¥{price}</span>
+                    </div>
+                    <p style="color: #666; margin: 10px 0;">
+                        <b>商品名:</b> {brand_name}<br>
+                        <b>产品名称:</b> {product_name}<br>
+                        <b>规格:</b> {spec}<br>
+                        <b>政策:</b> {policy}
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
     
     # 产品信息-华英
     with tab_info:
@@ -510,15 +575,54 @@ try:
         df_info = pd.read_excel(excel_file, sheet_name='产品信息_华英')
         
         st.write(f"**共 {len(df_info)} 个华英产品信息**")
-        st.dataframe(df_info, use_container_width=True, height=600)
+        
+        for idx, drug_row in df_info.iterrows():
+            name = str(drug_row.get('产品名称', ''))
+            if name == '/' or name == 'nan' or not name:
+                continue
+                
+            category = str(drug_row.get('类别', ''))
+            timing = str(drug_row.get('时\xa0机', ''))
+            brand_name = str(drug_row.get('商品名', ''))
+            spec = str(drug_row.get('包装规格', ''))
+            efficacy = str(drug_row.get('适应症状或产品功效', ''))
+            usage = str(drug_row.get('用法用量', ''))
+            water = str(drug_row.get('兑水量', ''))
+            price = format_price(drug_row.get('价\xa0格', ''))
+            remark = str(drug_row.get('备注', ''))
+            retail_price = format_price(drug_row.get('建议零售价', ''))
+            
+            with st.container():
+                st.markdown(f"""
+                <div class="drug-card" style="border-left-color: #43a047;">
+                    <h3 style="color: #2e7d32;">{name}</h3>
+                    <div>
+                        <span class="info-badge badge-green">¥{price}</span>
+                        <span class="info-badge badge-blue">{category}</span>
+                        <span class="info-badge badge-purple">{timing}</span>
+                    </div>
+                    <p style="color: #666; margin: 10px 0;">
+                        <b>商品名:</b> {brand_name}<br>
+                        <b>类别:</b> {category}<br>
+                        <b>时机:</b> {timing}<br>
+                        <b>包装规格:</b> {spec}<br>
+                        <b>适应症状或产品功效:</b> {efficacy}<br>
+                        <b>用法用量:</b> {usage}<br>
+                        <b>兑水量:</b> {water}<br>
+                        <b>价格:</b> ¥{price}<br>
+                        <b>备注:</b> {remark}<br>
+                        <b>建议零售价:</b> ¥{retail_price}
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
     
     # 分类说明
     st.markdown("---")
     st.markdown("""
     **📌 产品分类说明：**
-    - **底价目录**：基础价格产品，共22个，价格随原料变动，有效期10天
-    - **明星产品**：重点推荐产品，共23个，涵盖中药、饲料添加剂、维生素等类别
-    - **产品信息-华英**：完整产品信息库，共66个，包含详细的产品规格、功效、用法用量等信息
+    - **底价目录**：基础价格产品，价格随原料变动，有效期10天
+    - **明星产品**：重点推荐产品，涵盖中药、饲料添加剂、维生素等类别
+    - **产品信息-华英**：完整产品信息库，包含详细的产品规格、功效、用法用量等信息
     
     ⚠️ **注意**：三个类别的产品信息相互独立，不可混淆使用
     """)
