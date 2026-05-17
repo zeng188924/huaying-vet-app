@@ -118,8 +118,8 @@ class DrugDatabase:
         base_knowledge = {
             "氟苯尼考粉": {"component": "氟苯尼考", "indications": ["鸡霍乱", "鸡白痢", "大肠杆菌病", "慢性呼吸道病"], "types": ["BACTERIAL", "RESPIRATORY"], "egg_safe": False, "usage": "混饮：每袋兑水2000斤，连用3-5日", "timing": "发病期间治疗使用"},
             "盐酸多西环素可溶性粉": {"component": "盐酸多西环素", "indications": ["鸡慢性呼吸道病", "大肠杆菌病", "巴氏杆菌病", "沙门氏菌病"], "types": ["BACTERIAL", "RESPIRATORY"], "egg_safe": False, "usage": "混饮：每袋兑水1500斤，连用3-5日", "timing": "发病期间治疗使用"},
-            "卡巴匹林钙粉": {"component": "卡巴匹林钙", "indications": ["解热", "镇痛", "消炎", "退热"], "types": ["MIXED"], "egg_safe": True, "usage": "混饮：每袋兑水2000斤，连用3日", "timing": "发热时使用"},
-            "阿莫西林可溶性粉": {"component": "阿莫西林", "indications": ["大肠杆菌病", "沙门氏菌病", "葡萄球菌病", "链球菌病"], "types": ["BACTERIAL", "DIGESTIVE"], "egg_safe": True, "usage": "混饮：每袋兑水900斤，连用3-5日", "timing": "发病期间治疗使用"},
+            "卡巴匹林钙粉": {"component": "卡巴匹林钙", "indications": ["解热", "镇痛", "消炎", "退热"], "types": ["MIXED"], "egg_safe": False, "usage": "混饮：每袋兑水2000斤，连用3日", "timing": "发热时使用"},
+            "阿莫西林可溶性粉": {"component": "阿莫西林", "indications": ["大肠杆菌病", "沙门氏菌病", "葡萄球菌病", "链球菌病"], "types": ["BACTERIAL", "DIGESTIVE"], "egg_safe": False, "usage": "混饮：每袋兑水900斤，连用3-5日", "timing": "发病期间治疗使用"},
             "硫酸黏菌素预混剂1000g": {"component": "硫酸黏菌素", "indications": ["革兰氏阴性菌引起的肠道感染", "大肠杆菌病", "沙门氏菌病"], "types": ["BACTERIAL", "DIGESTIVE"], "egg_safe": False, "usage": "混饲：每袋拌料1000斤，连用3-5日", "timing": "发病期间治疗使用"},
             "硫酸黏菌素预混剂500g": {"component": "硫酸黏菌素", "indications": ["革兰氏阴性菌引起的肠道感染", "大肠杆菌病", "沙门氏菌病"], "types": ["BACTERIAL", "DIGESTIVE"], "egg_safe": False, "usage": "混饲：每袋拌料500斤，连用3-5日", "timing": "发病期间治疗使用"},
             "硫酸新霉素可溶性粉": {"component": "硫酸新霉素", "indications": ["禽大肠杆菌病", "沙门氏菌病", "禽霍乱", "鸡白痢"], "types": ["BACTERIAL", "DIGESTIVE"], "egg_safe": False, "usage": "混饮：每袋兑水800斤，连用3-5日", "timing": "发病期间治疗使用"},
@@ -136,7 +136,7 @@ class DrugDatabase:
             "磺胺喹噁啉钠可溶性粉（去球虫）": {"component": "磺胺喹噁啉钠", "indications": ["鸡球虫病", "兔球虫病", "盲肠球虫", "小肠球虫"], "types": ["PARASITIC"], "egg_safe": False, "usage": "混饮：每袋兑水1000斤，连用3日", "timing": "发病期间治疗使用"},
             "磺胺氯吡嗪钠可溶性粉（去球虫）": {"component": "磺胺氯吡嗪钠", "indications": ["鸡球虫病", "兔球虫病", "盲肠球虫", "禽霍乱"], "types": ["PARASITIC", "BACTERIAL"], "egg_safe": False, "usage": "混饮：每袋兑水800斤，连用3日", "timing": "发病期间治疗使用"},
             "30%氟苯尼考可溶性粉": {"component": "氟苯尼考", "indications": ["鸡霍乱", "鸡白痢", "大肠杆菌病", "慢性呼吸道病"], "types": ["BACTERIAL", "RESPIRATORY"], "egg_safe": False, "usage": "混饮：每袋兑水1500斤，连用3-5日", "timing": "发病期间治疗使用"},
-            "10%盐酸多西环素可溶性粉": {"component": "盐酸多西环素", "indications": ["鸡慢性呼吸道病", "大肠杆菌病", "巴氏杆菌病", "沙门氏菌病"], "types": ["BACTERIAL", "RESPIRATORY"], "egg_safe": True, "usage": "混饮：每袋兑水1200斤，连用3-5日", "timing": "发病期间治疗使用"},
+            "10%盐酸多西环素可溶性粉": {"component": "盐酸多西环素", "indications": ["鸡慢性呼吸道病", "大肠杆菌病", "巴氏杆菌病", "沙门氏菌病"], "types": ["BACTERIAL", "RESPIRATORY"], "egg_safe": False, "usage": "混饮：每袋兑水1200斤，连用3-5日", "timing": "发病期间治疗使用"},
             "80%延胡索酸泰妙菌素（呼吸道）": {"component": "延胡索酸泰妙菌素", "indications": ["鸡慢性呼吸道病", "滑液囊支原体", "猪支原体肺炎"], "types": ["RESPIRATORY"], "egg_safe": False, "usage": "混饲：每袋拌料1000斤，连用5-7日", "timing": "发病期间治疗使用"},
         }
         
@@ -222,8 +222,8 @@ class DrugDatabase:
             "海健素": {"component": "黄芪多糖口服液(β防御素、干扰素β、γ）", "indications": ["维生素缺乏", "营养补充", "抗应激"], "types": ["NUTRITIONAL"], "egg_safe": True, "category": "维生素", "timing": "日常保健使用", "usage": "混饮：每袋兑水2000斤，连用5-7日"},
             "（中药）金舒利（小柴胡）500g": {"component": "混合型饲料添加剂 牛磺酸", "indications": ["退烧", "抗炎", "增料", "抗病毒"], "types": ["NUTRITIONAL", "MIXED"], "egg_safe": True, "category": "饲料添加剂", "timing": "增免抗病毒类产品", "usage": "本品500g/袋兑水6000斤，建议不低于5000斤水使用，全天量集中饮用7-8小时，连用3-5天"},
             "（中药）金舒利（小柴胡）100g": {"component": "混合型饲料添加剂 牛磺酸", "indications": ["退烧", "抗炎", "增料", "抗病毒"], "types": ["NUTRITIONAL", "MIXED"], "egg_safe": True, "category": "饲料添加剂", "timing": "增免抗病毒类产品", "usage": "本品100g/袋兑水1200斤，建议不低于1000斤水使用，全天量集中饮用7-8小时，连用3-5天"},
-            "严立康": {"component": "盐酸大观霉素盐酸林可霉素可溶性粉", "indications": ["肠道菌群失调", "腹泻", "消化不良"], "types": ["DIGESTIVE"], "egg_safe": True, "category": "微生态", "timing": "日常保健使用", "usage": "混饮：每袋兑水2000斤，连用5-7日"},
-            "超吉拍档": {"component": "盐酸大观霉素盐酸林可霉素可溶性粉", "indications": ["促进消化", "提高饲料利用率", "肠道健康"], "types": ["NUTRITIONAL", "DIGESTIVE"], "egg_safe": True, "category": "酶制剂", "timing": "日常保健使用", "usage": "混饲：每袋拌料1000斤，连用5-7日"},
+            "严立康": {"component": "盐酸大观霉素盐酸林可霉素可溶性粉", "indications": ["肠道菌群失调", "腹泻", "消化不良"], "types": ["DIGESTIVE"], "egg_safe": False, "category": "微生态", "timing": "日常保健使用", "usage": "混饮：每袋兑水2000斤，连用5-7日"},
+            "超吉拍档": {"component": "盐酸大观霉素盐酸林可霉素可溶性粉", "indications": ["促进消化", "提高饲料利用率", "肠道健康"], "types": ["NUTRITIONAL", "DIGESTIVE"], "egg_safe": False, "category": "酶制剂", "timing": "日常保健使用", "usage": "混饲：每袋拌料1000斤，连用5-7日"},
             "新达罗": {"component": "硫酸庆大霉素可溶性粉", "indications": ["细菌感染", "呼吸道感染", "肠道感染"], "types": ["BACTERIAL", "RESPIRATORY", "DIGESTIVE"], "egg_safe": False, "category": "抗生素", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水1000斤，连用3-5日"},
             "菲清": {"component": "液态甘草鱼腥草粗提物(复配型)", "indications": ["清肺止咳", "呼吸道感染", "痰多"], "types": ["RESPIRATORY"], "egg_safe": True, "category": "中药", "timing": "发病期间治疗使用", "usage": "混饮：每瓶兑水2000斤，连用3-5日"},
             "热感清100ml": {"component": "鱼腥草提取液", "indications": ["退热", "感冒", "发热"], "types": ["MIXED", "VIRAL"], "egg_safe": True, "category": "中药", "timing": "增免抗病毒类产品", "usage": "本品100ml/瓶饮水400-600斤，全天量集中饮用4-5小时，连用3天"},
@@ -342,13 +342,34 @@ class DrugDatabase:
         """加载产品信息_华英（66个）"""
         df = pd.read_excel(excel_file, sheet_name='产品信息_华英')
         
+        # 产蛋期禁用药物清单（根据用户提供的清单）
+        egg_unsafe_products = [
+            # 抗生素类
+            "氟苯尼考粉", "30%氟苯尼考可溶性粉", "盐酸多西环素可溶性粉", "10%盐酸多西环素可溶性粉",
+            "卡巴匹林钙粉", "阿莫西林可溶性粉", "硫酸黏菌素预混剂", "硫酸新霉素可溶性粉",
+            "盐酸恩诺沙星可溶性粉", "硫酸庆大霉素可溶性粉", "盐酸林可霉素可溶性粉",
+            "地美硝唑预混剂", "单硫酸卡那霉素可溶性粉", "硫酸安普霉素可溶性粉",
+            "替米考星预混剂", "替米考星溶液", "复方磺胺间甲氧嘧啶钠可溶性粉",
+            "酒石酸泰万菌素预混剂", "磺胺喹噁啉钠可溶性粉", "磺胺氯吡嗪钠可溶性粉",
+            "80%延胡索酸泰妙菌素", "盐酸大观霉素可溶性粉", "盐酸金霉素可溶性粉",
+            "复方阿莫西林粉",
+            # 其他药物类
+            "地克珠利预混剂", "地克珠利溶液",
+            # 明星产品中的禁用药物
+            "严立康", "超吉拍档",
+        ]
+        
         for idx, row in df.iterrows():
             if pd.notna(row['产品名称']) and row['产品名称'] != '/':
                 name = str(row['产品名称'])
                 category = str(row['类别']) if pd.notna(row['类别']) else "其他"
                 
-                # 根据类别判断产蛋期安全性
-                egg_safe = category in ['中药', '营养保健', '维生素', '微生态', '免疫增强剂']
+                # 根据禁用清单判断产蛋期安全性
+                egg_safe = True  # 默认安全
+                for unsafe_name in egg_unsafe_products:
+                    if unsafe_name in name or name in unsafe_name:
+                        egg_safe = False
+                        break
                 
                 # 根据类别判断疾病类型
                 if category == '抗生素':
