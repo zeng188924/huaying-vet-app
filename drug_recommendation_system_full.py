@@ -244,10 +244,10 @@ class DrugDatabase:
                 name = str(row['商品名'])  # 商品名（显示用）
                 knowledge = star_knowledge.get(name, {})
                 
-                # 获取产品名称（原来的通用名称），如果为 "/" 则使用商品名
+                # 获取产品名称（原来的通用名称），如果为 "/" 或空则保持为空
                 generic_name = str(row['产品名称']) if pd.notna(row['产品名称']) else ""
-                if generic_name == "/" or not generic_name:
-                    generic_name = name
+                if generic_name == "/":
+                    generic_name = ""
                 
                 # 从"产品信息_华英" sheet 获取更完整的信息
                 # 尝试多种匹配方式：1. 商品名 2. 产品名称
@@ -286,15 +286,16 @@ class DrugDatabase:
                     if val and str(val) != '/':
                         timing = str(val)
                 
-                # 获取商品名（优先从 Excel 获取）
+                # 获取商品名（明星产品保持自己的商品名，不通过规格匹配覆盖）
+                # 只有通过商品名或产品名称直接匹配到的，才考虑使用产品信息_华英中的商品名
+                brand_name = name
                 if info_product is not None:
-                    brand_val = get_column_value(info_product, '商品名')
-                    if brand_val and str(brand_val) != '/':
-                        brand_name = str(brand_val)
-                    else:
-                        brand_name = name
-                else:
-                    brand_name = name
+                    # 只有通过商品名或产品名称直接匹配到的，才考虑使用产品信息_华英中的商品名
+                    # 通过规格匹配的不覆盖商品名
+                    if name in info_products or generic_name in info_products:
+                        brand_val = get_column_value(info_product, '商品名')
+                        if brand_val and str(brand_val) != '/':
+                            brand_name = str(brand_val)
                 
                 # 获取用法用量（只从 Excel 获取，找不到保持空缺）
                 usage_info = ""
