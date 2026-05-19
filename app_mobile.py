@@ -501,10 +501,14 @@ elif page == 'recommend':
                                 st.write(f"  - **商品名:** {drug.get('brand_name')}")
                             if drug.get('product_name'):
                                 st.write(f"  - **产品名:** {drug.get('product_name')}")
-                            st.write(f"  - **通用名称:** {drug.get('content', drug.get('name', 'N/A'))}")
-                            # 成分显示逻辑：优先使用component，如果不存在或为空则使用main_component
-                            component = drug.get('component') or drug.get('main_component') or 'N/A'
-                            st.write(f"  - **成分:** {component}")
+                            # 通用名称显示逻辑：优先使用content，如果为空则使用name
+                            content = drug.get('content', '')
+                            generic_name = content if content and content.strip() else drug.get('name', 'N/A')
+                            st.write(f"  - **通用名称:** {generic_name}")
+                            # 成分显示逻辑：如果有成分才显示
+                            component = drug.get('component') or drug.get('main_component')
+                            if component and component.strip() and component != 'N/A':
+                                st.write(f"  - **成分:** {component}")
                             st.write(f"  - **包装规格:** {drug.get('spec', 'N/A')}")
                             # 适应症状显示逻辑：确保正确显示列表或字符串
                             indications = drug.get('indications')
@@ -521,7 +525,10 @@ elif page == 'recommend':
                                 st.write(f"  - **用法用量:** {usage_info}")
                             else:
                                 st.write(f"  - **用法用量:** 详见说明书")
-                            st.write(f"  - **兑水量:** {drug.get('water', 'N/A')}")
+                            # 兑水量显示逻辑：如果为空则显示'N/A'
+                            water = drug.get('water', '')
+                            water_display = water if water and water.strip() else 'N/A'
+                            st.write(f"  - **兑水量:** {water_display}")
                             st.write(f"  - **类别:** {drug.get('category', 'N/A')}")
                             st.write(f"  - **来源:** {drug.get('source', 'N/A')}")
                             st.write(f"  - **价格:** ¥{drug.get('price', 0):.1f}")
