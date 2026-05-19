@@ -461,14 +461,8 @@ elif page == 'recommend':
                         st.write(f"**通用名称:** {drug.get('name', '')}")
                         st.write(f"**成分:** {drug.get('main_component', 'N/A')}")
                         st.write(f"**包装规格:** {drug.get('spec', 'N/A')}")
-                        indications = drug.get('indications')
-if indications:
-    if isinstance(indications, list) and len(indications) > 0:
-        st.write(f"  - **适应症状或产品功效:** {', '.join(indications)}")
-    elif isinstance(indications, str) and indications.strip():
-        st.write(f"  - **适应症状或产品功效:** {indications}")
-else:
-    st.write(f"  - **适应症状或产品功效:** 暂无")
+                        if drug.get('indications'):
+                            st.write(f"**适应症状或产品功效:** {', '.join(drug.get('indications', []))}")
                         st.write(f"**用法用量:** {rec.get('dosage_recommendation', '详见说明书')}")
                         st.write(f"**兑水量:** {drug.get('water', 'N/A')}")
                         st.write(f"**类别:** {drug.get('category', 'N/A')}")
@@ -508,25 +502,25 @@ else:
                             if drug.get('product_name'):
                                 st.write(f"  - **产品名:** {drug.get('product_name')}")
                             st.write(f"  - **通用名称:** {drug.get('content', drug.get('name', 'N/A'))}")
+                            # 成分显示逻辑：优先使用component，如果不存在或为空则使用main_component
                             component = drug.get('component') or drug.get('main_component') or 'N/A'
-st.write(f"  - **成分:** {component}")
-                         st.write(f"  - **通用名称:** {drug.get('content', drug.get('name', 'N/A'))}")
-component = drug.get('component') or drug.get('main_component') or 'N/A'
-st.write(f"  - **成分:** {component}")
-st.write(f"  - **包装规格:** {drug.get('spec', 'N/A')}")
-indications = drug.get('indications')
-if indications:
-    if isinstance(indications, list) and len(indications) > 0:
-        st.write(f"  - **适应症状或产品功效:** {', '.join(indications)}")
-    elif isinstance(indications, str) and indications.strip():
-        st.write(f"  - **适应症状或产品功效:** {indications}")
-else:
-    st.write(f"  - **适应症状或产品功效:** 暂无")
-usage_info = drug.get('usage_info')
-if usage_info and str(usage_info).strip():
-    st.write(f"  - **用法用量:** {usage_info}")
-else:
-    st.write(f"  - **用法用量:** 详见说明书")
+                            st.write(f"  - **成分:** {component}")
+                            st.write(f"  - **包装规格:** {drug.get('spec', 'N/A')}")
+                            # 适应症状显示逻辑：确保正确显示列表或字符串
+                            indications = drug.get('indications')
+                            if indications:
+                                if isinstance(indications, list) and len(indications) > 0:
+                                    st.write(f"  - **适应症状或产品功效:** {', '.join(indications)}")
+                                elif isinstance(indications, str) and indications.strip():
+                                    st.write(f"  - **适应症状或产品功效:** {indications}")
+                            else:
+                                st.write(f"  - **适应症状或产品功效:** 暂无")
+                            # 用法用量显示逻辑：确保不为空
+                            usage_info = drug.get('usage_info')
+                            if usage_info and str(usage_info).strip():
+                                st.write(f"  - **用法用量:** {usage_info}")
+                            else:
+                                st.write(f"  - **用法用量:** 详见说明书")
                             st.write(f"  - **兑水量:** {drug.get('water', 'N/A')}")
                             st.write(f"  - **类别:** {drug.get('category', 'N/A')}")
                             st.write(f"  - **来源:** {drug.get('source', 'N/A')}")
