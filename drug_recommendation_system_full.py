@@ -226,7 +226,7 @@ class DrugDatabase:
             "控孤": {"component": "混合型饲料添加剂L-抗坏血酸", "indications": ["弧菌感染", "肠道疾病", "免疫增强"], "types": ["BACTERIAL", "DIGESTIVE"], "egg_safe": True, "category": "饲料添加剂", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水2000斤，连用3-5日"},
             "抚风": {"component": "混合型饲料添加剂牛磺酸", "indications": ["抗应激", "保肝护肾", "提高免疫力"], "types": ["MIXED"], "egg_safe": True, "category": "饲料添加剂", "timing": "日常保健使用", "usage": "混饮：每袋兑水2000斤，连用5-7日"},
             "海健素": {"component": "黄芪多糖口服液(β防御素、干扰素β、γ）", "indications": ["维生素缺乏", "营养补充", "抗应激"], "types": ["NUTRITIONAL"], "egg_safe": True, "category": "维生素", "timing": "日常保健使用", "usage": "混饮：每袋兑水2000斤，连用5-7日"},
-            "金舒利（小柴胡）": {"component": "混合型饲料添加剂 牛磺酸", "indications": ["退烧", "抗炎", "增料", "抗病毒"], "types": ["NUTRITIONAL", "MIXED"], "egg_safe": True, "category": "饲料添加剂", "timing": "增免抗病毒类产品", "usage": "本品兑水使用，全天量集中饮用7-8小时，连用3-5天"},
+            "金舒利": {"component": "混合型饲料添加剂 牛磺酸", "indications": ["退烧", "抗炎", "增料", "抗病毒"], "types": ["NUTRITIONAL", "MIXED"], "egg_safe": True, "category": "饲料添加剂", "timing": "增免抗病毒类产品", "usage": "本品兑水使用，全天量集中饮用7-8小时，连用3-5天"},
             "严立康": {"component": "盐酸大观霉素盐酸林可霉素可溶性粉", "indications": ["肠道菌群失调", "腹泻", "消化不良"], "types": ["DIGESTIVE"], "egg_safe": False, "category": "微生态", "timing": "日常保健使用", "usage": "混饮：每袋兑水2000斤，连用5-7日"},
             "超吉拍档": {"component": "盐酸大观霉素盐酸林可霉素可溶性粉", "indications": ["促进消化", "提高饲料利用率", "肠道健康"], "types": ["NUTRITIONAL", "DIGESTIVE"], "egg_safe": False, "category": "酶制剂", "timing": "日常保健使用", "usage": "混饲：每袋拌料1000斤，连用5-7日"},
             "新达罗": {"component": "硫酸庆大霉素可溶性粉", "indications": ["细菌感染", "呼吸道感染", "肠道感染"], "types": ["BACTERIAL", "RESPIRATORY", "DIGESTIVE"], "egg_safe": False, "category": "抗生素", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水1000斤，连用3-5日"},
@@ -402,9 +402,10 @@ class DrugDatabase:
                     product_category = category
                 
                 # 检查产品是否已存在（从底价目录加载的）
+                # 使用产品名称+商品名+规格来唯一标识产品，支持同一产品名称的不同规格
                 existing_drug = None
                 for drug in self.drugs:
-                    if drug.name == name:
+                    if drug.name == name and drug.brand_name == brand_name:
                         existing_drug = drug
                         break
                 
@@ -437,9 +438,13 @@ class DrugDatabase:
                     self.drugs.append(drug)
     
     def get_drug_by_name(self, name: str) -> Optional[DrugInfo]:
-        """根据名称获取药物"""
+        """根据名称获取药物（支持产品名称和商品名匹配）"""
         for drug in self.drugs:
+            # 首先匹配产品名称
             if drug.name == name:
+                return drug
+            # 然后匹配商品名（支持部分匹配）
+            if drug.brand_name and name in drug.brand_name:
                 return drug
         return None
     
