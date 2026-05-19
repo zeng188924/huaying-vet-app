@@ -22,11 +22,17 @@ from drug_recommendation_system_full import (
 )
 from disease_knowledge import get_disease_knowledge_base, get_online_searcher
 
-# 初始化推荐器
+# 初始化推荐器 - 使用JSON文件加载数据
 @st.cache_resource
 def get_recommender():
-    excel_path = "合并产品信息表修改后.xlsx"
-    recommender = create_recommender(excel_path)
+    # 优先使用JSON文件，数据更新更可靠
+    json_path = "huaying_products_full.json"
+    if os.path.exists(json_path):
+        recommender = create_recommender(json_path)
+    else:
+        # 回退到Excel文件
+        excel_path = "合并产品信息表修改后.xlsx"
+        recommender = create_recommender(excel_path)
     return recommender
 
 # 价格格式化函数

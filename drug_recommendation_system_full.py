@@ -78,11 +78,44 @@ class DrugRecommendation:
 
 
 class DrugDatabase:
-    """药物数据库 - 包含所有111个产品"""
+    """药物数据库 - 包含所有114个产品"""
     
-    def __init__(self, excel_path: str):
+    def __init__(self, data_path: str):
         self.drugs: List[DrugInfo] = []
-        self.load_all_products(excel_path)
+        # 根据文件扩展名判断加载方式
+        if data_path.endswith('.json'):
+            self.load_from_json(data_path)
+        else:
+            self.load_all_products(data_path)
+    
+    def load_from_json(self, json_path: str):
+        """从JSON文件加载产品数据"""
+        import json
+        with open(json_path, 'r', encoding='utf-8') as f:
+            products = json.load(f)
+        
+        for p in products:
+            drug = DrugInfo(
+                id=p.get('id', ''),
+                name=p.get('name', ''),
+                content=p.get('content', ''),
+                spec=p.get('spec', ''),
+                water=p.get('water', ''),
+                price=float(p.get('price', 0)),
+                indications=p.get('indications', []),
+                main_component=p.get('main_component', ''),
+                category=p.get('category', ''),
+                egg_period_safe=p.get('egg_period_safe', True),
+                disease_types=p.get('disease_types', ['MIXED']),
+                usage_info=p.get('usage_info', ''),
+                source=p.get('source', ''),
+                timing=p.get('timing', ''),
+                brand_name=p.get('brand_name', ''),
+                product_name=p.get('product_name', '')
+            )
+            self.drugs.append(drug)
+        
+        print(f"[数据库] 从JSON加载 {len(self.drugs)} 个产品")
     
     def _parse_price(self, value) -> float:
         """解析价格字段"""
@@ -97,7 +130,7 @@ class DrugDatabase:
             return 0.0
     
     def load_all_products(self, excel_path: str):
-        """加载所有产品数据"""
+        """从Excel加载所有产品数据"""
         excel_file = pd.ExcelFile(excel_path)
         
         # 1. 加载底价目录产品
@@ -109,7 +142,7 @@ class DrugDatabase:
         # 3. 加载产品信息_华英
         self._load_info_products(excel_file)
         
-        print(f"[数据库] 共加载 {len(self.drugs)} 个产品")
+        print(f"[数据库] 从Excel加载 {len(self.drugs)} 个产品")
     
     def _load_base_products(self, excel_file):
         """加载底价目录产品（22个）"""
@@ -218,7 +251,7 @@ class DrugDatabase:
             "浆小白(水禽)": {"component": "中药提取物", "indications": ["水禽浆膜炎", "大肠杆菌病", "沙门氏菌病"], "types": ["BACTERIAL", "RESPIRATORY"], "egg_safe": True, "category": "中药", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水1000斤，连用3-5日"},
             "控孤": {"component": "混合型饲料添加剂L-抗坏血酸", "indications": ["弧菌感染", "肠道疾病", "免疫增强"], "types": ["BACTERIAL", "DIGESTIVE"], "egg_safe": True, "category": "饲料添加剂", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水2000斤，连用3-5日"},
             "抚风": {"component": "混合型饲料添加剂牛磺酸", "indications": ["抗应激", "保肝护肾", "提高免疫力"], "types": ["MIXED"], "egg_safe": True, "category": "饲料添加剂", "timing": "日常保健使用", "usage": "混饮：每袋兑水2000斤，连用5-7日"},
-            "浆小白(清解合剂)": {"component": "中药提取物", "indications": ["清热解毒", "病毒感染", "免疫增强"], "types": ["VIRAL", "MIXED"], "egg_safe": True, "category": "中药", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水1000斤，连用3-5日"},
+            "浆小白(清解合剂)": {"component": "中药提取物", "indications": ["肺部发黑", "肺部淤血", "支气管栓塞", "怪叫", "呼噜", "伸颈喘", "气管透明", "喉头出血"], "types": ["RESPIRATORY"], "egg_safe": True, "category": "中药", "timing": "发病期间治疗使用", "usage": "混饮：每瓶兑水400斤，饮用6-8小时，连用4天"},
             "海健素": {"component": "黄芪多糖口服液(β防御素、干扰素β、γ）", "indications": ["维生素缺乏", "营养补充", "抗应激"], "types": ["NUTRITIONAL"], "egg_safe": True, "category": "维生素", "timing": "日常保健使用", "usage": "混饮：每袋兑水2000斤，连用5-7日"},
             "（中药）金舒利（小柴胡）500g": {"component": "混合型饲料添加剂 牛磺酸", "indications": ["退烧", "抗炎", "增料", "抗病毒"], "types": ["NUTRITIONAL", "MIXED"], "egg_safe": True, "category": "饲料添加剂", "timing": "增免抗病毒类产品", "usage": "本品500g/袋兑水6000斤，建议不低于5000斤水使用，全天量集中饮用7-8小时，连用3-5天"},
             "（中药）金舒利（小柴胡）100g": {"component": "混合型饲料添加剂 牛磺酸", "indications": ["退烧", "抗炎", "增料", "抗病毒"], "types": ["NUTRITIONAL", "MIXED"], "egg_safe": True, "category": "饲料添加剂", "timing": "增免抗病毒类产品", "usage": "本品100g/袋兑水1200斤，建议不低于1000斤水使用，全天量集中饮用7-8小时，连用3-5天"},
@@ -237,6 +270,7 @@ class DrugDatabase:
             "（中药）羡康100g": {"component": "天然植物饲料原料、干姜粗提物", "indications": ["腺胃炎", "肌胃炎", "采食量低", "鸡大小不均"], "types": ["DIGESTIVE"], "egg_safe": True, "category": "腺胃炎产品", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水1000斤，连用3-5日"},
             "（中药）羡康500g": {"component": "天然植物饲料原料、干姜粗提物", "indications": ["腺胃炎", "肌胃炎", "采食量低", "鸡大小不均"], "types": ["DIGESTIVE"], "egg_safe": True, "category": "腺胃炎产品", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水5000斤，连用3-5日"},
             "（中药）畅健": {"component": "混合型饲料添加剂液态甘露寡糖", "indications": ["肠道健康", "腹泻", "消化不良"], "types": ["DIGESTIVE"], "egg_safe": True, "category": "中药", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水1000斤，连用3-5日"},
+            "卵舒康": {"component": "中药提取物", "indications": ["输卵管炎", "卵巢炎", "产蛋下降", "血斑蛋", "沙壳蛋", "畸形蛋"], "types": ["REPRODUCTIVE", "BACTERIAL"], "egg_safe": True, "category": "中药", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水1000斤，连用3-5日"},
         }
         
         for idx, row in df.iterrows():
@@ -496,6 +530,14 @@ class SymptomDiseaseMapper:
             "黑头病": {"diseases": ["组织滴虫病"], "type": "PARASITIC"},
             "流感": {"diseases": ["禽流感", "新城疫"], "type": "VIRAL"},
             "病毒": {"diseases": ["新城疫", "传染性支气管炎"], "type": "VIRAL"},
+            
+            # 生殖系统疾病
+            "输卵管炎": {"diseases": ["输卵管炎", "卵巢炎"], "type": "REPRODUCTIVE"},
+            "卵巢炎": {"diseases": ["卵巢炎", "输卵管炎"], "type": "REPRODUCTIVE"},
+            "产蛋下降": {"diseases": ["输卵管炎", "卵巢炎", "新城疫", "禽流感"], "type": "REPRODUCTIVE"},
+            "畸形蛋": {"diseases": ["输卵管炎", "卵巢炎"], "type": "REPRODUCTIVE"},
+            "沙壳蛋": {"diseases": ["输卵管炎", "卵巢炎"], "type": "REPRODUCTIVE"},
+            "血斑蛋": {"diseases": ["输卵管炎", "卵巢炎"], "type": "REPRODUCTIVE"},
         }
     
     def get_diseases_by_symptom(self, symptom: str) -> Dict:
@@ -522,7 +564,8 @@ class DrugRecommender:
             "细菌性疾病": "BACTERIAL",
             "病毒性疾病": "VIRAL",
             "营养代谢病": "NUTRITIONAL",
-            "混合感染": "MIXED"
+            "混合感染": "MIXED",
+            "生殖系统疾病": "REPRODUCTIVE"
         }
     
     def recommend(self, request: RecommendationRequest) -> Dict:
@@ -541,11 +584,11 @@ class DrugRecommender:
         
         # 确保至少有3个候选药物
         if len(candidate_drugs) < 3:
-            candidate_drugs = self._supplement_drugs(candidate_drugs, request, disease_type)
+            candidate_drugs = self._supplement_drugs(candidate_drugs, request, disease_type, diseases)
         
         # 计算单药推荐
         single_recommendations = self._calculate_single_recommendations(
-            candidate_drugs, request, diseases
+            candidate_drugs, request, diseases, disease_type
         )
         
         # 获取组合推荐
@@ -613,18 +656,21 @@ class DrugRecommender:
     
     def _supplement_drugs(self, candidates: List[DrugInfo], 
                           request: RecommendationRequest, 
-                          disease_type: str) -> List[DrugInfo]:
-        """补充候选药物"""
+                          disease_type: str,
+                          diseases: List[str]) -> List[DrugInfo]:
+        """补充候选药物 - 只补充适应症真正匹配的药物"""
         existing_names = {d.name for d in candidates}
         
+        # 严格类型优先级 - 只有高度相关的类型才会被补充
         type_priority = {
-            "PARASITIC": ["BACTERIAL", "DIGESTIVE"],
-            "RESPIRATORY": ["BACTERIAL", "MIXED"],
-            "DIGESTIVE": ["BACTERIAL", "PARASITIC"],
-            "BACTERIAL": ["MIXED", "DIGESTIVE", "RESPIRATORY"],
-            "VIRAL": ["MIXED", "BACTERIAL"],
-            "MIXED": ["BACTERIAL", "RESPIRATORY", "DIGESTIVE"],
-            "NUTRITIONAL": ["MIXED", "BACTERIAL"]
+            "PARASITIC": ["BACTERIAL"],
+            "RESPIRATORY": ["BACTERIAL"],
+            "DIGESTIVE": ["BACTERIAL"],
+            "BACTERIAL": ["MIXED"],
+            "VIRAL": ["BACTERIAL"],
+            "MIXED": ["BACTERIAL"],
+            "NUTRITIONAL": [],
+            "REPRODUCTIVE": ["BACTERIAL"]  # 生殖系统疾病可补充细菌性药物
         }
         
         # 先补充同类型药物
@@ -639,8 +685,8 @@ class DrugRecommender:
                 candidates.append(drug)
                 existing_names.add(drug.name)
         
-        # 补充相关类型药物
-        for related_type in type_priority.get(disease_type, ["BACTERIAL"]):
+        # 补充相关类型药物 - 但要求适应症必须匹配
+        for related_type in type_priority.get(disease_type, []):
             for drug in self.db.get_all_drugs():
                 if len(candidates) >= 5:
                     break
@@ -649,14 +695,26 @@ class DrugRecommender:
                 if request.egg_period_safe and not drug.egg_period_safe:
                     continue
                 if related_type in drug.disease_types:
-                    candidates.append(drug)
-                    existing_names.add(drug.name)
+                    # 严格检查：适应症必须匹配目标疾病
+                    has_matching_indication = False
+                    for indication in drug.indications:
+                        for disease in diseases:
+                            if disease in indication or indication in disease:
+                                has_matching_indication = True
+                                break
+                        if has_matching_indication:
+                            break
+                    
+                    if has_matching_indication:
+                        candidates.append(drug)
+                        existing_names.add(drug.name)
         
         return candidates
     
     def _calculate_single_recommendations(self, drugs: List[DrugInfo], 
                                           request: RecommendationRequest,
-                                          diseases: List[str]) -> List[DrugRecommendation]:
+                                          diseases: List[str],
+                                          disease_type: str = "MIXED") -> List[DrugRecommendation]:
         """计算单药推荐，确保包含明星产品和华英产品"""
         recommendations = []
         
@@ -691,18 +749,67 @@ class DrugRecommender:
                 recommendations.append(rec)
                 break
         
-        # 确保推荐结果包含明星产品和华英产品（非底价目录产品）
+        # 筛选真正匹配的产品 - 只保留适应症匹配的产品
+        truly_matched_recommendations = []
+        for rec in recommendations:
+            # 检查是否有匹配的适应症
+            has_matching_indication = False
+            for indication in rec.drug.indications:
+                for disease in diseases:
+                    if disease in indication or indication in disease:
+                        has_matching_indication = True
+                        break
+                if has_matching_indication:
+                    break
+            
+            # 只有适应症匹配的产品才保留（或者匹配分数足够高）
+            if has_matching_indication or rec.match_score >= 3.0:
+                truly_matched_recommendations.append(rec)
+        
+        # 如果没有任何匹配的产品，尝试推荐相关类型的药物（如细菌性药物用于生殖系统疾病）
+        if not truly_matched_recommendations:
+            # 对于生殖系统疾病，推荐可能有效的细菌性药物
+            if disease_type == "REPRODUCTIVE":
+                for drug in self.db.get_all_drugs():
+                    if request.egg_period_safe and not drug.egg_period_safe:
+                        continue
+                    # 检查是否是大肠杆菌/沙门氏菌相关药物（这些常引起输卵管炎）
+                    has_related = False
+                    for ind in drug.indications:
+                        if any(keyword in ind for keyword in ['大肠杆菌', '沙门氏菌', '细菌', '消炎']):
+                            has_related = True
+                            break
+                    if has_related and "BACTERIAL" in drug.disease_types:
+                        match_score = self._calculate_match_score(drug, diseases, request)
+                        reason = self._generate_reason(drug, diseases, match_score)
+                        dosage = self._generate_dosage(drug, request)
+                        rec = DrugRecommendation(
+                            drug=drug,
+                            match_score=match_score,
+                            reason=reason + "（注意：本产品适应症未明确提及输卵管炎，但可用于相关细菌感染）",
+                            dosage_recommendation=dosage
+                        )
+                        truly_matched_recommendations.append(rec)
+                        if len(truly_matched_recommendations) >= 3:
+                            break
+            
+            # 如果仍然没有匹配的产品，返回空列表
+            if not truly_matched_recommendations:
+                return []
+        
+        # 从匹配的产品中选择最优的3个
+        # 优先选择明星产品和华英产品，但前提是它们真正匹配
         final_recommendations = []
         base_recommendations = []  # 底价目录产品
         star_huaying_recommendations = []  # 明星产品和华英产品
         
-        for rec in recommendations:
+        for rec in truly_matched_recommendations:
             if rec.drug.source == "底价目录":
                 base_recommendations.append(rec)
             else:
                 star_huaying_recommendations.append(rec)
         
-        # 优先添加明星产品和华英产品，确保至少包含2个
+        # 优先添加明星产品和华英产品（最多2个），但前提是它们真正匹配
         final_recommendations.extend(star_huaying_recommendations[:2])
         
         # 如果明星/华英产品不足2个，从底价目录补充
@@ -989,9 +1096,14 @@ class DrugRecommender:
 
 
 # 便捷函数
-def create_recommender(excel_path: str) -> DrugRecommender:
-    """创建推荐器实例"""
-    db = DrugDatabase(excel_path)
+def create_recommender(data_path: str) -> DrugRecommender:
+    """创建推荐器实例
+    
+    Args:
+        data_path: 数据文件路径，支持 .json 或 .xlsx 格式
+                  优先使用JSON格式，数据更新更可靠
+    """
+    db = DrugDatabase(data_path)
     return DrugRecommender(db)
 
 
