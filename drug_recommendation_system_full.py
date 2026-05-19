@@ -136,10 +136,7 @@ class DrugDatabase:
         # 1. 加载底价目录产品
         self._load_base_products(excel_file)
         
-        # 2. 加载明星产品
-        self._load_star_products(excel_file)
-        
-        # 3. 加载产品信息_华英
+        # 2. 加载产品信息_华英（包含明星产品信息）
         self._load_info_products(excel_file)
         
         print(f"[数据库] 从Excel加载 {len(self.drugs)} 个产品")
@@ -218,108 +215,42 @@ class DrugDatabase:
                 )
                 self.drugs.append(drug)
     
-    def _load_star_products(self, excel_file):
-        """加载明星产品（23个）"""
-        df = pd.read_excel(excel_file, sheet_name='明星产品_20260512')
+    def _load_info_products(self, excel_file):
+        """加载产品信息_华英（包含明星产品信息）"""
+        df = pd.read_excel(excel_file, sheet_name='产品信息_华英')
         
-        # 加载"产品信息_华英" sheet 用于匹配详细信息
-        info_df = pd.read_excel(excel_file, sheet_name='产品信息_华英')
-        
-        # 创建列名映射函数（处理特殊字符如不间断空格）
-        def get_column_value(row, target_name, default=None):
-            """根据目标列名模糊匹配获取值"""
-            for col in row.index:
-                if target_name in str(col):
-                    val = row[col]
-                    if pd.notna(val):
-                        return val
-            return default
-        
-        info_products = {}
-        for _, info_row in info_df.iterrows():
-            # 通过商品名匹配
-            brand = get_column_value(info_row, '商品名')
-            if brand and str(brand) != '/':
-                info_products[str(brand)] = info_row
-            # 通过产品名称匹配
-            product = get_column_value(info_row, '产品名称')
-            if product and str(product) != '/':
-                info_products[str(product)] = info_row
-        
-        # 明星产品知识库
+        # 明星产品知识库 - 用于识别和增强明星产品信息
         star_knowledge = {
-            "浆小白(水禽)": {"component": "中药提取物", "indications": ["水禽浆膜炎", "大肠杆菌病", "沙门氏菌病"], "types": ["BACTERIAL", "RESPIRATORY"], "egg_safe": True, "category": "中药", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水1000斤，连用3-5日"},
+            "浆小白": {"component": "中药提取物", "indications": ["水禽浆膜炎", "大肠杆菌病", "沙门氏菌病"], "types": ["BACTERIAL", "RESPIRATORY"], "egg_safe": True, "category": "中药", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水1000斤，连用3-5日"},
+            "浆小白（清解合剂）": {"component": "中药提取物", "indications": ["肺部发黑", "肺部淤血", "支气管栓塞", "怪叫", "呼噜", "伸颈喘", "气管透明", "喉头出血"], "types": ["RESPIRATORY"], "egg_safe": True, "category": "中药", "timing": "发病期间治疗使用", "usage": "混饮：每瓶兑水400斤，饮用6-8小时，连用4天"},
             "控孤": {"component": "混合型饲料添加剂L-抗坏血酸", "indications": ["弧菌感染", "肠道疾病", "免疫增强"], "types": ["BACTERIAL", "DIGESTIVE"], "egg_safe": True, "category": "饲料添加剂", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水2000斤，连用3-5日"},
             "抚风": {"component": "混合型饲料添加剂牛磺酸", "indications": ["抗应激", "保肝护肾", "提高免疫力"], "types": ["MIXED"], "egg_safe": True, "category": "饲料添加剂", "timing": "日常保健使用", "usage": "混饮：每袋兑水2000斤，连用5-7日"},
-            "浆小白(清解合剂)": {"component": "中药提取物", "indications": ["肺部发黑", "肺部淤血", "支气管栓塞", "怪叫", "呼噜", "伸颈喘", "气管透明", "喉头出血"], "types": ["RESPIRATORY"], "egg_safe": True, "category": "中药", "timing": "发病期间治疗使用", "usage": "混饮：每瓶兑水400斤，饮用6-8小时，连用4天"},
             "海健素": {"component": "黄芪多糖口服液(β防御素、干扰素β、γ）", "indications": ["维生素缺乏", "营养补充", "抗应激"], "types": ["NUTRITIONAL"], "egg_safe": True, "category": "维生素", "timing": "日常保健使用", "usage": "混饮：每袋兑水2000斤，连用5-7日"},
-            "（中药）金舒利（小柴胡）500g": {"component": "混合型饲料添加剂 牛磺酸", "indications": ["退烧", "抗炎", "增料", "抗病毒"], "types": ["NUTRITIONAL", "MIXED"], "egg_safe": True, "category": "饲料添加剂", "timing": "增免抗病毒类产品", "usage": "本品500g/袋兑水6000斤，建议不低于5000斤水使用，全天量集中饮用7-8小时，连用3-5天"},
-            "（中药）金舒利（小柴胡）100g": {"component": "混合型饲料添加剂 牛磺酸", "indications": ["退烧", "抗炎", "增料", "抗病毒"], "types": ["NUTRITIONAL", "MIXED"], "egg_safe": True, "category": "饲料添加剂", "timing": "增免抗病毒类产品", "usage": "本品100g/袋兑水1200斤，建议不低于1000斤水使用，全天量集中饮用7-8小时，连用3-5天"},
+            "金舒利（小柴胡）": {"component": "混合型饲料添加剂 牛磺酸", "indications": ["退烧", "抗炎", "增料", "抗病毒"], "types": ["NUTRITIONAL", "MIXED"], "egg_safe": True, "category": "饲料添加剂", "timing": "增免抗病毒类产品", "usage": "本品兑水使用，全天量集中饮用7-8小时，连用3-5天"},
             "严立康": {"component": "盐酸大观霉素盐酸林可霉素可溶性粉", "indications": ["肠道菌群失调", "腹泻", "消化不良"], "types": ["DIGESTIVE"], "egg_safe": False, "category": "微生态", "timing": "日常保健使用", "usage": "混饮：每袋兑水2000斤，连用5-7日"},
             "超吉拍档": {"component": "盐酸大观霉素盐酸林可霉素可溶性粉", "indications": ["促进消化", "提高饲料利用率", "肠道健康"], "types": ["NUTRITIONAL", "DIGESTIVE"], "egg_safe": False, "category": "酶制剂", "timing": "日常保健使用", "usage": "混饲：每袋拌料1000斤，连用5-7日"},
             "新达罗": {"component": "硫酸庆大霉素可溶性粉", "indications": ["细菌感染", "呼吸道感染", "肠道感染"], "types": ["BACTERIAL", "RESPIRATORY", "DIGESTIVE"], "egg_safe": False, "category": "抗生素", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水1000斤，连用3-5日"},
             "菲清": {"component": "液态甘草鱼腥草粗提物(复配型)", "indications": ["清肺止咳", "呼吸道感染", "痰多"], "types": ["RESPIRATORY"], "egg_safe": True, "category": "中药", "timing": "发病期间治疗使用", "usage": "混饮：每瓶兑水2000斤，连用3-5日"},
-            "热感清100ml": {"component": "鱼腥草提取液", "indications": ["退热", "感冒", "发热"], "types": ["MIXED", "VIRAL"], "egg_safe": True, "category": "中药", "timing": "增免抗病毒类产品", "usage": "本品100ml/瓶饮水400-600斤，全天量集中饮用4-5小时，连用3天"},
-            "热感清250ml": {"component": "鱼腥草提取液", "indications": ["退热", "感冒", "发热"], "types": ["MIXED", "VIRAL"], "egg_safe": True, "category": "中药", "timing": "增免抗病毒类产品", "usage": "本品250ml/瓶饮水1000-1500斤，全天量集中饮用4-5小时，连用3天"},
+            "热感清": {"component": "鱼腥草提取液", "indications": ["退热", "感冒", "发热"], "types": ["MIXED", "VIRAL"], "egg_safe": True, "category": "中药", "timing": "增免抗病毒类产品", "usage": "全天量集中饮用4-5小时，连用3天"},
             "肽芪剑（蛋鸡）": {"component": "液态低聚壳聚糖", "indications": ["免疫增强", "抗病毒", "提高产蛋率"], "types": ["VIRAL", "MIXED"], "egg_safe": True, "category": "免疫增强剂", "timing": "日常保健使用", "usage": "混饮：每袋兑水2000斤，连用5-7日"},
-            "卡迪欧100ml": {"component": "鸡传染性法氏囊病精制蛋黄抗体", "indications": ["退热", "止痛", "消炎"], "types": ["MIXED"], "egg_safe": True, "category": "解热镇痛", "timing": "发热时使用", "usage": "混饮：每瓶兑水1000斤，连用3日"},
-            "卡迪欧250ml": {"component": "鸡传染性法氏囊病精制蛋黄抗体", "indications": ["退热", "止痛", "消炎"], "types": ["MIXED"], "egg_safe": True, "category": "解热镇痛", "timing": "发热时使用", "usage": "混饮：每瓶兑水2000斤，连用3日"},
+            "卡迪欧": {"component": "鸡传染性法氏囊病精制蛋黄抗体", "indications": ["退热", "止痛", "消炎"], "types": ["MIXED"], "egg_safe": True, "category": "解热镇痛", "timing": "发热时使用", "usage": "混饮使用，连用3日"},
             "甘舒乐": {"component": "甘露寡糖", "indications": ["保肝护肾", "解毒", "抗应激"], "types": ["NUTRITIONAL", "MIXED"], "egg_safe": True, "category": "中药", "timing": "日常保健使用", "usage": "混饮：每袋兑水2000斤，连用5-7日"},
-            "（中药）温炎消": {"component": "混合型饲料添加剂液态牛磺酸", "indications": ["消炎", "肠道疾病", "腹泻"], "types": ["DIGESTIVE", "BACTERIAL"], "egg_safe": True, "category": "中药", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水1000斤，连用3-5日"},
-            "（中药）双胃康": {"component": "液态苍术木香粗提物(复配型)", "indications": ["腺胃炎", "肌胃炎", "消化不良"], "types": ["DIGESTIVE"], "egg_safe": True, "category": "中药", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水1000斤，连用3-5日"},
-            "（中药）羡康100g": {"component": "天然植物饲料原料、干姜粗提物", "indications": ["腺胃炎", "肌胃炎", "采食量低", "鸡大小不均"], "types": ["DIGESTIVE"], "egg_safe": True, "category": "腺胃炎产品", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水1000斤，连用3-5日"},
-            "（中药）羡康500g": {"component": "天然植物饲料原料、干姜粗提物", "indications": ["腺胃炎", "肌胃炎", "采食量低", "鸡大小不均"], "types": ["DIGESTIVE"], "egg_safe": True, "category": "腺胃炎产品", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水5000斤，连用3-5日"},
-            "（中药）畅健": {"component": "混合型饲料添加剂液态甘露寡糖", "indications": ["肠道健康", "腹泻", "消化不良"], "types": ["DIGESTIVE"], "egg_safe": True, "category": "中药", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水1000斤，连用3-5日"},
+            "温炎消": {"component": "混合型饲料添加剂液态牛磺酸", "indications": ["消炎", "肠道疾病", "腹泻"], "types": ["DIGESTIVE", "BACTERIAL"], "egg_safe": True, "category": "中药", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水1000斤，连用3-5日"},
+            "双胃康": {"component": "液态苍术木香粗提物(复配型)", "indications": ["腺胃炎", "肌胃炎", "消化不良"], "types": ["DIGESTIVE"], "egg_safe": True, "category": "中药", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水1000斤，连用3-5日"},
+            "羡康": {"component": "天然植物饲料原料、干姜粗提物", "indications": ["腺胃炎", "肌胃炎", "采食量低", "鸡大小不均"], "types": ["DIGESTIVE"], "egg_safe": True, "category": "腺胃炎产品", "timing": "发病期间治疗使用", "usage": "混饮使用，连用3-5日"},
+            "畅健": {"component": "混合型饲料添加剂液态甘露寡糖", "indications": ["肠道健康", "腹泻", "消化不良"], "types": ["DIGESTIVE"], "egg_safe": True, "category": "中药", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水1000斤，连用3-5日"},
             "卵舒康": {"component": "中药提取物", "indications": ["输卵管炎", "卵巢炎", "产蛋下降", "血斑蛋", "沙壳蛋", "畸形蛋"], "types": ["REPRODUCTIVE", "BACTERIAL"], "egg_safe": True, "category": "中药", "timing": "发病期间治疗使用", "usage": "混饮：每袋兑水1000斤，连用3-5日"},
         }
         
-        for idx, row in df.iterrows():
-            if pd.notna(row['商品名']) and row['商品名'] != '/':
-                name = str(row['商品名'])  # 商品名（显示用）
-                knowledge = star_knowledge.get(name, {})
-                
-                # 获取产品名称（原来的通用名称），如果为 "/" 或空则保持为空
-                generic_name = str(row['产品名称']) if pd.notna(row['产品名称']) else ""
-                if generic_name == "/":
-                    generic_name = ""
-                
-                # 明星产品完全独立，不从"产品信息_华英"获取任何信息
-                # 避免任何匹配导致的商品名混淆
-                info_product = None
-                
-                # 直接使用明星产品自己的数据
-                brand_name = name
-                timing = knowledge.get("timing", "")
-                usage_info = knowledge.get("usage", "")
-                water = ""
-                indications = knowledge.get("indications", [])
-                
-                drug = DrugInfo(
-                    id=f"S{idx+1}",
-                    name=name,
-                    content=generic_name,
-                    spec=str(row['规格型号']) if pd.notna(row['规格型号']) else "",
-                    water=water,
-                    price=self._parse_price(row['经销商单价']),
-                    indications=indications,
-                    main_component=knowledge.get("component", name),
-                    category=knowledge.get("category", "其他"),
-                    egg_period_safe=knowledge.get("egg_safe", True),
-                    disease_types=knowledge.get("types", ["MIXED"]),
-                    usage_info=usage_info,
-                    source="明星产品",
-                    timing=timing,
-                    brand_name=brand_name,
-                    product_name=name
-                )
-                self.drugs.append(drug)
-    
-    def _load_info_products(self, excel_file):
-        """加载产品信息_华英（66个）"""
-        df = pd.read_excel(excel_file, sheet_name='产品信息_华英')
+        # 明星产品商品名列表（用于识别）
+        star_brand_names = [
+            "浆小白", "控孤", "抚风", "海健素", "金舒利", "严立康", 
+            "超吉拍档", "新达罗", "菲清", "热感清", "肽芪剑", 
+            "卡迪欧", "甘舒乐", "温炎消", "双胃康", "羡康", 
+            "畅健", "卵舒康"
+        ]
         
         # 产蛋期禁用药物清单（根据GB 31650-2019和兽药质量标准）
-        # 包含所有变体名称和商品名
         egg_unsafe_products = [
             # 氨基糖苷类
             "硫酸庆大霉素可溶性粉", "盐酸大观霉素可溶性粉", "盐酸大观霉素盐酸林可霉素可溶性粉",
@@ -357,10 +288,32 @@ class DrugDatabase:
             "卡巴匹林钙", "黏菌素", "地美硝唑", "地克珠利"
         ]
         
+        def is_star_product(brand_name, product_name):
+            """判断是否为明星产品"""
+            name_to_check = brand_name if brand_name and brand_name != "/" else product_name
+            if not name_to_check:
+                return False, None
+            
+            for star_name in star_brand_names:
+                if star_name in name_to_check:
+                    return True, star_name
+            return False, None
+        
         for idx, row in df.iterrows():
             if pd.notna(row['产品名称']) and row['产品名称'] != '/':
                 name = str(row['产品名称'])
                 category = str(row['类别']) if pd.notna(row['类别']) else "其他"
+                
+                # 获取商品名
+                brand_name = str(row['商品名']) if pd.notna(row['商品名']) else ""
+                if not brand_name or brand_name == "/":
+                    brand_name = name
+                
+                # 判断是否为明星产品
+                is_star, star_key = is_star_product(brand_name, name)
+                
+                # 获取明星产品知识库数据（如果是明星产品）
+                star_data = star_knowledge.get(star_key, {}) if is_star else {}
                 
                 # 根据禁用清单判断产蛋期安全性（双重检查：产品名称 + 活性成分）
                 egg_safe = True  # 默认安全
@@ -379,8 +332,14 @@ class DrugDatabase:
                             egg_safe = False
                             break
                 
-                # 根据类别判断疾病类型
-                if category == '抗生素':
+                # 如果是明星产品，使用知识库中的产蛋期安全性
+                if is_star and "egg_safe" in star_data:
+                    egg_safe = star_data["egg_safe"]
+                
+                # 根据类别判断疾病类型（如果是明星产品，优先使用知识库）
+                if is_star and "types" in star_data:
+                    disease_types = star_data["types"]
+                elif category == '抗生素':
                     disease_types = ["BACTERIAL"]
                 elif category == '中药':
                     disease_types = ["VIRAL", "MIXED"]
@@ -393,13 +352,12 @@ class DrugDatabase:
                 else:
                     disease_types = ["MIXED"]
                 
-                indications_str = str(row['适应症状或产品功效']) if pd.notna(row['适应症状或产品功效']) else ""
-                indications = [i.strip() for i in indications_str.split('、')] if indications_str else ["详见产品说明"]
-                
-                # 获取商品名，如果为空则使用产品名称
-                brand_name = str(row['商品名']) if pd.notna(row['商品名']) else ""
-                if not brand_name or brand_name == "/":
-                    brand_name = name
+                # 获取适应症（如果是明星产品，优先使用知识库）
+                if is_star and "indications" in star_data:
+                    indications = star_data["indications"]
+                else:
+                    indications_str = str(row['适应症状或产品功效']) if pd.notna(row['适应症状或产品功效']) else ""
+                    indications = [i.strip() for i in indications_str.split('、')] if indications_str else ["详见产品说明"]
                 
                 # 获取兑水量，如果为空则显示提示
                 water_amount = str(row['兑水量']) if pd.notna(row['兑水量']) else ""
@@ -414,6 +372,10 @@ class DrugDatabase:
                             timing = str(row[col])
                             break
                 
+                # 如果是明星产品，优先使用知识库中的时机
+                if is_star and "timing" in star_data:
+                    timing = star_data["timing"]
+                
                 # 获取价格（产品信息_华英的价格更准确，处理列名中的不间断空格）
                 price = 0
                 for col in df.columns:
@@ -421,9 +383,25 @@ class DrugDatabase:
                         price = self._parse_price(row[col])
                         break
                 
-                # 检查产品是否已存在（从明星产品加载的）
-                # 注意：为了保持三个类别的独立性，不更新已存在的产品
-                # 而是跳过重复项，保持原有分类
+                # 获取用法用量（如果是明星产品，优先使用知识库）
+                if is_star and "usage" in star_data:
+                    usage_info = star_data["usage"]
+                else:
+                    usage_info = str(row['用法用量']) if pd.notna(row['用法用量']) else ""
+                
+                # 获取主要成分（如果是明星产品，优先使用知识库）
+                if is_star and "component" in star_data:
+                    main_component = star_data["component"]
+                else:
+                    main_component = str(row['成分']) if pd.notna(row.get('成分')) else name
+                
+                # 获取类别（如果是明星产品，优先使用知识库）
+                if is_star and "category" in star_data:
+                    product_category = star_data["category"]
+                else:
+                    product_category = category
+                
+                # 检查产品是否已存在（从底价目录加载的）
                 existing_drug = None
                 for drug in self.drugs:
                     if drug.name == name:
@@ -432,24 +410,26 @@ class DrugDatabase:
                 
                 if existing_drug:
                     # 产品已存在，跳过以保持分类独立性
-                    # 不更新 source 字段，保持原有分类（底价目录/明星产品）
                     continue
                 else:
-                    # 添加新产品（仅产品信息_华英独有的产品）
+                    # 添加新产品
+                    # 如果是明星产品，标记source为"明星产品"，否则为"产品信息_华英"
+                    source = "明星产品" if is_star else "产品信息_华英"
+                    
                     drug = DrugInfo(
-                        id=f"H{idx+1}",
+                        id=f"{'S' if is_star else 'H'}{idx+1}",
                         name=name,
                         content=brand_name,
                         spec=str(row['包装规格']) if pd.notna(row['包装规格']) else "",
                         water=water_amount,
                         price=price,
                         indications=indications,
-                        main_component=name,
-                        category=category,
+                        main_component=main_component,
+                        category=product_category,
                         egg_period_safe=egg_safe,
                         disease_types=disease_types,
-                        usage_info=str(row['用法用量']) if pd.notna(row['用法用量']) else "",
-                        source="产品信息_华英",
+                        usage_info=usage_info,
+                        source=source,
                         timing=timing,
                         brand_name=brand_name,
                         product_name=name
