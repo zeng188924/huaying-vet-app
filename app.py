@@ -25,8 +25,9 @@ from disease_knowledge import get_disease_knowledge_base, get_online_searcher
 # 初始化推荐器
 @st.cache_resource
 def get_recommender():
-    excel_path = "合并产品信息表修改后.xlsx"
-    recommender = create_recommender(excel_path)
+    # 使用完整的JSON数据文件（包含111个产品，包括浆小白等明星产品）
+    json_path = "huaying_products_full.json"
+    recommender = create_recommender(json_path)
     # 验证数据结构
     print(f"[DEBUG] 推荐器已创建，共 {len(recommender.db.get_all_drugs())} 个产品")
     return recommender
