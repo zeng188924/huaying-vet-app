@@ -716,14 +716,14 @@ elif page == 'catalog':
                     st.markdown(f"**明星产品 ({len(results_star)} 个)**")
                     for _, row in results_star.iterrows():
                         name = row['商品名'] if row['商品名'] != '/' else row['产品名称']
-                        price = format_price(row['价格'])
+                        price = format_price(row['经销商单价'])
                         st.write(f"- {name} - ¥{price}")
                 
                 if len(results_info) > 0:
                     st.markdown(f"**华英产品 ({len(results_info)} 个)**")
                     for _, row in results_info.iterrows():
                         name = row['产品名称']
-                        price = format_price(row['价格'])
+                        price = format_price(row['价\xa0格'])
                         st.write(f"- {name} - ¥{price}")
                 
                 if len(results_base) == 0 and len(results_star) == 0 and len(results_info) == 0:
