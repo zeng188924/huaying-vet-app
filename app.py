@@ -21,6 +21,7 @@ from drug_recommendation_system_full import (
     create_recommender, quick_recommend
 )
 from disease_knowledge import get_disease_knowledge_base, get_online_searcher
+from db_admin import render_admin_tab, validate_combination, get_drug_media
 
 # 初始化推荐器
 @st.cache_resource
@@ -166,6 +167,16 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# 主功能模式选择
+app_mode = st.radio(
+    "📌 功能模块",
+    ["💊 智能推荐", "📋 产品目录", "🛠️ 数据库管理"],
+    horizontal=True,
+    key="app_mode",
+)
+
+st.divider()
+
 # 侧边栏 - 输入表单
 with st.sidebar:
     st.header("📝 病情信息录入")
@@ -220,42 +231,74 @@ with st.sidebar:
     )
     
     # 推荐按钮
-    recommend_clicked = st.button("🔍 获取用药推荐", use_container_width=True)
+recommend_clicked = st.button("🔍 获取用药推荐", use_container_width=True)
 
-# 主内容区
-if recommend_clicked:
-    if not symptom:
-        st.warning("⚠️ 请输入主要症状后再获取推荐")
-    else:
-        with st.spinner("正在分析病情并推荐最佳用药方案..."):
-            try:
-                recommender = get_recommender()
-                result = quick_recommend(
-                    recommender,
-                    animal_type=animal_type,
-                    age_stage=age_stage,
-                    symptom=symptom,
-                    disease_type=disease_type,
-                    usage=usage,
-                    egg_period_safe=egg_period_safe,
-                    farm_scale=farm_scale
-                )
-                
-                # 保存结果到session state
-                st.session_state['recommendation_result'] = result
-                st.session_state['show_results'] = True
-                
-            except Exception as e:
-                st.error(f"推荐过程中出现错误: {str(e)}")
+# 数据库管理模式：提前渲染并停止后续逻辑
+if app_mode == "🛠️ 数据库管理":
+    render_admin_tab("huaying_products_full.json")
+    st.divider()
+    st.subheader("🔎 药物资料实时调取")
+    try:
+        _all_products = __import__("json").load(
+            open("huaying_products_full.json", "r", encoding="utf-8")
+        )
+    except Exception:
+        _all_products = []
+    if _all_products:
+        _opts = [f"{p.get('id','')} - {p.get('name','')}" for p in _all_products]
+        _sel = st.selectbox("选择药物查看关联资料", _opts, key="quick_view_drug")
+        _p = _all_products[_opts.index(_sel)]
+        c1, c2, c3 = st.columns(3)
+        c1.metric("主要成分", _p.get("main_component", "/"))
+        c2.metric("类别", _p.get("category", "/"))
+        c3.metric("价格", f"¥{_p.get('price', 0):.1f}")
+        _media = _p.get("media") or []
+        if _media:
+            st.markdown("##### 📎 关联的多媒体资料")
+            _cols = st.columns(3)
+            for _i, _m in enumerate(_media):
+                with _cols[_i % 3]:
+                    with st.container(border=True):
+                        st.caption(f"📎 {_m.get('filename','')}")
+                        _mp = _m.get("path", "")
+                        if _m.get("media_type") == "image" and _mp and os.path.exists(_mp):
+                            st.image(_mp)
+                        elif _m.get("media_type") == "video" and _mp and os.path.exists(_mp):
+                            st.video(_mp)
+                        else:
+                            st.write(f"类型: {_m.get('media_type','')}")
+    st.stop()
 
-# 显示推荐结果
-if st.session_state.get('show_results', False):
-    result = st.session_state['recommendation_result']
-    
-    # 分析结果展示
-    st.markdown("---")
-    st.subheader("📊 病情分析")
-    
+# 主内容区 - 仅在"智能推荐"模式下显示推荐结果
+if app_mode == "💊 智能推荐":
+    if recommend_clicked:
+        if not symptom:
+            st.warning("⚠️ 请输入主要症状后再获取推荐")
+        else:
+            with st.spinner("正在分析病情并推荐最佳用药方案..."):
+                try:
+                    recommender = get_recommender()
+                    result = quick_recommend(
+                        recommender,
+                        animal_type=animal_type,
+                        age_stage=age_stage,
+                        symptom=symptom,
+                        disease_type=disease_type,
+                        usage=usage,
+                        egg_period_safe=egg_period_safe,
+                        farm_scale=farm_scale
+                    )
+
+                    # 保存结果到session state
+                    st.session_state['recommendation_result'] = result
+                    st.session_state['show_results'] = True
+
+                except Exception as e:
+                    st.error(f"推荐过程中出现错误: {str(e)}")
+
+    if st.session_state.get('show_results', False):
+        result = st.session_state['recommendation_result']
+
     analysis = result['input_analysis']
     col1, col2, col3 = st.columns(3)
     with col1:

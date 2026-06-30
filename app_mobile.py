@@ -21,6 +21,7 @@ from drug_recommendation_system_full import (
     create_recommender, quick_recommend
 )
 from disease_knowledge import get_disease_knowledge_base, get_online_searcher
+from db_admin import render_admin_tab
 
 # 初始化推荐器 - 使用JSON文件加载数据
 @st.cache_resource
@@ -265,7 +266,7 @@ page = st.session_state.page
 
 # 底部导航
 if page != 'home':
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         if st.button("🏠 首页", use_container_width=True):
             st.session_state.page = 'home'
@@ -277,6 +278,10 @@ if page != 'home':
     with col3:
         if st.button("📋 目录", use_container_width=True):
             st.session_state.page = 'catalog'
+            st.rerun()
+    with col4:
+        if st.button("🛠️ 管理", use_container_width=True):
+            st.session_state.page = 'admin'
             st.rerun()
 
 # ==================== 首页 ====================
@@ -290,8 +295,8 @@ if page == 'home':
     
     # 快速入口
     st.subheader("快速入口")
-    
-    col1, col2 = st.columns(2)
+
+    col1, col2, col3 = st.columns(3)
     with col1:
         if st.button("🔍 智能推荐", use_container_width=True):
             st.session_state.page = 'recommend'
@@ -300,7 +305,11 @@ if page == 'home':
         if st.button("📋 产品目录", use_container_width=True):
             st.session_state.page = 'catalog'
             st.rerun()
-    
+    with col3:
+        if st.button("🛠️ 数据库管理", use_container_width=True, type="primary"):
+            st.session_state.page = 'admin'
+            st.rerun()
+
     st.markdown("---")
     
     # 功能介绍
@@ -744,6 +753,16 @@ elif page == 'catalog':
     
     except Exception as e:
         st.error(f"加载产品目录失败: {str(e)}")
+
+# ==================== 数据库管理页面 ====================
+elif page == 'admin':
+    st.markdown("""
+    <div class="mobile-header">
+        <h1>🛠️ 数据库管理</h1>
+        <p>增删改查 · 多媒体上传 · 配伍校验</p>
+    </div>
+    """, unsafe_allow_html=True)
+    render_admin_tab("huaying_products_full.json")
 
 # 底部信息
 st.markdown("---")

@@ -9,3 +9,20 @@ venv/
 *.swp
 *.swo
 .DS_Store
+
+# 上传的多媒体文件
+uploaded_media/
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+*.flv
+
+# 临时 / 中间产物
+system_data/
+organized_data/
+产品信息归档/
+deploy_package/
+GitHub上传文件/
+huaying_products_full.json.bak
