@@ -408,6 +408,16 @@ if app_mode == "💊 智能推荐":
             is_safe = compatibility_check.get('is_safe', True)
             level = compatibility_check.get('level', '安全')
             
+            # 类型合规校验结果
+            type_compliance = combo.get('type_compliance', {})
+            is_compliant = type_compliance.get('compliant', True)
+            chem_count = type_compliance.get('chem_count', 0)
+            tcm_count = type_compliance.get('tcm_count', 0)
+            type_reason = type_compliance.get('reason', '')
+            type_labels = type_compliance.get('drug_type_labels', [])
+            was_adjusted = type_compliance.get('adjusted', False)
+            type_rule = type_compliance.get('rule', '')
+            
             # 使用容器和列来显示
             with st.container():
                 col1, col2, col3 = st.columns([3, 1, 1])
@@ -426,6 +436,61 @@ if app_mode == "💊 智能推荐":
                 
                 st.write(f"**方案说明:** {combo_desc}")
                 
+                # ===== 类型搭配与合规性展示 =====
+                st.markdown("**🧪 组合类型构成与合规性：**")
+                if type_labels:
+                    # 横向展示每个药物的类型标签
+                    tag_cols = st.columns(min(len(type_labels), 4) or 1)
+                    for idx, lbl in enumerate(type_labels):
+                        with tag_cols[idx % len(tag_cols)]:
+                            dname = lbl.get('name', '未知')
+                            dtype = lbl.get('drug_type', '未知')
+                            dcat = lbl.get('category', '')
+                            if dtype == '化药':
+                                st.markdown(
+                                    f"<span class='info-badge badge-blue'>💊 {dname}（化药）</span>",
+                                    unsafe_allow_html=True,
+                                )
+                            elif dtype == '中兽药':
+                                st.markdown(
+                                    f"<span class='info-badge badge-green'>🌿 {dname}（中兽药）</span>",
+                                    unsafe_allow_html=True,
+                                )
+                            else:
+                                st.markdown(
+                                    f"<span class='info-badge badge-orange'>{dname}（{dtype}）</span>",
+                                    unsafe_allow_html=True,
+                                )
+                
+                # 统计与合规结论
+                stat_line = f"化药 {chem_count} 款 / 中兽药 {tcm_count} 款"
+                if is_compliant:
+                    if chem_count > 0 and tcm_count > 0:
+                        st.success(
+                            f"✅ **类型搭配合规**（{stat_line}，化药+中兽药组合）"
+                        )
+                    else:
+                        st.success(
+                            f"✅ **类型搭配合规**（{stat_line}，中兽药+中兽药组合）"
+                        )
+                else:
+                    st.error(
+                        f"❌ **类型搭配不合规**（{stat_line}，全部为化药）"
+                    )
+                    st.warning(
+                        f"**规则说明：** {type_rule}"
+                    )
+                
+                if type_reason:
+                    st.caption(f"📌 {type_reason}")
+                
+                if was_adjusted:
+                    st.info(
+                        "ℹ️ 系统已自动调整组合：原方案中包含全部化药，"
+                        "已自动将其中一款化药替换为同适应症的中兽药，"
+                        "以满足「化药+中兽药」的搭配规则。"
+                    )
+                
                 # 如果有配伍问题，显示详细信息
                 if not is_safe:
                     conflicts = compatibility_check.get('conflicts', [])
@@ -440,7 +505,23 @@ if app_mode == "💊 智能推荐":
                 # 展开显示每款药物的完整信息
                 with st.expander("查看药物详情"):
                     for j, drug in enumerate(combo_drugs, 1):
-                        st.write(f"**药物{j}: {drug.get('name', '未知')}**")
+                        # 找出当前药物的类型标签
+                        cur_label = next(
+                            (lb for lb in type_labels if lb.get('name') == drug.get('name')),
+                            None,
+                        )
+                        cur_type = cur_label.get('drug_type', '未知') if cur_label else '未知'
+                        if cur_type == '化药':
+                            type_badge = "<span class='info-badge badge-blue'>💊 化药</span>"
+                        elif cur_type == '中兽药':
+                            type_badge = "<span class='info-badge badge-green'>🌿 中兽药</span>"
+                        else:
+                            type_badge = f"<span class='info-badge badge-orange'>{cur_type}</span>"
+                        
+                        st.markdown(
+                            f"**药物{j}: {drug.get('name', '未知')}** {type_badge}",
+                            unsafe_allow_html=True,
+                        )
                         st.write(f"  - 时机: {drug.get('timing', '/')}")
                         st.write(f"  - 商品名: {drug.get('brand_name', '/')}")
                         st.write(f"  - 产品名: {drug.get('product_name', '/')}")

@@ -534,6 +534,145 @@ class SymptomDiseaseMapper:
         return {"diseases": [symptom], "type": "MIXED"}
 
 
+# ===================== 药物类型分类与组合合规校验 =====================
+
+# 化药类类别关键词（命中任一即判定为"化药"）
+CHEMICAL_DRUG_CATEGORIES = {
+    "化药", "抗生素", "抗支原体药", "抗球虫类",
+    "驱霉菌类产品", "消毒剂类", "解热镇痛",
+}
+
+# 化药成分关键词（用于"明星产品"等仅凭类别无法判断时的兜底识别）
+CHEMICAL_COMPONENT_KEYWORDS = [
+    "氟苯尼考", "多西环素", "卡巴匹林", "阿莫西林", "黏菌素",
+    "新霉素", "恩诺沙星", "庆大霉素", "林可霉素", "地美硝唑",
+    "卡那霉素", "替米考星", "安普霉素", "磺胺", "泰万菌素",
+    "泰妙菌素", "大观霉素", "土霉素", "金霉素", "头孢",
+    "喹诺酮", "红霉素", "青霉素", "链霉素", "壮观霉素",
+]
+
+
+def classify_drug_type(drug: "DrugInfo") -> str:
+    """根据药物的类别与成分判定其类型
+
+    返回值: "化药" 或 "中兽药"
+    判定规则:
+      1. 类别属于 CHEMICAL_DRUG_CATEGORIES -> 化药
+      2. 类别为"明星产品"时，按主成分关键词判断（命中化药关键词 -> 化药，否则 -> 中兽药）
+      3. 其他类别（中药、抗病毒类产品、气管栓塞呼吸道药、营养类、免疫增强剂、微生态、
+         酶制剂、维生素、饲料添加剂、保肝类护肾类、腺胃炎产品、气囊炎类产品、
+         肠道类产品、特色类产品、增蛋类产品、抗体类产品、防暑降温类产品、营养增料促生长）
+         一律判定为中兽药
+    """
+    category = (drug.category or "").strip()
+
+    if category in CHEMICAL_DRUG_CATEGORIES:
+        return "化药"
+
+    # 明星产品需要按成分细分
+    if category == "明星产品":
+        comp = drug.main_component or ""
+        for kw in CHEMICAL_COMPONENT_KEYWORDS:
+            if kw in comp:
+                return "化药"
+        return "中兽药"
+
+    # 其他类别默认为中兽药
+    return "中兽药"
+
+
+def validate_combination_compliance(drugs: List["DrugInfo"]) -> Dict:
+    """校验一组药物的类型搭配是否符合业务规则
+
+    规则:
+      - 化药 + 中兽药 -> 合规
+      - 中兽药 + 中兽药 -> 合规
+      - 化药 + 化药 -> 不合规（被禁用）
+    返回: dict(compliant, reason, types, chem_count, tcm_count, type_set)
+    """
+    if not drugs:
+        return {
+            "compliant": False,
+            "reason": "组合为空，无法校验",
+            "types": [],
+            "type_set": [],
+            "chem_count": 0,
+            "tcm_count": 0,
+        }
+
+    types = [classify_drug_type(d) for d in drugs]
+    chem_count = types.count("化药")
+    tcm_count = types.count("中兽药")
+    type_set = sorted(set(types))
+
+    # 全为化药 -> 不合规
+    if chem_count > 0 and tcm_count == 0:
+        names = "、".join(d.name for d in drugs)
+        return {
+            "compliant": False,
+            "reason": (
+                f"组合中全部为化药产品（{names}），违反业务规则。"
+                "必须采用『化药+中兽药』或『中兽药+中兽药』的组合搭配。"
+            ),
+            "types": types,
+            "type_set": type_set,
+            "chem_count": chem_count,
+            "tcm_count": tcm_count,
+        }
+
+    return {
+        "compliant": True,
+        "reason": (
+            "化药+中兽药组合" if chem_count > 0 else "中兽药+中兽药组合"
+        ) + "，符合业务规则",
+        "types": types,
+        "type_set": type_set,
+        "chem_count": chem_count,
+        "tcm_count": tcm_count,
+    }
+
+
+def _find_tcm_substitute(db: "DrugDatabase", original_drug: "DrugInfo",
+                         disease_type: str, used_names: set) -> Optional["DrugInfo"]:
+    """为化药寻找一个合适的中兽药替代品
+
+    优先级:
+      1. 同疾病类型且类别为中兽药的药物
+      2. 主成分含"中药/植物/口服液"等字样的明星产品
+      3. 任意蛋鸡产蛋期可用的中兽药
+    """
+    all_drugs = db.get_all_drugs()
+    candidates: List["DrugInfo"] = []
+
+    for d in all_drugs:
+        if d.name in used_names:
+            continue
+        if d.name == original_drug.name:
+            continue
+        if classify_drug_type(d) != "中兽药":
+            continue
+        candidates.append(d)
+
+    # 优先级1：疾病类型匹配
+    for d in candidates:
+        if disease_type in (d.disease_types or []):
+            return d
+
+    # 优先级2：含"中药/植物/口服液"等关键词的明星/中兽药产品
+    name_kw = ["中药", "植物", "口服液", "合剂", "清解", "粗提物"]
+    for d in candidates:
+        comp = d.main_component or ""
+        for kw in name_kw:
+            if kw in comp or kw in d.name:
+                return d
+
+    # 优先级3：任何可用的中兽药
+    for d in candidates:
+        return d
+
+    return None
+
+
 class DrugRecommender:
     """药物推荐引擎 - 完整版"""
     
@@ -990,18 +1129,120 @@ class DrugRecommender:
                     break
             
             if all_drugs_exist and drug_details:
+                # ===== 类型合规校验：必须为"化药+中兽药"或"中兽药+中兽药" =====
+                scheme_drugs = [
+                    self.db.get_drug_by_name(name) for name in scheme["drugs"]
+                ]
+                scheme_drugs = [d for d in scheme_drugs if d is not None]
+                compliance = validate_combination_compliance(scheme_drugs)
+
+                # 若不合规，尝试将其中一款化药自动替换为中兽药
+                adjusted = False
+                if not compliance["compliant"]:
+                    used_names = {d.name for d in scheme_drugs}
+                    for i, d in enumerate(scheme_drugs):
+                        if classify_drug_type(d) != "化药":
+                            continue
+                        substitute = _find_tcm_substitute(
+                            self.db, d, disease_type, used_names
+                        )
+                        if substitute is None:
+                            continue
+                        # 在 drug_details 中替换对应记录
+                        old_name = d.name
+                        new_name = substitute.name
+                        for idx, detail in enumerate(drug_details):
+                            if detail.get("name") == old_name:
+                                drug_details[idx] = {
+                                    "name": substitute.name,
+                                    "component": substitute.main_component,
+                                    "price": substitute.price,
+                                    "spec": substitute.spec,
+                                    "category": substitute.category,
+                                    "water": substitute.water,
+                                    "content": substitute.content,
+                                    "indications": substitute.indications,
+                                    "egg_period_safe": substitute.egg_period_safe,
+                                    "source": substitute.source,
+                                    "usage_info": substitute.usage_info,
+                                    "timing": substitute.timing,
+                                    "brand_name": substitute.brand_name,
+                                    "product_name": substitute.product_name,
+                                }
+                                # 价格重新累加
+                                total_price = total_price - d.price + substitute.price
+                                used_names.add(new_name)
+                                adjusted = True
+                                break
+                        if adjusted:
+                            break
+                        # 若本轮没找到合适的，跳到下一款化药
+                        used_names.add(old_name)
+
+                # 重新校验（若调整成功）
+                if adjusted:
+                    scheme_drugs = [
+                        self.db.get_drug_by_name(dd.get("name", "")) for dd in drug_details
+                    ]
+                    scheme_drugs = [d for d in scheme_drugs if d is not None]
+                    compliance = validate_combination_compliance(scheme_drugs)
+
+                # 构造每个药物的类型标签，便于前端展示
+                type_labels = []
+                for dd in drug_details:
+                    tmp = self.db.get_drug_by_name(dd.get("name", ""))
+                    if tmp is not None:
+                        type_labels.append({
+                            "name": dd.get("name", ""),
+                            "drug_type": classify_drug_type(tmp),
+                            "category": dd.get("category", ""),
+                        })
+                    else:
+                        type_labels.append({
+                            "name": dd.get("name", ""),
+                            "drug_type": "未知",
+                            "category": dd.get("category", ""),
+                        })
+
                 combinations.append({
                     "scheme_name": scheme["name"],
                     "description": scheme["description"],
                     "drugs": drug_details,
                     "total_price": round(total_price, 1),
-                    "priority": scheme["priority"]
+                    "priority": scheme["priority"],
+                    "type_compliance": {
+                        **compliance,
+                        "drug_type_labels": type_labels,
+                        "adjusted": adjusted,
+                        "rule": "必须为'化药+中兽药'或'中兽药+中兽药'组合，禁止全化药",
+                    },
                 })
-        
+
         # 如果没有找到合适的组合，使用默认组合
         if not combinations:
             combinations = self._get_default_combinations(request, disease_type)
-        
+            # 同样对默认组合做一次合规校验与展示补充
+            for combo in combinations:
+                scheme_drugs = [
+                    self.db.get_drug_by_name(dd.get("name", "")) for dd in combo.get("drugs", [])
+                ]
+                scheme_drugs = [d for d in scheme_drugs if d is not None]
+                compliance = validate_combination_compliance(scheme_drugs)
+                type_labels = [
+                    {
+                        "name": dd.get("name", ""),
+                        "drug_type": classify_drug_type(d) if d else "未知",
+                        "category": dd.get("category", ""),
+                    }
+                    for dd, d in zip(combo.get("drugs", []), scheme_drugs)
+                ]
+                combo["type_compliance"] = {
+                    **compliance,
+                    "drug_type_labels": type_labels,
+                    "adjusted": False,
+                    "rule": "必须为'化药+中兽药'或'中兽药+中兽药'组合，禁止全化药",
+                }
+
         # 按优先级排序，只返回第一个（最优方案）
         combinations.sort(key=lambda x: x["priority"])
         return combinations[:1]

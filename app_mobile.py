@@ -490,6 +490,34 @@ elif page == 'recommend':
         combo_recs = result['combination_recommendations']
         if combo_recs:
             for i, combo in enumerate(combo_recs[:2], 1):
+                # 类型合规校验结果
+                type_compliance = combo.get('type_compliance', {})
+                is_compliant = type_compliance.get('compliant', True)
+                chem_count = type_compliance.get('chem_count', 0)
+                tcm_count = type_compliance.get('tcm_count', 0)
+                type_reason = type_compliance.get('reason', '')
+                type_labels = type_compliance.get('drug_type_labels', [])
+                was_adjusted = type_compliance.get('adjusted', False)
+                type_rule = type_compliance.get('rule', '')
+
+                # 合规状态徽章 HTML
+                if is_compliant:
+                    if chem_count > 0 and tcm_count > 0:
+                        compliance_badge = (
+                            "<span class='info-tag' style='background:#e8f5e9;color:#2e7d32;'>"
+                            f"✅ 类型合规（化药 {chem_count} + 中兽药 {tcm_count}）</span>"
+                        )
+                    else:
+                        compliance_badge = (
+                            "<span class='info-tag' style='background:#e8f5e9;color:#2e7d32;'>"
+                            f"✅ 类型合规（中兽药 {tcm_count} + 中兽药 {tcm_count}）</span>"
+                        )
+                else:
+                    compliance_badge = (
+                        "<span class='info-tag' style='background:#ffebee;color:#c62828;'>"
+                        f"❌ 类型不合规（全部为化药）</span>"
+                    )
+
                 with st.container():
                     st.markdown(f"""
                     <div class="combo-card">
@@ -497,13 +525,67 @@ elif page == 'recommend':
                         <p style="color: #666; font-size: 0.9em;">{combo.get('description', '')}</p>
                         <div class="info-row">
                             <span class="info-tag info-tag-orange">总价格: ¥{combo.get('total_price', 0):.1f}</span>
+                            {compliance_badge}
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
-                    
+
+                    # 类型构成详细展示
+                    if type_labels:
+                        st.markdown("**🧪 组合类型构成：**")
+                        # 每行最多4个徽章
+                        per_row = 4
+                        for row_start in range(0, len(type_labels), per_row):
+                            row = type_labels[row_start:row_start + per_row]
+                            cols = st.columns(len(row))
+                            for idx, lbl in enumerate(row):
+                                dname = lbl.get('name', '未知')
+                                dtype = lbl.get('drug_type', '未知')
+                                with cols[idx]:
+                                    if dtype == '化药':
+                                        st.markdown(
+                                            f"<div style='background:#e3f2fd;color:#1565c0;padding:6px 10px;border-radius:8px;text-align:center;font-size:0.85em;'>💊 {dname}<br><b>化药</b></div>",
+                                            unsafe_allow_html=True,
+                                        )
+                                    elif dtype == '中兽药':
+                                        st.markdown(
+                                            f"<div style='background:#e8f5e9;color:#2e7d32;padding:6px 10px;border-radius:8px;text-align:center;font-size:0.85em;'>🌿 {dname}<br><b>中兽药</b></div>",
+                                            unsafe_allow_html=True,
+                                        )
+                                    else:
+                                        st.markdown(
+                                            f"<div style='background:#fff3e0;color:#ef6c00;padding:6px 10px;border-radius:8px;text-align:center;font-size:0.85em;'>{dname}<br><b>{dtype}</b></div>",
+                                            unsafe_allow_html=True,
+                                        )
+
+                    # 合规说明
+                    if not is_compliant and type_rule:
+                        st.warning(f"**规则说明：** {type_rule}")
+                    if type_reason:
+                        st.caption(f"📌 {type_reason}")
+                    if was_adjusted:
+                        st.info(
+                            "ℹ️ 系统已自动调整：原方案中包含全部化药，"
+                            "已自动将其中一款化药替换为同适应症的中兽药，"
+                            "以满足「化药+中兽药」的搭配规则。"
+                        )
+
                     with st.expander("💊 查看组合药品详情", expanded=True):
                         for j, drug in enumerate(combo.get('drugs', []), 1):
-                            st.markdown(f"**药品 {j}: {drug.get('name', '')}**")
+                            # 当前药物类型徽章
+                            cur_label = next(
+                                (lb for lb in type_labels if lb.get('name') == drug.get('name')),
+                                None,
+                            )
+                            cur_type = cur_label.get('drug_type', '未知') if cur_label else '未知'
+                            if cur_type == '化药':
+                                type_badge = " <span style='background:#e3f2fd;color:#1565c0;padding:2px 8px;border-radius:10px;font-size:0.8em;'>💊 化药</span>"
+                            elif cur_type == '中兽药':
+                                type_badge = " <span style='background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:10px;font-size:0.8em;'>🌿 中兽药</span>"
+                            else:
+                                type_badge = f" <span style='background:#fff3e0;color:#ef6c00;padding:2px 8px;border-radius:10px;font-size:0.8em;'>{cur_type}</span>"
+
+                            st.markdown(f"**药品 {j}: {drug.get('name', '')}** {type_badge}", unsafe_allow_html=True)
                             if drug.get('timing'):
                                 st.write(f"  - **时机:** {drug.get('timing')}")
                             if drug.get('brand_name'):
