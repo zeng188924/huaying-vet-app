@@ -635,6 +635,26 @@ elif page == 'recommend':
 
 # ==================== 产品目录页面 ====================
 elif page == 'catalog':
+    import json
+    import os
+    
+    DB_PATH = "huaying_products_full.json"
+    
+    def load_products():
+        if os.path.exists(DB_PATH):
+            with open(DB_PATH, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        return []
+    
+    def save_products(products):
+        with open(DB_PATH, 'w', encoding='utf-8') as f:
+            json.dump(products, f, ensure_ascii=False, indent=2)
+    
+    if 'editing_product' not in st.session_state:
+        st.session_state.editing_product = None
+    
+    products = load_products()
+    
     st.markdown("""
     <div class="mobile-header">
         <h1>📋 产品目录</h1>
@@ -642,199 +662,267 @@ elif page == 'catalog':
     </div>
     """, unsafe_allow_html=True)
     
-    st.info("💡 产品目录严格按Excel分类展示，三个类别相互独立")
+    st.info("💡 产品目录数据来源于 JSON 文件，支持增删改查")
     
-    # 读取Excel文件
-    try:
-        excel_file = pd.ExcelFile("合并产品信息表修改后.xlsx")
-        
-        # 创建三个独立标签页
-        tab_base, tab_star, tab_info, tab_search = st.tabs([
-            "📦 底价目录", 
-            "⭐ 明星产品", 
-            "🏭 华英产品",
-            "🔍 搜索"
-        ])
-        
-        # 底价目录
-        with tab_base:
-            st.markdown("### 📦 底价目录")
-            st.caption("来源：底价目录_20260112")
-            
-            df_base = pd.read_excel(excel_file, sheet_name='底价目录_20260112')
-            df_base_filtered = df_base[df_base['序号'].apply(lambda x: str(x).isdigit() if pd.notna(x) else False)]
-            
-            st.write(f"**共 {len(df_base_filtered)} 个产品**")
-            
-            for idx, drug_row in df_base_filtered.iterrows():
-                name = str(drug_row.get('品名', ''))
-                content = str(drug_row.get('含量', ''))
-                spec = str(drug_row.get('规格型号', ''))
-                water = str(drug_row.get('兑水量', ''))
-                price = format_price(drug_row.get('单价        元/袋/瓶', ''))
-                spec2 = str(drug_row.get('规格型号.1', ''))
-                water2 = str(drug_row.get('兑水量.1', ''))
-                price2 = format_price(drug_row.get('单价        元/袋/瓶.1', ''))
-                remark = str(drug_row.get('备注', ''))
-                
-                with st.container():
-                    st.markdown(f"""
-                    <div class="mobile-card" style="border-left-color: #2196f3;">
-                        <h3 style="color: #1565c0;">{name}</h3>
-                        <div class="info-row">
-                            <span class="info-tag">底价目录</span>
-                            <span class="info-tag info-tag-green">¥{price}</span>
-                        </div>
-                        <p style="color: #666; font-size: 0.85em; margin: 8px 0;">
-                            <b>含量:</b> {content}<br>
-                            <b>规格:</b> {spec}<br>
-                            <b>兑水量:</b> {water}<br>
-                            <b>规格2:</b> {spec2}<br>
-                            <b>兑水量2:</b> {water2}<br>
-                            <b>单价2:</b> ¥{price2}<br>
-                            <b>备注:</b> {remark}
-                        </p>
-                    </div>
-                    """, unsafe_allow_html=True)
-        
-        # 明星产品
-        with tab_star:
-            st.markdown("### ⭐ 明星产品")
-            st.caption("来源：明星产品_20260512")
-            
-            df_star = pd.read_excel(excel_file, sheet_name='明星产品_20260512')
-            
-            st.write(f"**共 {len(df_star)} 个明星产品**")
-            
-            for idx, drug_row in df_star.iterrows():
-                brand_name = str(drug_row.get('商品名', ''))
-                product_name = str(drug_row.get('产品名称', ''))
-                spec = str(drug_row.get('规格型号', ''))
-                price = format_price(drug_row.get('经销商单价', ''))
-                policy = str(drug_row.get('政策', ''))
-                
-                display_name = brand_name if brand_name != '/' and brand_name != 'nan' and brand_name else product_name
-                
-                with st.container():
-                    st.markdown(f"""
-                    <div class="mobile-card" style="border-left-color: #ff9500;">
-                        <h3 style="color: #e67700;">⭐ {display_name}</h3>
-                        <div class="info-row">
-                            <span class="info-tag info-tag-orange">¥{price}</span>
-                        </div>
-                        <p style="color: #666; font-size: 0.85em; margin: 8px 0;">
-                            <b>商品名:</b> {brand_name}<br>
-                            <b>产品名称:</b> {product_name}<br>
-                            <b>规格:</b> {spec}<br>
-                            <b>政策:</b> {policy}
-                        </p>
-                    </div>
-                    """, unsafe_allow_html=True)
-        
-        # 华英产品
-        with tab_info:
-            st.markdown("### 🏭 产品信息-华英")
-            st.caption("来源：产品信息_华英")
-            
-            df_info = pd.read_excel(excel_file, sheet_name='产品信息_华英')
-            
-            st.write(f"**共 {len(df_info)} 个华英产品**")
-            
-            for idx, drug_row in df_info.iterrows():
-                name = str(drug_row.get('产品名称', ''))
-                if name == '/' or name == 'nan' or not name:
-                    continue
-                    
-                category = str(drug_row.get('类别', ''))
-                timing = str(drug_row.get('时\xa0机', ''))
-                brand_name = str(drug_row.get('商品名', ''))
-                spec = str(drug_row.get('包装规格', ''))
-                efficacy = str(drug_row.get('适应症状或产品功效', ''))
-                usage = str(drug_row.get('用法用量', ''))
-                water = str(drug_row.get('兑水量', ''))
-                price = format_price(drug_row.get('价\xa0格', ''))
-                remark = str(drug_row.get('备注', ''))
-                retail_price = format_price(drug_row.get('建议零售价', ''))
-                
-                with st.container():
-                    st.markdown(f"""
-                    <div class="mobile-card" style="border-left-color: #43a047;">
-                        <h3 style="color: #2e7d32;">{name}</h3>
-                        <div class="info-row">
-                            <span class="info-tag info-tag-green">¥{price}</span>
-                            <span class="info-tag">{category}</span>
-                            <span class="info-tag">{timing}</span>
-                        </div>
-                        <p style="color: #666; font-size: 0.85em; margin: 8px 0;">
-                            <b>商品名:</b> {brand_name}<br>
-                            <b>类别:</b> {category}<br>
-                            <b>时机:</b> {timing}<br>
-                            <b>包装规格:</b> {spec}<br>
-                            <b>适应症状或产品功效:</b> {efficacy}<br>
-                            <b>用法用量:</b> {usage}<br>
-                            <b>兑水量:</b> {water}<br>
-                            <b>价格:</b> ¥{price}<br>
-                            <b>备注:</b> {remark}<br>
-                            <b>建议零售价:</b> ¥{retail_price}
-                        </p>
-                    </div>
-                    """, unsafe_allow_html=True)
-        
-        # 搜索功能
-        with tab_search:
-            st.markdown("### 🔍 产品搜索")
-            st.caption("在三个类别中搜索产品")
-            
-            search_text = st.text_input("输入产品名称搜索", placeholder="例如：氟苯尼考...")
-            
-            if search_text:
-                # 在三个类别中分别搜索
-                results_base = df_base[df_base['品名'].str.contains(search_text, na=False, case=False)]
-                results_star = df_star[df_star['商品名'].str.contains(search_text, na=False, case=False) | 
-                                       df_star['产品名称'].str.contains(search_text, na=False, case=False)]
-                results_info = df_info[df_info['产品名称'].str.contains(search_text, na=False, case=False)]
-                
-                st.write(f"**搜索结果：**")
-                
-                if len(results_base) > 0:
-                    st.markdown(f"**底价目录 ({len(results_base)} 个)**")
-                    for _, row in results_base.iterrows():
-                        name = row['品名']
-                        price = format_price(row['单价        元/袋/瓶'])
-                        st.write(f"- {name} - ¥{price}")
-                
-                if len(results_star) > 0:
-                    st.markdown(f"**明星产品 ({len(results_star)} 个)**")
-                    for _, row in results_star.iterrows():
-                        name = row['商品名'] if row['商品名'] != '/' else row['产品名称']
-                        price = format_price(row['经销商单价'])
-                        st.write(f"- {name} - ¥{price}")
-                
-                if len(results_info) > 0:
-                    st.markdown(f"**华英产品 ({len(results_info)} 个)**")
-                    for _, row in results_info.iterrows():
-                        name = row['产品名称']
-                        price = format_price(row['价\xa0格'])
-                        st.write(f"- {name} - ¥{price}")
-                
-                if len(results_base) == 0 and len(results_star) == 0 and len(results_info) == 0:
-                    st.info("未找到匹配的产品")
-            else:
-                st.info("请输入搜索关键词")
-        
-        # 分类说明
-        st.markdown("---")
-        st.markdown("""
-        **📌 产品分类说明：**
-        - **底价目录**：基础价格产品，共22个
-        - **明星产品**：重点推荐产品，共23个
-        - **产品信息-华英**：完整产品信息库，共66个
-        
-        ⚠️ 三个类别的产品信息相互独立，不可混淆
-        """)
+    tab_list, tab_add, tab_search = st.tabs([
+        "📦 产品列表", 
+        "➕ 新增产品",
+        "🔍 搜索"
+    ])
     
-    except Exception as e:
-        st.error(f"加载产品目录失败: {str(e)}")
+    with tab_list:
+        st.markdown("### 📦 产品列表")
+        
+        source_filter = st.selectbox("按来源筛选", ["全部", "底价目录", "明星产品", "产品信息-华英", "用户上传"])
+        
+        filtered_products = products
+        if source_filter != "全部":
+            filtered_products = [p for p in products if p.get('source', '') == source_filter]
+        
+        st.write(f"**共 {len(filtered_products)} 个产品**")
+        
+        for product in filtered_products:
+            name = product.get('name', '')
+            if not name or name == '/':
+                continue
+            
+            content = product.get('content', '')
+            spec = product.get('spec', '')
+            water = product.get('water', '')
+            price = product.get('price', 0)
+            category = product.get('category', '')
+            source = product.get('source', '')
+            brand_name = product.get('brand_name', '')
+            efficacy = product.get('indications', [])
+            usage = product.get('usage_info', '')
+            egg_period_safe = product.get('egg_period_safe', True)
+            
+            if isinstance(efficacy, list):
+                efficacy = ', '.join(efficacy)
+            
+            with st.container():
+                st.markdown(f"""
+                <div class="mobile-card" style="border-left-color: #2196f3;">
+                    <h3 style="color: #1565c0;">{name}</h3>
+                    <div class="info-row">
+                        <span class="info-tag">{source}</span>
+                        <span class="info-tag info-tag-green">¥{price}</span>
+                    </div>
+                    <p style="color: #666; font-size: 0.85em; margin: 8px 0;">
+                        <b>成分:</b> {content}<br>
+                        <b>规格:</b> {spec}<br>
+                        <b>兑水量:</b> {water}<br>
+                        <b>类别:</b> {category}<br>
+                        <b>商品名:</b> {brand_name}
+                    </p>
+                    {f'<p style="color: #666; font-size: 0.85em; margin: 8px 0;"><b>功效:</b> {efficacy}</p>' if efficacy else ''}
+                    {f'<p style="color: #666; font-size: 0.85em; margin: 8px 0;"><b>用法用量:</b> {usage}</p>' if usage else ''}
+                    {f'<p style="color: #666; font-size: 0.85em; margin: 8px 0;">{"✅ 产蛋期可用" if egg_period_safe else "❌ 产蛋期禁用"}</p>'}
+                </div>
+                """, unsafe_allow_html=True)
+                
+                col_edit, col_delete = st.columns([1, 3])
+                with col_edit:
+                    if st.button(f"编辑", key=f"mobile_edit_{product.get('id', '')}", use_container_width=True):
+                        st.session_state.editing_product = product
+                        st.rerun()
+                with col_delete:
+                    if st.button(f"删除", key=f"mobile_delete_{product.get('id', '')}", use_container_width=True, type="secondary"):
+                        products = [p for p in products if p.get('id') != product.get('id')]
+                        save_products(products)
+                        st.success(f"已删除产品: {name}")
+                        st.rerun()
+    
+    with tab_add:
+        st.markdown("### ➕ 新增产品")
+        
+        is_edit = st.session_state.editing_product is not None
+        product = st.session_state.editing_product if is_edit else None
+        
+        if is_edit:
+            st.info(f"正在编辑: {product.get('name', '')}")
+        
+        CATEGORY_OPTIONS = [
+            "化药", "中药", "抗生素", "营养类", "微生态", "免疫增强剂",
+            "消毒剂类", "抗病毒类产品", "抗支原体药", "抗球虫类",
+            "驱霉菌类产品", "解热镇痛", "保肝类护肾类", "特色类产品",
+            "腺胃炎产品", "气囊炎类产品", "气管栓塞呼吸道药", "肠道类产品",
+            "饲料添加剂", "维生素", "抗体类产品", "增蛋类产品",
+            "防暑降温类产品", "营养增料促生长", "明星产品"
+        ]
+        
+        SOURCE_OPTIONS = ["底价目录", "明星产品", "产品信息-华英", "用户上传"]
+        
+        DISEASE_TYPE_OPTIONS = [
+            "BACTERIAL", "RESPIRATORY", "DIGESTIVE", "PARASITIC",
+            "VIRAL", "MIXED", "NUTRITIONAL", "ENVIRONMENTAL",
+        ]
+        
+        with st.form("mobile_product_form", clear_on_submit=True):
+            product_id = st.text_input("产品ID *", value=product.get('id', '') if product else "", 
+                                     placeholder="如：B1、S1、H1")
+            name = st.text_input("产品名称 *", value=product.get('name', '') if product else "", 
+                               placeholder="请输入产品名称")
+            brand_name = st.text_input("商品名", value=product.get('brand_name', '') if product else "", 
+                                      placeholder="请输入商品名")
+            content = st.text_input("成分/含量", value=product.get('content', '') if product else "", 
+                                    placeholder="请输入成分或含量")
+            main_component = st.text_input("主要成分 *", value=product.get('main_component', '') if product else "", 
+                                          placeholder="请输入主要成分")
+            spec = st.text_input("包装规格 *", value=product.get('spec', '') if product else "", 
+                                 placeholder="如：100g/袋*100袋/箱")
+            water = st.text_input("兑水量", value=product.get('water', '') if product else "", 
+                                  placeholder="如：400斤")
+            
+            price = st.number_input("价格 *", min_value=0.0, max_value=100000.0, 
+                                    value=float(product.get('price', 0)) if product else 0.0,
+                                    step=0.01)
+            
+            cat = product.get('category', CATEGORY_OPTIONS[0]) if product else CATEGORY_OPTIONS[0]
+            category = st.selectbox("类别", CATEGORY_OPTIONS,
+                                   index=CATEGORY_OPTIONS.index(cat) if cat in CATEGORY_OPTIONS else 0)
+            
+            src = product.get('source', '用户上传') if product else '用户上传'
+            source = st.selectbox("数据来源", SOURCE_OPTIONS,
+                                  index=SOURCE_OPTIONS.index(src) if src in SOURCE_OPTIONS else SOURCE_OPTIONS.index("用户上传"))
+            
+            disease_types = st.multiselect("疾病类型", DISEASE_TYPE_OPTIONS,
+                                           default=product.get('disease_types', ['MIXED']) if product else ['MIXED'])
+            
+            egg_period_safe = st.checkbox("产蛋期可用", 
+                                          value=bool(product.get('egg_period_safe', True)) if product else True)
+            
+            timing = st.text_input("时机", value=product.get('timing', '') if product else "", 
+                                   placeholder="如：发病期间治疗使用")
+            
+            usage_info = st.text_area("用法用量", value=product.get('usage_info', '') if product else "", 
+                                      placeholder="请输入用法用量")
+            
+            efficacy_str = ""
+            if product and product.get('indications'):
+                if isinstance(product['indications'], list):
+                    efficacy_str = '、'.join(product['indications'])
+                else:
+                    efficacy_str = str(product['indications'])
+            efficacy_input = st.text_input("适应症（用 、分隔）", 
+                                           value=efficacy_str,
+                                           placeholder="如：呼吸道感染、大肠杆菌病")
+            
+            remark = st.text_input("备注", value=product.get('remark', '') if product else "", 
+                                    placeholder="请输入备注信息")
+            
+            retail_price = st.text_input("建议零售价", value=product.get('retail_price', '') if product else "", 
+                                          placeholder="请输入建议零售价")
+            
+            submitted = st.form_submit_button("保存产品" if is_edit else "创建产品", use_container_width=True)
+            
+            if submitted:
+                if not product_id or not name or not main_component or not spec:
+                    st.warning("请填写必填项（产品ID、产品名称、主要成分、包装规格）")
+                else:
+                    existing_ids = {p.get('id') for p in products}
+                    if not is_edit and product_id in existing_ids:
+                        st.warning(f"产品ID {product_id} 已存在")
+                    else:
+                        efficacy_list = [p.strip() for p in efficacy_input.split('、') if p.strip()] if efficacy_input else []
+                        
+                        new_product = {
+                            "id": product_id.strip(),
+                            "name": name.strip(),
+                            "brand_name": brand_name.strip(),
+                            "content": content.strip(),
+                            "main_component": main_component.strip(),
+                            "spec": spec.strip(),
+                            "water": water.strip(),
+                            "price": price,
+                            "category": category,
+                            "source": source,
+                            "disease_types": disease_types,
+                            "egg_period_safe": egg_period_safe,
+                            "timing": timing.strip(),
+                            "usage_info": usage_info.strip(),
+                            "indications": efficacy_list,
+                            "remark": remark.strip(),
+                            "retail_price": retail_price.strip(),
+                            "product_name": name.strip()
+                        }
+                        
+                        if is_edit:
+                            products = [p if p.get('id') != product.get('id') else new_product for p in products]
+                            st.success(f"产品更新成功: {name}")
+                        else:
+                            products.append(new_product)
+                            st.success(f"产品创建成功: {name}")
+                        
+                        save_products(products)
+                        st.session_state.editing_product = None
+        
+        if is_edit and st.button("取消编辑", use_container_width=True):
+            st.session_state.editing_product = None
+            st.rerun()
+    
+    with tab_search:
+        st.markdown("### 🔍 产品搜索")
+        st.caption("在产品库中搜索产品")
+        
+        search_text = st.text_input("输入产品名称/成分搜索", placeholder="例如：氟苯尼考...")
+        
+        if search_text:
+            ql = search_text.lower()
+            results = [
+                p for p in products
+                if ql in str(p.get("name", "")).lower()
+                or ql in str(p.get("main_component", "")).lower()
+                or ql in str(p.get("category", "")).lower()
+            ]
+            
+            st.write(f"**搜索结果：共 {len(results)} 个产品**")
+            
+            for product in results:
+                name = product.get('name', '')
+                price = product.get('price', 0)
+                category = product.get('category', '')
+                source = product.get('source', '')
+                
+                st.markdown(f"""
+                <div class="mobile-card" style="border-left-color: #667eea;">
+                    <h3 style="color: #667eea;">{name}</h3>
+                    <div class="info-row">
+                        <span class="info-tag info-tag-green">¥{price}</span>
+                        <span class="info-tag">{category}</span>
+                        <span class="info-tag">{source}</span>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                col_edit, col_delete = st.columns([1, 3])
+                with col_edit:
+                    if st.button(f"编辑", key=f"mobile_search_edit_{product.get('id', '')}", use_container_width=True):
+                        st.session_state.editing_product = product
+                        st.rerun()
+                with col_delete:
+                    if st.button(f"删除", key=f"mobile_search_delete_{product.get('id', '')}", use_container_width=True, type="secondary"):
+                        products = [p for p in products if p.get('id') != product.get('id')]
+                        save_products(products)
+                        st.success(f"已删除产品: {name}")
+                        st.rerun()
+            
+            if not results:
+                st.info("未找到匹配的产品")
+        else:
+            st.info("请输入搜索关键词")
+    
+    # 分类说明
+    st.markdown("---")
+    st.markdown("""
+    **📌 产品分类说明：**
+    - **底价目录**：基础价格产品
+    - **明星产品**：重点推荐产品
+    - **产品信息-华英**：完整产品信息库
+    - **用户上传**：用户自行添加的产品
+    
+    ⚠️ 所有产品数据存储在 `huaying_products_full.json` 文件中
+    """)
 
 # ==================== 数据库管理页面 ====================
 elif page == 'admin':

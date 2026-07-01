@@ -1,27 +1,5 @@
 [
   {
-    "id": "B1",
-    "name": "氟苯尼考粉",
-    "content": "氟苯尼考粉",
-    "spec": "100g/袋*100袋/箱",
-    "water": "400斤",
-    "price": 6.02272727272727,
-    "indications": [
-      "氟苯尼考粉"
-    ],
-    "main_component": "氟苯尼考粉",
-    "category": "化药",
-    "egg_period_safe": false,
-    "disease_types": [
-      "MIXED"
-    ],
-    "usage_info": "详见说明书",
-    "source": "底价目录",
-    "timing": "发病期间治疗使用",
-    "brand_name": "氟苯尼考粉",
-    "product_name": "氟苯尼考粉"
-  },
-  {
     "id": "B2",
     "name": "盐酸多西环素可溶性粉",
     "content": "盐酸多西环素可溶性粉",
@@ -29,15 +7,19 @@
     "water": "800斤",
     "price": 26.4772727272727,
     "indications": [
-      "盐酸多西环素可溶性粉"
+      "鸡慢性呼吸道病",
+      "大肠杆菌病",
+      "巴氏杆菌病",
+      "沙门氏菌病"
     ],
-    "main_component": "盐酸多西环素可溶性粉",
+    "main_component": "盐酸多西环素",
     "category": "化药",
     "egg_period_safe": false,
     "disease_types": [
-      "MIXED"
+      "BACTERIAL",
+      "RESPIRATORY"
     ],
-    "usage_info": "详见说明书",
+    "usage_info": "混饮：每袋兑水1500斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "盐酸多西环素可溶性粉",
@@ -51,15 +33,18 @@
     "water": "400斤",
     "price": 4.20454545454546,
     "indications": [
-      "卡巴匹林钙粉"
+      "解热",
+      "镇痛",
+      "消炎",
+      "退热"
     ],
-    "main_component": "卡巴匹林钙粉",
+    "main_component": "卡巴匹林钙",
     "category": "化药",
     "egg_period_safe": false,
     "disease_types": [
       "MIXED"
     ],
-    "usage_info": "详见说明书",
+    "usage_info": "混饮：每袋兑水2000斤，连用3日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "卡巴匹林钙粉",
@@ -73,15 +58,19 @@
     "water": "900斤",
     "price": 9.77272727272727,
     "indications": [
-      "阿莫西林可溶性粉"
+      "大肠杆菌病",
+      "沙门氏菌病",
+      "葡萄球菌病",
+      "链球菌病"
     ],
-    "main_component": "阿莫西林可溶性粉",
+    "main_component": "阿莫西林",
     "category": "化药",
     "egg_period_safe": false,
     "disease_types": [
-      "MIXED"
+      "BACTERIAL",
+      "DIGESTIVE"
     ],
-    "usage_info": "详见说明书",
+    "usage_info": "混饮：每袋兑水900斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "阿莫西林可溶性粉",
@@ -95,37 +84,43 @@
     "water": "800斤",
     "price": 5.79545454545454,
     "indications": [
-      "硫酸黏菌素预混剂1000g"
+      "革兰氏阴性菌引起的肠道感染",
+      "大肠杆菌病",
+      "沙门氏菌病"
     ],
-    "main_component": "硫酸黏菌素预混剂1000g",
+    "main_component": "硫酸黏菌素",
     "category": "化药",
     "egg_period_safe": false,
     "disease_types": [
-      "MIXED"
+      "BACTERIAL",
+      "DIGESTIVE"
     ],
-    "usage_info": "详见说明书",
+    "usage_info": "混饲：每袋拌料1000斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "硫酸黏菌素预混剂1000g",
     "product_name": "硫酸黏菌素预混剂1000g"
   },
   {
-    "id": "B5",
+    "id": "B5_500g",
     "name": "硫酸黏菌素预混剂500g",
     "content": "硫酸黏菌素预混剂500g",
     "spec": "100g/袋*100袋/箱",
     "water": "800斤",
     "price": 5.79545454545454,
     "indications": [
-      "硫酸黏菌素预混剂500g"
+      "革兰氏阴性菌引起的肠道感染",
+      "大肠杆菌病",
+      "沙门氏菌病"
     ],
-    "main_component": "硫酸黏菌素预混剂500g",
+    "main_component": "硫酸黏菌素",
     "category": "化药",
     "egg_period_safe": false,
     "disease_types": [
-      "MIXED"
+      "BACTERIAL",
+      "DIGESTIVE"
     ],
-    "usage_info": "详见说明书",
+    "usage_info": "混饲：每袋拌料500斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "硫酸黏菌素预混剂500g",
@@ -139,15 +134,19 @@
     "water": "900斤",
     "price": 7.84090909090909,
     "indications": [
-      "硫酸新霉素可溶性粉"
+      "禽大肠杆菌病",
+      "沙门氏菌病",
+      "禽霍乱",
+      "鸡白痢"
     ],
-    "main_component": "硫酸新霉素可溶性粉",
+    "main_component": "硫酸新霉素",
     "category": "化药",
     "egg_period_safe": false,
     "disease_types": [
-      "MIXED"
+      "BACTERIAL",
+      "DIGESTIVE"
     ],
-    "usage_info": "详见说明书",
+    "usage_info": "混饮：每袋兑水800斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "硫酸新霉素可溶性粉",
@@ -161,15 +160,20 @@
     "water": "2500斤",
     "price": 35.3409090909091,
     "indications": [
-      "盐酸恩诺沙星可溶性粉"
+      "禽大肠杆菌病",
+      "鸡白痢",
+      "禽霍乱",
+      "慢性呼吸道病"
     ],
-    "main_component": "盐酸恩诺沙星可溶性粉",
+    "main_component": "盐酸恩诺沙星",
     "category": "化药",
     "egg_period_safe": false,
     "disease_types": [
-      "MIXED"
+      "BACTERIAL",
+      "RESPIRATORY",
+      "DIGESTIVE"
     ],
-    "usage_info": "详见说明书",
+    "usage_info": "混饮：每袋兑水1000斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "盐酸恩诺沙星可溶性粉",
@@ -183,15 +187,18 @@
     "water": "2000斤",
     "price": 74.5454545454545,
     "indications": [
-      "硫酸庆大霉素可溶性粉"
+      "革兰氏阴性菌和阳性菌感染",
+      "大肠杆菌病",
+      "沙门氏菌病"
     ],
-    "main_component": "硫酸庆大霉素可溶性粉",
+    "main_component": "硫酸庆大霉素",
     "category": "化药",
     "egg_period_safe": false,
     "disease_types": [
-      "MIXED"
+      "BACTERIAL",
+      "DIGESTIVE"
     ],
-    "usage_info": "详见说明书",
+    "usage_info": "混饮：每袋兑水800斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "硫酸庆大霉素可溶性粉",
@@ -205,15 +212,19 @@
     "water": "150斤",
     "price": 6.13636363636364,
     "indications": [
-      "盐酸林可霉素可溶性粉"
+      "革兰氏阳性菌感染",
+      "支原体感染",
+      "坏死性肠炎"
     ],
-    "main_component": "盐酸林可霉素可溶性粉",
+    "main_component": "盐酸林可霉素",
     "category": "化药",
     "egg_period_safe": false,
     "disease_types": [
-      "MIXED"
+      "BACTERIAL",
+      "DIGESTIVE",
+      "RESPIRATORY"
     ],
-    "usage_info": "详见说明书",
+    "usage_info": "混饮：每袋兑水1000斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "盐酸林可霉素可溶性粉",
@@ -227,15 +238,19 @@
     "water": "400斤",
     "price": 4.65909090909091,
     "indications": [
-      "地美硝唑预混剂"
+      "禽组织滴虫病",
+      "禽毛滴虫病",
+      "坏死性肠炎",
+      "球虫病辅助治疗"
     ],
-    "main_component": "地美硝唑预混剂",
+    "main_component": "地美硝唑",
     "category": "化药",
     "egg_period_safe": false,
     "disease_types": [
-      "MIXED"
+      "PARASITIC",
+      "DIGESTIVE"
     ],
-    "usage_info": "详见说明书",
+    "usage_info": "混饲：每袋拌料1000斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "地美硝唑预混剂",
@@ -249,15 +264,19 @@
     "water": "400斤",
     "price": 5.90909090909091,
     "indications": [
-      "单硫酸卡那霉素可溶性粉"
+      "禽大肠杆菌病",
+      "沙门氏菌病",
+      "禽霍乱"
     ],
-    "main_component": "单硫酸卡那霉素可溶性粉",
+    "main_component": "单硫酸卡那霉素",
     "category": "化药",
     "egg_period_safe": false,
     "disease_types": [
-      "MIXED"
+      "BACTERIAL",
+      "DIGESTIVE",
+      "RESPIRATORY"
     ],
-    "usage_info": "详见说明书",
+    "usage_info": "混饮：每袋兑水800斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "单硫酸卡那霉素可溶性粉",
@@ -271,15 +290,18 @@
     "water": "700斤",
     "price": 15.1136363636364,
     "indications": [
-      "替米考星溶液"
+      "鸡慢性呼吸道病",
+      "传染性鼻炎",
+      "禽霍乱"
     ],
-    "main_component": "替米考星溶液",
+    "main_component": "替米考星",
     "category": "化药",
     "egg_period_safe": false,
     "disease_types": [
-      "MIXED"
+      "RESPIRATORY",
+      "BACTERIAL"
     ],
-    "usage_info": "详见说明书",
+    "usage_info": "混饮：每瓶兑水1000斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "替米考星溶液",
@@ -293,15 +315,18 @@
     "water": "500斤",
     "price": 23.9772727272727,
     "indications": [
-      "硫酸安普霉素可溶性粉"
+      "禽大肠杆菌病",
+      "沙门氏菌病",
+      "禽霍乱"
     ],
-    "main_component": "硫酸安普霉素可溶性粉",
+    "main_component": "硫酸安普霉素",
     "category": "化药",
     "egg_period_safe": false,
     "disease_types": [
-      "MIXED"
+      "BACTERIAL",
+      "DIGESTIVE"
     ],
-    "usage_info": "详见说明书",
+    "usage_info": "混饮：每袋兑水800斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "硫酸安普霉素可溶性粉",
@@ -315,15 +340,18 @@
     "water": "500斤",
     "price": 12.1590909090909,
     "indications": [
-      "替米考星预混剂"
+      "鸡慢性呼吸道病",
+      "传染性鼻炎",
+      "禽霍乱"
     ],
-    "main_component": "替米考星预混剂",
+    "main_component": "替米考星",
     "category": "化药",
     "egg_period_safe": false,
     "disease_types": [
-      "MIXED"
+      "RESPIRATORY",
+      "BACTERIAL"
     ],
-    "usage_info": "详见说明书",
+    "usage_info": "混饲：每袋拌料1000斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "替米考星预混剂",
@@ -337,15 +365,20 @@
     "water": "400斤",
     "price": 9.20454545454545,
     "indications": [
-      "复方磺胺间甲氧嘧啶钠可溶性粉（毒性大不宜过量用）"
+      "禽大肠杆菌病",
+      "沙门氏菌病",
+      "禽霍乱",
+      "球虫病"
     ],
-    "main_component": "复方磺胺间甲氧嘧啶钠可溶性粉（毒性大不宜过量用）",
+    "main_component": "磺胺间甲氧嘧啶钠+甲氧苄啶",
     "category": "化药",
     "egg_period_safe": false,
     "disease_types": [
-      "MIXED"
+      "BACTERIAL",
+      "DIGESTIVE",
+      "PARASITIC"
     ],
-    "usage_info": "详见说明书",
+    "usage_info": "混饮：每袋兑水800斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "复方磺胺间甲氧嘧啶钠可溶性粉（毒性大不宜过量用）",
@@ -359,15 +392,17 @@
     "water": "1500斤",
     "price": 30.9090909090909,
     "indications": [
-      "酒石酸泰万菌素预混剂"
+      "鸡慢性呼吸道病",
+      "滑液囊支原体",
+      "猪支原体肺炎"
     ],
-    "main_component": "酒石酸泰万菌素预混剂",
+    "main_component": "酒石酸泰万菌素",
     "category": "化药",
     "egg_period_safe": false,
     "disease_types": [
-      "MIXED"
+      "RESPIRATORY"
     ],
-    "usage_info": "详见说明书",
+    "usage_info": "混饲：每袋拌料1000斤，连用5-7日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "酒石酸泰万菌素预混剂",
@@ -381,15 +416,18 @@
     "water": "300斤",
     "price": 11.7045454545455,
     "indications": [
-      "磺胺喹噁啉钠可溶性粉（去球虫病）"
+      "鸡球虫病",
+      "兔球虫病",
+      "盲肠球虫",
+      "小肠球虫"
     ],
-    "main_component": "磺胺喹噁啉钠可溶性粉（去球虫病）",
+    "main_component": "磺胺喹噁啉钠",
     "category": "化药",
     "egg_period_safe": false,
     "disease_types": [
-      "MIXED"
+      "PARASITIC"
     ],
-    "usage_info": "详见说明书",
+    "usage_info": "混饮：每袋兑水1000斤，连用3日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "磺胺喹噁啉钠可溶性粉（去球虫病）",
@@ -403,15 +441,19 @@
     "water": "300斤",
     "price": 10.2272727272727,
     "indications": [
-      "磺胺氯吡嗪钠可溶性粉（去球虫病）"
+      "鸡球虫病",
+      "兔球虫病",
+      "盲肠球虫",
+      "禽霍乱"
     ],
-    "main_component": "磺胺氯吡嗪钠可溶性粉（去球虫病）",
+    "main_component": "磺胺氯吡嗪钠",
     "category": "化药",
     "egg_period_safe": false,
     "disease_types": [
-      "MIXED"
+      "PARASITIC",
+      "BACTERIAL"
     ],
-    "usage_info": "详见说明书",
+    "usage_info": "混饮：每袋兑水800斤，连用3日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "磺胺氯吡嗪钠可溶性粉（去球虫病）",
@@ -425,15 +467,19 @@
     "water": "600斤",
     "price": 8.86363636363636,
     "indications": [
-      "30%氟苯尼考可溶性粉"
+      "鸡霍乱",
+      "鸡白痢",
+      "大肠杆菌病",
+      "慢性呼吸道病"
     ],
-    "main_component": "30%氟苯尼考可溶性粉",
+    "main_component": "氟苯尼考",
     "category": "化药",
     "egg_period_safe": false,
     "disease_types": [
-      "MIXED"
+      "BACTERIAL",
+      "RESPIRATORY"
     ],
-    "usage_info": "详见说明书",
+    "usage_info": "混饮：每袋兑水1500斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "30%氟苯尼考可溶性粉",
@@ -447,15 +493,19 @@
     "water": "800斤",
     "price": 30.3409090909091,
     "indications": [
-      "10%盐酸多西环素可溶性粉"
+      "鸡慢性呼吸道病",
+      "大肠杆菌病",
+      "巴氏杆菌病",
+      "沙门氏菌病"
     ],
-    "main_component": "10%盐酸多西环素可溶性粉",
+    "main_component": "盐酸多西环素",
     "category": "化药",
     "egg_period_safe": false,
     "disease_types": [
-      "MIXED"
+      "BACTERIAL",
+      "RESPIRATORY"
     ],
-    "usage_info": "详见说明书",
+    "usage_info": "混饮：每袋兑水1200斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "10%盐酸多西环素可溶性粉",
@@ -469,15 +519,17 @@
     "water": "1000斤",
     "price": 31.5909090909091,
     "indications": [
-      "80%延胡索酸泰妙菌素（呼吸道）"
+      "鸡慢性呼吸道病",
+      "滑液囊支原体",
+      "猪支原体肺炎"
     ],
-    "main_component": "80%延胡索酸泰妙菌素（呼吸道）",
+    "main_component": "延胡索酸泰妙菌素",
     "category": "化药",
     "egg_period_safe": false,
     "disease_types": [
-      "MIXED"
+      "RESPIRATORY"
     ],
-    "usage_info": "详见说明书",
+    "usage_info": "混饲：每袋拌料1000斤，连用5-7日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "80%延胡索酸泰妙菌素（呼吸道）",
@@ -491,7 +543,7 @@
     "water": "",
     "price": 45.5,
     "indications": [
-      "浆小白(水禽)"
+      "详见产品说明"
     ],
     "main_component": "浆小白(水禽)",
     "category": "明星产品",
@@ -513,7 +565,7 @@
     "water": "",
     "price": 20.5,
     "indications": [
-      "控孤"
+      "详见产品说明"
     ],
     "main_component": "控孤",
     "category": "明星产品",
@@ -535,7 +587,7 @@
     "water": "",
     "price": 39.8,
     "indications": [
-      "抚风"
+      "详见产品说明"
     ],
     "main_component": "抚风",
     "category": "明星产品",
@@ -557,7 +609,7 @@
     "water": "",
     "price": 45.5,
     "indications": [
-      "浆小白(清解合剂)"
+      "详见产品说明"
     ],
     "main_component": "浆小白(清解合剂)",
     "category": "明星产品",
@@ -579,7 +631,7 @@
     "water": "",
     "price": 20.5,
     "indications": [
-      "海健素"
+      "详见产品说明"
     ],
     "main_component": "海健素",
     "category": "明星产品",
@@ -601,7 +653,7 @@
     "water": "",
     "price": 45.5,
     "indications": [
-      "（中药）金舒利（小柴胡）500g"
+      "详见产品说明"
     ],
     "main_component": "（中药）金舒利（小柴胡）500g",
     "category": "明星产品",
@@ -623,7 +675,7 @@
     "water": "",
     "price": 10.8,
     "indications": [
-      "（中药）金舒利（小柴胡）100g"
+      "详见产品说明"
     ],
     "main_component": "（中药）金舒利（小柴胡）100g",
     "category": "明星产品",
@@ -645,7 +697,7 @@
     "water": "",
     "price": 25.0,
     "indications": [
-      "严立康"
+      "详见产品说明"
     ],
     "main_component": "严立康",
     "category": "明星产品",
@@ -667,7 +719,7 @@
     "water": "",
     "price": 23.9,
     "indications": [
-      "超吉拍档"
+      "详见产品说明"
     ],
     "main_component": "超吉拍档",
     "category": "明星产品",
@@ -689,7 +741,7 @@
     "water": "",
     "price": 22.7,
     "indications": [
-      "新达罗"
+      "详见产品说明"
     ],
     "main_component": "新达罗",
     "category": "明星产品",
@@ -711,7 +763,7 @@
     "water": "",
     "price": 102.3,
     "indications": [
-      "菲清"
+      "详见产品说明"
     ],
     "main_component": "菲清",
     "category": "明星产品",
@@ -733,7 +785,7 @@
     "water": "",
     "price": 20.5,
     "indications": [
-      "热感清100ml"
+      "详见产品说明"
     ],
     "main_component": "热感清100ml",
     "category": "明星产品",
@@ -755,7 +807,7 @@
     "water": "",
     "price": 30.7,
     "indications": [
-      "热感清250ml"
+      "详见产品说明"
     ],
     "main_component": "热感清250ml",
     "category": "明星产品",
@@ -777,7 +829,7 @@
     "water": "",
     "price": 56.8,
     "indications": [
-      "肽芪剑（蛋鸡）"
+      "详见产品说明"
     ],
     "main_component": "肽芪剑（蛋鸡）",
     "category": "明星产品",
@@ -799,7 +851,7 @@
     "water": "",
     "price": 28.4,
     "indications": [
-      "卡迪欧100ml"
+      "详见产品说明"
     ],
     "main_component": "卡迪欧100ml",
     "category": "明星产品",
@@ -821,7 +873,7 @@
     "water": "",
     "price": 68.2,
     "indications": [
-      "卡迪欧250ml"
+      "详见产品说明"
     ],
     "main_component": "卡迪欧250ml",
     "category": "明星产品",
@@ -843,7 +895,7 @@
     "water": "",
     "price": 22.7,
     "indications": [
-      "甘舒乐"
+      "详见产品说明"
     ],
     "main_component": "甘舒乐",
     "category": "明星产品",
@@ -865,7 +917,7 @@
     "water": "",
     "price": 56.8,
     "indications": [
-      "（中药）温炎消"
+      "详见产品说明"
     ],
     "main_component": "（中药）温炎消",
     "category": "明星产品",
@@ -887,7 +939,7 @@
     "water": "",
     "price": 90.9,
     "indications": [
-      "（中药）双胃康"
+      "详见产品说明"
     ],
     "main_component": "（中药）双胃康",
     "category": "明星产品",
@@ -909,7 +961,7 @@
     "water": "",
     "price": 11.4,
     "indications": [
-      "（中药）羡康100g"
+      "详见产品说明"
     ],
     "main_component": "（中药）羡康100g",
     "category": "明星产品",
@@ -931,7 +983,7 @@
     "water": "",
     "price": 54.0,
     "indications": [
-      "（中药）羡康500g"
+      "详见产品说明"
     ],
     "main_component": "（中药）羡康500g",
     "category": "明星产品",
@@ -953,7 +1005,7 @@
     "water": "",
     "price": 45.5,
     "indications": [
-      "（中药）畅健"
+      "详见产品说明"
     ],
     "main_component": "（中药）畅健",
     "category": "明星产品",
