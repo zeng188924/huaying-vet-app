@@ -22,6 +22,12 @@ from drug_recommendation_system_full import (
 )
 from disease_knowledge import get_disease_knowledge_base, get_online_searcher
 from db_admin import render_admin_tab
+from utils.data_manager import (
+    create_farmer_profile, get_all_farmer_profiles,
+    get_farmer_profile, update_farmer_profile, delete_farmer_profile,
+    create_shed, get_sheds_by_farmer, get_shed, update_shed, delete_shed
+)
+from utils.encryption import hash_id_card
 
 # 初始化推荐器 - 使用JSON文件加载数据
 @st.cache_resource
@@ -266,21 +272,29 @@ page = st.session_state.page
 
 # 底部导航
 if page != 'home':
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
     with col1:
-        if st.button("🏠 首页", use_container_width=True):
+        if st.button("🏠 首页", use_container_width=True, key="nav_home"):
             st.session_state.page = 'home'
             st.rerun()
     with col2:
-        if st.button("💊 推荐", use_container_width=True):
-            st.session_state.page = 'recommend'
+        if st.button("👤 档案", use_container_width=True, key="nav_profile"):
+            st.session_state.page = 'profile'
             st.rerun()
     with col3:
-        if st.button("📋 目录", use_container_width=True):
-            st.session_state.page = 'catalog'
+        if st.button("🏘️ 棚舍", use_container_width=True, key="nav_shed"):
+            st.session_state.page = 'shed'
             st.rerun()
     with col4:
-        if st.button("🛠️ 管理", use_container_width=True):
+        if st.button("💊 推荐", use_container_width=True, key="nav_recommend"):
+            st.session_state.page = 'recommend'
+            st.rerun()
+    with col5:
+        if st.button("📋 目录", use_container_width=True, key="nav_catalog"):
+            st.session_state.page = 'catalog'
+            st.rerun()
+    with col6:
+        if st.button("🛠️ 管理", use_container_width=True, key="nav_admin"):
             st.session_state.page = 'admin'
             st.rerun()
 
@@ -308,6 +322,16 @@ if page == 'home':
     with col3:
         if st.button("🛠️ 数据库管理", use_container_width=True, type="primary"):
             st.session_state.page = 'admin'
+            st.rerun()
+    
+    col4, col5 = st.columns(2)
+    with col4:
+        if st.button("👤 养殖户档案", use_container_width=True):
+            st.session_state.page = 'profile'
+            st.rerun()
+    with col5:
+        if st.button("🏠 棚舍管理", use_container_width=True):
+            st.session_state.page = 'shed'
             st.rerun()
 
     st.markdown("---")
@@ -933,6 +957,270 @@ elif page == 'admin':
     </div>
     """, unsafe_allow_html=True)
     render_admin_tab("huaying_products_full.json")
+
+# ==================== 养殖户档案管理页面 ====================
+elif page == 'profile':
+    st.markdown("""
+    <div class="mobile-header">
+        <h1>👤 养殖户档案管理</h1>
+        <p>建立您的个人档案，享受个性化服务</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if 'editing_profile' not in st.session_state:
+        st.session_state.editing_profile = None
+
+    tab1, tab2 = st.tabs(["📋 档案列表", "➕ 新建/编辑"])
+
+    with tab1:
+        profiles = get_all_farmer_profiles()
+        
+        if not profiles:
+            st.info("暂无档案，请点击右侧标签页创建")
+        else:
+            st.write(f"**共 {len(profiles)} 个档案**")
+            st.divider()
+            
+            for profile in profiles:
+                with st.container():
+                    st.markdown(f"""
+                    <div class="mobile-card" style="border-left-color: #1e88e5;">
+                        <h3 style="color: #1e88e5;">👤 {profile.name}</h3>
+                        <div class="info-row">
+                            <span class="info-tag">📱 {profile.phone}</span>
+                            <span class="info-tag">📅 {profile.farming_years}年</span>
+                            <span class="info-tag">🏆 {profile.technical_level}</span>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    col1, col2 = st.columns([1, 3])
+                    with col1:
+                        if st.button(f"编辑", key=f"mobile_edit_{profile.id}", use_container_width=True):
+                            st.session_state.editing_profile = profile
+                            st.rerun()
+                    with col2:
+                        if st.button(f"删除", key=f"mobile_delete_{profile.id}", use_container_width=True, type="secondary"):
+                            if delete_farmer_profile(profile.id):
+                                st.success(f"已删除档案: {profile.name}")
+                                st.rerun()
+                            else:
+                                st.error("删除失败")
+
+    with tab2:
+        st.subheader("📝 填写档案信息")
+
+        is_edit = st.session_state.editing_profile is not None
+        profile = st.session_state.editing_profile if is_edit else None
+
+        if is_edit:
+            st.info(f"正在编辑: {profile.name}")
+
+        with st.form("profile_form", clear_on_submit=True):
+            name = st.text_input("姓名 *", value=profile.name if profile else "", placeholder="请输入姓名")
+            phone = st.text_input("联系电话 *", value=profile.phone if profile else "", placeholder="请输入手机号码")
+            id_card = st.text_input("身份证号", value="", placeholder="请输入身份证号（加密存储）")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                farming_years = st.number_input("养殖年限（年）", min_value=0, max_value=50,
+                                               value=profile.farming_years if profile else 0)
+            with col2:
+                technical_level = st.selectbox("技术等级",
+                                              ["初级", "中级", "高级", "技术员", "执业兽医", "专家"],
+                                              index=["初级", "中级", "高级", "技术员", "执业兽医", "专家"].index(profile.technical_level) if profile else 0)
+
+            submitted = st.form_submit_button("保存档案" if is_edit else "创建档案", use_container_width=True)
+
+            if submitted:
+                if not name or not phone:
+                    st.warning("请填写必填项（姓名和电话）")
+                else:
+                    id_card_hash = hash_id_card(id_card) if id_card else (profile.id_card_hash if profile else "")
+
+                    if is_edit:
+                        result = update_farmer_profile(
+                            profile.id,
+                            name=name,
+                            phone=phone,
+                            id_card_hash=id_card_hash,
+                            farming_years=farming_years,
+                            technical_level=technical_level
+                        )
+                        if result:
+                            st.success(f"档案更新成功: {name}")
+                            st.session_state.editing_profile = None
+                    else:
+                        result = create_farmer_profile(
+                            name=name,
+                            phone=phone,
+                            id_card_hash=id_card_hash,
+                            farming_years=farming_years,
+                            technical_level=technical_level
+                        )
+                        if result:
+                            st.success(f"档案创建成功: {name}")
+
+        if is_edit and st.button("取消编辑", use_container_width=True):
+            st.session_state.editing_profile = None
+            st.rerun()
+
+    st.caption("💡 提示：身份证号采用加密存储，系统不会保存明文信息")
+
+# ==================== 棚舍管理页面 ====================
+elif page == 'shed':
+    SHED_TYPES = ["肉鸡舍", "蛋鸡舍", "种鸡舍", "肉鸭舍", "蛋鸭舍", "鹅舍", "火鸡舍", "鸽子舍", "鹌鹑舍"]
+    BREED_OPTIONS = ["白羽肉鸡", "黄羽肉鸡", "蛋鸡", "种鸡", "樱桃谷鸭", "麻鸭", "鹅", "火鸡", "鸽子", "鹌鹑", "其他"]
+    SCALE_OPTIONS = ["小规模(1000只以下)", "中规模(1000-10000只)", "大规模(10000只以上)"]
+    FACILITY_OPTIONS = [
+        "自然通风", "机械通风", "地暖", "热风炉", "水帘降温",
+        "自动饮水系统", "自动喂料系统", "粪污处理系统", "消毒设备",
+        "监控设备", "温湿度控制", "光照控制", "氨气监测"
+    ]
+    ENV_CONTROL_OPTIONS = [
+        "自动温控系统", "智能通风系统", "环境监测仪",
+        "自动加湿/除湿", "CO2监测", "负压控制系统"
+    ]
+
+    st.markdown("""
+    <div class="mobile-header">
+        <h1>🏠 棚舍信息管理</h1>
+        <p>管理您的养殖棚舍信息</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    farmers = get_all_farmer_profiles()
+
+    if not farmers:
+        st.warning("⚠️ 请先创建养殖户档案")
+        st.info("点击底部导航「👤」进入档案管理")
+    else:
+        selected_farmer_id = st.selectbox(
+            "选择养殖户 *",
+            [f"{f.id} - {f.name}" for f in farmers],
+            format_func=lambda x: x.split(" - ")[1]
+        )
+        selected_farmer_id = selected_farmer_id.split(" - ")[0]
+
+        if 'editing_shed' not in st.session_state:
+            st.session_state.editing_shed = None
+
+        tab1, tab2 = st.tabs(["📋 棚舍列表", "➕ 新建/编辑"])
+
+        with tab1:
+            sheds = get_sheds_by_farmer(selected_farmer_id)
+
+            if not sheds:
+                st.info("该养殖户暂无棚舍信息，请点击右侧标签页添加")
+            else:
+                st.write(f"**共 {len(sheds)} 个棚舍**")
+                st.divider()
+
+                for shed in sheds:
+                    with st.container():
+                        st.markdown(f"""
+                        <div class="mobile-card" style="border-left-color: #f57c00;">
+                            <h3 style="color: #f57c00;">🏠 {shed.name}</h3>
+                            <div class="info-row">
+                                <span class="info-tag">🐔 {shed.type}</span>
+                                <span class="info-tag">🌾 {shed.breed}</span>
+                                <span class="info-tag">📐 {shed.area}㎡</span>
+                                <span class="info-tag">📍 {shed.location}</span>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                        col1, col2 = st.columns([1, 3])
+                        with col1:
+                            if st.button(f"编辑", key=f"mobile_edit_shed_{shed.id}", use_container_width=True):
+                                st.session_state.editing_shed = shed
+                                st.rerun()
+                        with col2:
+                            if st.button(f"删除", key=f"mobile_delete_shed_{shed.id}", use_container_width=True, type="secondary"):
+                                if delete_shed(shed.id):
+                                    st.success(f"已删除棚舍: {shed.name}")
+                                    st.rerun()
+                                else:
+                                    st.error("删除失败")
+
+        with tab2:
+            st.subheader("📝 填写棚舍信息")
+
+            is_edit = st.session_state.editing_shed is not None
+            shed = st.session_state.editing_shed if is_edit else None
+
+            if is_edit:
+                st.info(f"正在编辑: {shed.name}")
+
+            with st.form("shed_form", clear_on_submit=True):
+                name = st.text_input("棚舍名称 *", value=shed.name if shed else "", placeholder="如：一号鸡舍")
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    shed_type = st.selectbox("棚舍类型", SHED_TYPES,
+                                           index=SHED_TYPES.index(shed.type) if shed else 0)
+                    area = st.number_input("面积（平方米）", min_value=1, max_value=10000,
+                                          value=int(shed.area) if shed else 100)
+                    breed = st.selectbox("养殖品种", BREED_OPTIONS,
+                                        index=BREED_OPTIONS.index(shed.breed) if shed else 0)
+                with col2:
+                    scale = st.selectbox("养殖规模", SCALE_OPTIONS,
+                                        index=SCALE_OPTIONS.index(shed.scale) if shed else 1)
+                    location = st.text_input("地理位置", value=shed.location if shed else "", placeholder="如：山东省济南市")
+
+                facilities = st.multiselect(
+                    "设施条件",
+                    FACILITY_OPTIONS,
+                    default=shed.facilities if shed else []
+                )
+
+                environment_control = st.multiselect(
+                    "环境控制设备",
+                    ENV_CONTROL_OPTIONS,
+                    default=shed.environment_control if shed else []
+                )
+
+                submitted = st.form_submit_button("保存棚舍" if is_edit else "创建棚舍", use_container_width=True)
+
+                if submitted:
+                    if not name or not area:
+                        st.warning("请填写必填项（棚舍名称和面积）")
+                    else:
+                        if is_edit:
+                            result = update_shed(
+                                shed.id,
+                                name=name,
+                                type=shed_type,
+                                area=area,
+                                breed=breed,
+                                scale=scale,
+                                facilities=facilities,
+                                location=location,
+                                environment_control=environment_control
+                            )
+                            if result:
+                                st.success(f"棚舍更新成功: {name}")
+                                st.session_state.editing_shed = None
+                        else:
+                            result = create_shed(
+                                farmer_id=selected_farmer_id,
+                                name=name,
+                                shed_type=shed_type,
+                                area=area,
+                                breed=breed,
+                                scale=scale,
+                                facilities=facilities,
+                                location=location,
+                                environment_control=environment_control
+                            )
+                            if result:
+                                st.success(f"棚舍创建成功: {name}")
+
+            if is_edit and st.button("取消编辑", use_container_width=True):
+                st.session_state.editing_shed = None
+                st.rerun()
+
+    st.caption("💡 提示：完善的棚舍信息有助于系统提供更精准的用药推荐")
 
 # 底部信息
 st.markdown("---")
