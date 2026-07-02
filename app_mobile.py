@@ -1,5 +1,5 @@
 """
-华英兽药智能推荐系统 - 手机版
+华英兽医宝（专家版） - 手机版
 使用Streamlit构建，针对移动端优化
 """
 
@@ -10,7 +10,7 @@ import os
 
 # 设置页面配置 - 移动端优化
 st.set_page_config(
-    page_title="华英兽药推荐",
+    page_title="华英兽医宝（专家版）",
     page_icon="💊",
     layout="centered",  # 居中布局更适合手机
     initial_sidebar_state="collapsed"  # 默认收起侧边栏
@@ -30,6 +30,10 @@ from utils.data_manager import (
 from utils.encryption import hash_id_card
 from environment_adjustment import get_environment_adjustment_engine, ShedEnvironment
 from key_matters import get_key_matters, get_summary_points
+from diagnosis_engine import (
+    get_diagnosis_engine, get_questionnaire, get_safety_guardian,
+    SymptomBasedDiagnosisEngine, SymptomQuestionnaire, MedicationSafetyGuardian
+)
 
 # 初始化推荐器 - 使用JSON文件加载数据
 @st.cache_resource
@@ -54,6 +58,28 @@ def format_price(price_value):
         return f"{price_float:.1f}"
     except (ValueError, TypeError):
         return str(price_value)
+
+def disease_name_to_type(disease_name: str) -> str:
+    """将疾病名称映射到疾病类型"""
+    disease_type_map = {
+        "球虫病": "寄生虫病",
+        "盲肠球虫": "寄生虫病",
+        "小肠球虫": "寄生虫病",
+        "慢性呼吸道病": "呼吸道疾病",
+        "大肠杆菌病": "细菌性疾病",
+        "沙门氏菌病": "细菌性疾病",
+        "鸡白痢": "细菌性疾病",
+        "禽霍乱": "细菌性疾病",
+        "传染性鼻炎": "呼吸道疾病",
+        "坏死性肠炎": "消化道疾病",
+        "滑液囊支原体": "呼吸道疾病",
+        "新城疫": "病毒性疾病",
+        "传染性支气管炎": "病毒性疾病",
+        "组织滴虫病": "寄生虫病",
+        "蛔虫病": "寄生虫病",
+        "绦虫病": "寄生虫病",
+    }
+    return disease_type_map.get(disease_name, "混合感染")
 
 # 移动端自定义CSS
 def mobile_css():
@@ -304,8 +330,8 @@ if page != 'home':
 if page == 'home':
     st.markdown("""
     <div class="mobile-header">
-        <h1>💊 华英兽药智能推荐</h1>
-        <p>专业的禽药推荐工具</p>
+        <h1>💊 华英兽医宝（专家版）</h1>
+        <p>用好华英兽医宝，专家药方护禽好</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -378,6 +404,188 @@ elif page == 'recommend':
     </div>
     """, unsafe_allow_html=True)
     
+    if 'diagnosis_mode' not in st.session_state:
+        st.session_state.diagnosis_mode = 'direct'
+    if 'questionnaire_step' not in st.session_state:
+        st.session_state.questionnaire_step = 0
+    if 'selected_symptoms' not in st.session_state:
+        st.session_state.selected_symptoms = []
+    if 'diagnosis_result' not in st.session_state:
+        st.session_state.diagnosis_result = None
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("🎯 我知道症状", use_container_width=True, 
+                    type="primary" if st.session_state.diagnosis_mode == 'direct' else "secondary"):
+            st.session_state.diagnosis_mode = 'direct'
+            st.session_state.questionnaire_step = 0
+            st.session_state.selected_symptoms = []
+            st.rerun()
+    with col2:
+        if st.button("❓ 我不确定", use_container_width=True,
+                    type="primary" if st.session_state.diagnosis_mode == 'questionnaire' else "secondary"):
+            st.session_state.diagnosis_mode = 'questionnaire'
+            st.session_state.questionnaire_step = 0
+            st.session_state.selected_symptoms = []
+            st.rerun()
+    
+    if st.session_state.diagnosis_mode == 'questionnaire':
+        questionnaire = get_questionnaire()
+        current_step = st.session_state.questionnaire_step
+        total_steps = questionnaire.get_total_steps()
+        step = questionnaire.get_step(current_step)
+        
+        if step:
+            st.markdown(f"""
+            <div class="tip-box">
+                <strong>📋 引导式问诊 ({current_step + 1}/{total_steps})</strong><br>
+                请根据提示逐步选择症状，系统将帮助您判断疾病类型
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.subheader(step.title)
+            st.write(step.description)
+            
+            default_selected = st.session_state.get(f"questionnaire_{step.step_id}_selected", [])
+            
+            selected_in_step = st.multiselect(
+                "请选择符合的症状（可多选）",
+                [sym.name for sym in step.symptoms],
+                default=default_selected,
+                key=f"questionnaire_{step.step_id}"
+            )
+            
+            col_back, col_next = st.columns(2)
+            with col_back:
+                if current_step > 0:
+                    if st.button("← 上一步", use_container_width=True):
+                        st.session_state[f"questionnaire_{step.step_id}_selected"] = selected_in_step
+                        for sym in step.symptoms:
+                            if sym.name in selected_in_step:
+                                if sym.id not in st.session_state.selected_symptoms:
+                                    st.session_state.selected_symptoms.append(sym.id)
+                            else:
+                                if sym.id in st.session_state.selected_symptoms:
+                                    st.session_state.selected_symptoms.remove(sym.id)
+                        st.session_state.questionnaire_step -= 1
+                        st.rerun()
+            with col_next:
+                if current_step < total_steps - 1:
+                    if st.button("下一步 →", use_container_width=True):
+                        st.session_state[f"questionnaire_{step.step_id}_selected"] = selected_in_step
+                        for sym in step.symptoms:
+                            if sym.name in selected_in_step:
+                                if sym.id not in st.session_state.selected_symptoms:
+                                    st.session_state.selected_symptoms.append(sym.id)
+                            else:
+                                if sym.id in st.session_state.selected_symptoms:
+                                    st.session_state.selected_symptoms.remove(sym.id)
+                        st.session_state.questionnaire_step += 1
+                        st.rerun()
+                else:
+                    if st.button("✅ 完成问诊", use_container_width=True, type="primary"):
+                        st.session_state[f"questionnaire_{step.step_id}_selected"] = selected_in_step
+                        for sym in step.symptoms:
+                            if sym.name in selected_in_step:
+                                if sym.id not in st.session_state.selected_symptoms:
+                                    st.session_state.selected_symptoms.append(sym.id)
+                            else:
+                                if sym.id in st.session_state.selected_symptoms:
+                                    st.session_state.selected_symptoms.remove(sym.id)
+                        diagnosis_engine = get_diagnosis_engine()
+                        st.session_state.diagnosis_result = diagnosis_engine.diagnose(st.session_state.selected_symptoms)
+                        st.session_state.show_diagnosis = True
+                        st.rerun()
+        
+        if st.session_state.get('show_diagnosis', False) and st.session_state.diagnosis_result:
+            diag_result = st.session_state.diagnosis_result
+            
+            st.markdown("---")
+            st.subheader("📊 诊断结果")
+            
+            confidence_color = {
+                "高": "#2e7d32",
+                "中": "#ef6c00",
+                "低": "#c62828"
+            }
+            
+            st.markdown(f"""
+            <div class="mobile-card">
+                <h3 style="color: {confidence_color.get(diag_result.confidence_level, '#666')};">
+                    🎯 诊断状态: {diag_result.status}
+                </h3>
+                <p><b>置信度:</b> <span style="color: {confidence_color.get(diag_result.confidence_level, '#666')}; font-weight: bold;">{diag_result.confidence_level}</span></p>
+                <p><b>安全等级:</b> {diag_result.safety_level}</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            if diag_result.primary_disease:
+                st.markdown(f"""
+                <div class="mobile-card">
+                    <h3>🔬 最可能疾病: {diag_result.primary_disease.name}</h3>
+                    <p><b>匹配症状:</b> {', '.join(diag_result.primary_disease.matched_symptoms)}</p>
+                    <p><b>治疗原则:</b> {diag_result.primary_disease.treatment_principle}</p>
+                    <p><b>常用药物:</b> {', '.join(diag_result.primary_disease.common_drugs)}</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            if diag_result.secondary_diseases:
+                st.markdown("### 其他可能疾病")
+                for disease in diag_result.secondary_diseases:
+                    st.markdown(f"""
+                    <div class="mobile-card" style="border-left-color: #ff9800;">
+                        <h3 style="color: #e65100;">{disease.name} (匹配度: {disease.confidence})</h3>
+                        <p><b>匹配症状:</b> {', '.join(disease.matched_symptoms)}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+            if diag_result.recommendations:
+                st.markdown("### 📋 诊疗建议")
+                st.write(diag_result.recommendations.get("advice", ""))
+                
+                if diag_result.recommendations.get("action_items"):
+                    st.markdown("**行动清单:**")
+                    for i, item in enumerate(diag_result.recommendations["action_items"], 1):
+                        st.markdown(f"{i}. {item}")
+                
+                if diag_result.recommendations.get("follow_up"):
+                    st.markdown(f"**随访要求:** {diag_result.recommendations['follow_up']}")
+                
+                if diag_result.recommendations.get("consult_veterinarian"):
+                    st.markdown("""
+                    <div style="background: #ffebee; border-left: 4px solid #c62828; padding: 12px; border-radius: 8px; margin: 12px 0;">
+                        ⚠️ <strong>建议咨询兽医:</strong> 诊断置信度较低，建议联系专业兽医进行确诊
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+            safety_guardian = get_safety_guardian()
+            follow_up_plan = safety_guardian.generate_follow_up_plan(
+                diag_result.confidence_level, diag_result
+            )
+            
+            st.markdown("### 📅 随访计划")
+            st.markdown(f"""
+            <div class="mobile-card">
+                <p><b>随访时间:</b> {follow_up_plan['time']}</p>
+                <p><b>观察指标:</b> {', '.join(follow_up_plan['indicators'])}</p>
+                <p><b>无改善时:</b> {follow_up_plan['action_if_no_improvement']}</p>
+                <p><b>有改善时:</b> {follow_up_plan['action_if_improvement']}</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            if diag_result.primary_disease:
+                st.markdown("---")
+                st.subheader("💊 获取用药推荐")
+                
+                st.session_state.diagnosis_mode = 'direct'
+                st.session_state.auto_symptom = diag_result.primary_disease.name
+                st.session_state.auto_disease_type = disease_name_to_type(diag_result.primary_disease.name)
+                
+                st.info(f"已根据诊断结果自动填入：症状='{st.session_state.auto_symptom}'")
+                st.rerun()
+        
+        st.stop()
+    
     farmers = get_all_farmer_profiles()
     
     col_farmer, col_shed = st.columns(2)
@@ -449,15 +657,21 @@ elif page == 'recommend':
         )
         
         # 病症
+        auto_symptom = st.session_state.get('auto_symptom', '')
         symptom = st.text_input(
             "🤒 主要症状",
+            value=auto_symptom,
             placeholder="例如：咳嗽、拉稀、精神沉郁..."
         )
         
         # 发病类型
+        auto_disease_type = st.session_state.get('auto_disease_type', '')
+        disease_type_options = ["呼吸道疾病", "消化道疾病", "寄生虫病", "细菌性疾病", "病毒性疾病", "营养代谢病", "混合感染"]
+        disease_type_index = disease_type_options.index(auto_disease_type) if auto_disease_type in disease_type_options else 0
         disease_type = st.selectbox(
             "🏥 发病类型",
-            ["呼吸道疾病", "消化道疾病", "寄生虫病", "细菌性疾病", "病毒性疾病", "营养代谢病", "混合感染"]
+            disease_type_options,
+            index=disease_type_index
         )
         
         # 用途
@@ -485,6 +699,11 @@ elif page == 'recommend':
     
     # 处理推荐请求
     if submitted:
+        auto_symptom = st.session_state.get('auto_symptom', '')
+        if auto_symptom:
+            symptom = auto_symptom
+            st.session_state.pop('auto_symptom', None)
+        
         if not symptom:
             st.warning("⚠️ 请输入主要症状")
         else:
@@ -539,11 +758,72 @@ elif page == 'recommend':
         </div>
         """, unsafe_allow_html=True)
         
+        safety_guardian = get_safety_guardian()
+        
+        if st.session_state.get('diagnosis_result'):
+            diag_result = st.session_state['diagnosis_result']
+            confidence_level = diag_result.confidence_level
+            
+            if confidence_level == '低':
+                st.markdown("""
+                <div style="background: #ffebee; border-left: 4px solid #c62828; padding: 12px; border-radius: 8px; margin: 12px 0;">
+                    ⚠️ <strong>诊断置信度低</strong>: 仅显示中兽药推荐，建议咨询兽医确诊后再用药
+                </div>
+                """, unsafe_allow_html=True)
+                
+                single_recs = [r for r in result['single_recommendations'] 
+                              if r.get('drug', {}).get('category') in ['中药', '免疫增强剂', '维生素', '饲料添加剂']]
+                
+                combo_recs = []
+                for combo in result['combination_recommendations']:
+                    drugs = combo.get('drugs', [])
+                    chem_count = 0
+                    for d in drugs:
+                        cat = d.get('category', '')
+                        if cat in ['抗生素', '化药']:
+                            chem_count += 1
+                    if chem_count == 0:
+                        combo_recs.append(combo)
+            elif confidence_level == '中':
+                st.markdown("""
+                <div style="background: #fff3e0; border-left: 4px solid #ff9800; padding: 12px; border-radius: 8px; margin: 12px 0;">
+                    ⚠️ <strong>诊断置信度中</strong>: 化药推荐已限制，建议送检确认诊断
+                </div>
+                """, unsafe_allow_html=True)
+                
+                chem_count_in_single = 0
+                filtered_single = []
+                for r in result['single_recommendations']:
+                    cat = r.get('drug', {}).get('category', '')
+                    if cat in ['抗生素', '化药']:
+                        if chem_count_in_single < 1:
+                            filtered_single.append(r)
+                            chem_count_in_single += 1
+                    else:
+                        filtered_single.append(r)
+                single_recs = filtered_single
+                
+                combo_recs = []
+                for combo in result['combination_recommendations']:
+                    drugs = combo.get('drugs', [])
+                    chem_count = 0
+                    for d in drugs:
+                        cat = d.get('category', '')
+                        if cat in ['抗生素', '化药']:
+                            chem_count += 1
+                    if chem_count <= 1:
+                        combo_recs.append(combo)
+            else:
+                single_recs = result['single_recommendations']
+                combo_recs = result['combination_recommendations']
+        else:
+            single_recs = result['single_recommendations']
+            combo_recs = result['combination_recommendations']
+        
         # 单药推荐
         st.markdown("---")
         st.subheader("💊 推荐药品 (TOP 3)")
         
-        single_recs = result['single_recommendations']
         if single_recs:
             for i, rec in enumerate(single_recs, 1):
                 drug = rec.get('drug', {})
@@ -590,7 +870,6 @@ elif page == 'recommend':
         st.markdown("---")
         st.subheader("🎯 推荐组合方案")
         
-        combo_recs = result['combination_recommendations']
         if combo_recs:
             for i, combo in enumerate(combo_recs[:2], 1):
                 # 类型合规校验结果
@@ -666,12 +945,7 @@ elif page == 'recommend':
                         st.warning(f"**规则说明：** {type_rule}")
                     if type_reason:
                         st.caption(f"📌 {type_reason}")
-                    if was_adjusted:
-                        st.info(
-                            "ℹ️ 系统已自动调整：原方案中包含全部化药，"
-                            "已自动将其中一款化药替换为同适应症的中兽药，"
-                            "以满足「化药+中兽药」的搭配规则。"
-                        )
+
 
                     with st.expander("💊 查看组合药品详情", expanded=True):
                         for j, drug in enumerate(combo.get('drugs', []), 1):
@@ -777,6 +1051,40 @@ elif page == 'recommend':
         except Exception as e:
             st.info(f"环境调整建议加载中... ({str(e)})")
         
+        # 用药安全保障
+        st.markdown("---")
+        st.subheader("🛡️ 用药安全保障")
+        st.info("💡 根据诊断置信度制定的安全用药策略")
+        
+        if st.session_state.get('diagnosis_result'):
+            diag_result = st.session_state['diagnosis_result']
+            safety_guardian = get_safety_guardian()
+            strategy = safety_guardian.get_recommendation_strategy(diag_result.confidence_level)
+            
+            warning_html = f"<p style='color: #c62828;'><b>⚠️ 警告:</b> {strategy['warning']}</p>" if strategy['warning'] else ""
+            follow_up_text = '需要' if strategy['follow_up_required'] else '不需要'
+            
+            st.markdown(f"""
+            <div class="mobile-card">
+                <h3>🎯 推荐策略: {strategy['description']}</h3>
+                <p><b>允许药物类型:</b> {', '.join(strategy['drug_types'])}</p>
+                <p><b>最大药物数量:</b> {strategy['max_drugs']}种</p>
+                {warning_html}
+                <p><b>随访要求:</b> {follow_up_text} ({strategy['follow_up_time']})</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            follow_up_plan = safety_guardian.generate_follow_up_plan(diag_result.confidence_level, diag_result)
+            st.markdown("### 📅 用药后随访计划")
+            st.markdown(f"""
+            <div class="mobile-card">
+                <p><b>观察指标:</b> {', '.join(follow_up_plan['indicators'])}</p>
+                <p><b>用药后{follow_up_plan['time']}评估疗效</b></p>
+                <p><b>无改善时:</b> {follow_up_plan['action_if_no_improvement']}</p>
+                <p><b>有改善时:</b> {follow_up_plan['action_if_improvement']}</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
         # 兽医诊疗关键事项
         st.markdown("---")
         st.subheader("📋 兽医诊疗关键事项")
@@ -804,6 +1112,15 @@ elif page == 'recommend':
             st.session_state.recommendation_result = None
             st.session_state.selected_shed = None
             st.session_state.selected_farmer = None
+            st.session_state.diagnosis_result = None
+            st.session_state.show_diagnosis = False
+            st.session_state.auto_symptom = ''
+            st.session_state.auto_disease_type = ''
+            st.session_state.questionnaire_step = 0
+            st.session_state.selected_symptoms = []
+            for key in list(st.session_state.keys()):
+                if key.startswith('questionnaire_'):
+                    del st.session_state[key]
             st.rerun()
 
 # ==================== 产品目录页面 ====================
@@ -1373,4 +1690,4 @@ elif page == 'shed':
 
 # 底部信息
 st.markdown("---")
-st.caption("© 2025 华英兽药智能推荐系统 | 手机版")
+st.caption("© 2025 华英兽医宝（专家版） | 手机版")
