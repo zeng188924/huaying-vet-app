@@ -31,8 +31,15 @@ class ShedInfo:
     facilities: List[str]
     location: str
     environment_control: List[str]
-    create_time: str
-    update_time: str
+    temperature: Optional[float] = None
+    humidity: Optional[float] = None
+    ventilation_status: Optional[str] = None
+    stocking_density: Optional[str] = None
+    cleanliness_level: Optional[str] = None
+    ammonia_level: Optional[str] = None
+    lighting_hours: Optional[int] = None
+    create_time: str = ""
+    update_time: str = ""
 
 def _ensure_data_dir():
     data_dir = os.path.dirname(FARMER_DATA_FILE)
@@ -105,7 +112,10 @@ def delete_farmer_profile(farmer_id: str) -> bool:
 
 def create_shed(farmer_id: str, name: str, shed_type: str, area: float,
                 breed: str, scale: str, facilities: List[str], location: str,
-                environment_control: List[str]) -> ShedInfo:
+                environment_control: List[str], temperature: Optional[float] = None,
+                humidity: Optional[float] = None, ventilation_status: Optional[str] = None,
+                stocking_density: Optional[str] = None, cleanliness_level: Optional[str] = None,
+                ammonia_level: Optional[str] = None, lighting_hours: Optional[int] = None) -> ShedInfo:
     now = datetime.now().isoformat()
     shed = ShedInfo(
         id=str(uuid.uuid4()),
@@ -118,6 +128,13 @@ def create_shed(farmer_id: str, name: str, shed_type: str, area: float,
         facilities=facilities,
         location=location,
         environment_control=environment_control,
+        temperature=temperature,
+        humidity=humidity,
+        ventilation_status=ventilation_status,
+        stocking_density=stocking_density,
+        cleanliness_level=cleanliness_level,
+        ammonia_level=ammonia_level,
+        lighting_hours=lighting_hours,
         create_time=now,
         update_time=now
     )

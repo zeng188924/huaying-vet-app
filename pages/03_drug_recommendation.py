@@ -8,6 +8,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from drug_recommendation_system_full import create_recommender, quick_recommend
 from disease_knowledge import get_disease_knowledge_base
 from key_matters import get_key_matters, get_summary_points
+from environment_adjustment import get_environment_adjustment_engine, ShedEnvironment
 from utils.data_manager import get_all_farmer_profiles, get_sheds_by_farmer
 
 st.set_page_config(
@@ -465,6 +466,52 @@ if st.session_state.get('show_results', False):
         </ul>
     </div>
     """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    st.subheader("🌡️ 环境调整建议")
+    st.info("💡 根据当前病症和棚舍环境信息，制定科学的环境调整方案，助力疾病康复和预防复发")
+    
+    try:
+        env_engine = get_environment_adjustment_engine()
+        
+        shed_env = None
+        if selected_shed:
+            shed_env = ShedEnvironment(
+                temperature=selected_shed.temperature,
+                humidity=selected_shed.humidity,
+                ventilation_status=selected_shed.ventilation_status,
+                stocking_density=selected_shed.stocking_density,
+                cleanliness_level=selected_shed.cleanliness_level,
+                ammonia_level=selected_shed.ammonia_level,
+                lighting_hours=selected_shed.lighting_hours
+            )
+        
+        diseases = analysis['possible_diseases']
+        adjustments = env_engine.generate_comprehensive_adjustments(diseases, shed_env=shed_env, age_stage=age_stage)
+        
+        if adjustments:
+            for adj in adjustments:
+                with st.expander(f"🔧 {adj.category} - {adj.title}", expanded=True):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.markdown(f"**当前状态:** {adj.current_value}")
+                    with col2:
+                        st.markdown(f"**目标状态:** <span style='color: #2e7d32; font-weight: bold;'>{adj.target_value}</span>", unsafe_allow_html=True)
+                    
+                    st.markdown("**调整步骤:**")
+                    for i, step in enumerate(adj.adjustment_steps, 1):
+                        st.markdown(f"{i}. {step}")
+                    
+                    st.markdown(f"**预期效果:** {adj.expected_effect}")
+                    
+                    if adj.precautions:
+                        st.markdown("**注意事项:**")
+                        for precaution in adj.precautions:
+                            st.markdown(f"- ⚠️ {precaution}")
+        else:
+            st.info("当前病症暂无特定环境调整建议，请参考常规饲养管理")
+    except Exception as e:
+        st.info(f"环境调整建议加载中... ({str(e)})")
     
     st.markdown("---")
     st.subheader("📋 兽医诊疗关键事项（同步告知）")
