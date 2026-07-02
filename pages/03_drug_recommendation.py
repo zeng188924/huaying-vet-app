@@ -5,7 +5,7 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from drug_recommendation_system_full import create_recommender, quick_recommend
+from drug_recommendation_system_full import create_recommender, quick_recommend, DrugDatabase
 from disease_knowledge import get_disease_knowledge_base
 from key_matters import get_key_matters, get_summary_points
 from environment_adjustment import get_environment_adjustment_engine, ShedEnvironment
@@ -207,6 +207,24 @@ with st.sidebar:
         index=["小规模(1000只以下)", "中规模(1000-10000只)", "大规模(10000只以上)"].index(scale_default),
         help="选择养殖规模以推荐合适规格"
     )
+    
+    st.markdown("---")
+    st.header("🚫 耐药性药物排除")
+    
+    all_drugs = []
+    json_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'huaying_products_full.json')
+    if os.path.exists(json_path):
+        db = DrugDatabase(json_path)
+        all_drugs = db.get_all_drugs()
+    
+    drug_options = sorted([f"{d.name} ({d.brand_name})" for d in all_drugs], key=lambda x: x.lower())
+    
+    excluded_drugs = st.multiselect(
+        "选择已产生耐药性的药物（推荐时将排除这些药物）",
+        drug_options,
+        default=[],
+        help="选择您的养殖场中已经产生耐药性或经常使用导致效果下降的药物，系统将在推荐时排除这些药物"
+    )
 
 if selected_shed:
     st.subheader("📊 当前棚舍信息")
@@ -241,6 +259,8 @@ if recommend_clicked:
                         'area': selected_shed.area
                     }
                 
+                excluded_drug_names = [d.split(' (')[0] for d in excluded_drugs] if excluded_drugs else []
+                
                 result = quick_recommend(
                     recommender,
                     animal_type=animal_type,
@@ -249,7 +269,8 @@ if recommend_clicked:
                     disease_type=disease_type,
                     usage=usage,
                     egg_period_safe=egg_period_safe,
-                    farm_scale=farm_scale
+                    farm_scale=farm_scale,
+                    excluded_drugs=excluded_drug_names
                 )
                 
                 st.session_state['recommendation_result'] = result

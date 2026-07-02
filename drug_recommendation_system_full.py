@@ -65,6 +65,7 @@ class RecommendationRequest:
     usage: str
     egg_period_safe: bool
     farm_scale: str
+    excluded_drugs: List[str] = None
 
 
 @dataclass
@@ -678,6 +679,50 @@ def _find_tcm_substitute(db: "DrugDatabase", original_drug: "DrugInfo",
     return None
 
 
+def _find_chemical_drug(db: "DrugDatabase", disease_type: str, used_names: set,
+                        egg_period_safe: bool = False, excluded_drugs: List[str] = None) -> Optional["DrugInfo"]:
+    """为中兽药组合寻找一个合适的化药产品
+
+    优先级:
+      1. 同疾病类型且类别为化药的药物
+      2. 适应症匹配的化药
+      3. 广谱抗菌化药
+    """
+    all_drugs = db.get_all_drugs()
+    excluded_set = set(excluded_drugs) if excluded_drugs else set()
+    candidates: List["DrugInfo"] = []
+
+    for d in all_drugs:
+        if d.name in used_names:
+            continue
+        if d.name in excluded_set or d.brand_name in excluded_set:
+            continue
+        if classify_drug_type(d) != "化药":
+            continue
+        if egg_period_safe and not d.egg_period_safe:
+            continue
+        candidates.append(d)
+
+    # 优先级1：疾病类型匹配
+    for d in candidates:
+        if disease_type in (d.disease_types or []):
+            return d
+
+    # 优先级2：广谱抗菌药物
+    broad_spectrum_keywords = ["氟苯尼考", "多西环素", "阿莫西林", "恩诺沙星", "磺胺"]
+    for d in candidates:
+        comp = d.main_component or ""
+        for kw in broad_spectrum_keywords:
+            if kw in comp:
+                return d
+
+    # 优先级3：任何可用的化药
+    for d in candidates:
+        return d
+
+    return None
+
+
 class DrugRecommender:
     """药物推荐引擎 - 完整版"""
     
@@ -763,7 +808,13 @@ class DrugRecommender:
         """获取候选药物列表"""
         candidates = []
         
+        excluded_drugs_set = set(request.excluded_drugs) if request.excluded_drugs else set()
+        
         for drug in self.db.get_all_drugs():
+            # 排除耐药性药物
+            if drug.name in excluded_drugs_set or drug.brand_name in excluded_drugs_set:
+                continue
+            
             # 产蛋期安全检查
             if request.egg_period_safe and not drug.egg_period_safe:
                 continue
@@ -789,6 +840,7 @@ class DrugRecommender:
                           diseases: List[str]) -> List[DrugInfo]:
         """补充候选药物 - 只补充适应症真正匹配的药物"""
         existing_names = {d.name for d in candidates}
+        excluded_drugs_set = set(request.excluded_drugs) if request.excluded_drugs else set()
         
         # 严格类型优先级 - 只有高度相关的类型才会被补充
         type_priority = {
@@ -808,6 +860,8 @@ class DrugRecommender:
                 break
             if drug.name in existing_names:
                 continue
+            if drug.name in excluded_drugs_set or drug.brand_name in excluded_drugs_set:
+                continue
             if request.egg_period_safe and not drug.egg_period_safe:
                 continue
             if disease_type in drug.disease_types:
@@ -820,6 +874,8 @@ class DrugRecommender:
                 if len(candidates) >= 5:
                     break
                 if drug.name in existing_names:
+                    continue
+                if drug.name in excluded_drugs_set or drug.brand_name in excluded_drugs_set:
                     continue
                 if request.egg_period_safe and not drug.egg_period_safe:
                     continue
@@ -1093,6 +1149,17 @@ class DrugRecommender:
                 if has_unsafe:
                     continue
             
+            # 排除耐药性药物检查
+            excluded_set = set(request.excluded_drugs) if request.excluded_drugs else set()
+            has_excluded = False
+            for drug_name in scheme["drugs"]:
+                drug = self.db.get_drug_by_name(drug_name)
+                if drug and (drug.name in excluded_set or drug.brand_name in excluded_set):
+                    has_excluded = True
+                    break
+            if has_excluded:
+                continue
+            
             # 检查所有药物是否都存在
             all_drugs_exist = True
             drug_details = []
@@ -1198,6 +1265,51 @@ class DrugRecommender:
                             "category": dd.get("category", ""),
                         })
 
+                # ===== 中兽药组合规则：两种均为中兽药时，添加一种化药 =====
+                chem_count = sum(1 for tl in type_labels if tl.get("drug_type") == "化药")
+                tcm_count = sum(1 for tl in type_labels if tl.get("drug_type") == "中兽药")
+                
+                if len(drug_details) == 2 and tcm_count == 2 and chem_count == 0:
+                    used_names = {dd.get("name", "") for dd in drug_details}
+                    excluded_drugs = request.excluded_drugs if request.excluded_drugs else []
+                    
+                    chemical_drug = _find_chemical_drug(
+                        self.db, disease_type, used_names,
+                        egg_period_safe=request.egg_period_safe,
+                        excluded_drugs=excluded_drugs
+                    )
+                    
+                    if chemical_drug:
+                        drug_details.append({
+                            "name": chemical_drug.name,
+                            "component": chemical_drug.main_component,
+                            "price": chemical_drug.price,
+                            "spec": chemical_drug.spec,
+                            "category": chemical_drug.category,
+                            "water": chemical_drug.water,
+                            "content": chemical_drug.content,
+                            "indications": chemical_drug.indications,
+                            "egg_period_safe": chemical_drug.egg_period_safe,
+                            "source": chemical_drug.source,
+                            "usage_info": chemical_drug.usage_info,
+                            "timing": chemical_drug.timing,
+                            "brand_name": chemical_drug.brand_name,
+                            "product_name": chemical_drug.product_name
+                        })
+                        total_price += chemical_drug.price
+                        
+                        type_labels.append({
+                            "name": chemical_drug.name,
+                            "drug_type": classify_drug_type(chemical_drug),
+                            "category": chemical_drug.category,
+                        })
+                        
+                        adjusted = True
+                        compliance["chem_count"] = 1
+                        compliance["tcm_count"] = 2
+                        compliance["types"] = ["中兽药", "中兽药", "化药"]
+                        compliance["type_set"] = ["化药", "中兽药"]
+
                 combinations.append({
                     "scheme_name": scheme["name"],
                     "description": scheme["description"],
@@ -1208,7 +1320,7 @@ class DrugRecommender:
                         **compliance,
                         "drug_type_labels": type_labels,
                         "adjusted": adjusted,
-                        "rule": "必须为'化药+中兽药'或'中兽药+中兽药'组合，禁止全化药",
+                        "rule": "必须为'化药+中兽药'或'中兽药+中兽药'组合，禁止全化药；两种中兽药组合时需添加一种化药",
                     },
                 })
 
@@ -1334,7 +1446,8 @@ def quick_recommend(recommender: DrugRecommender,
                    disease_type: str,
                    usage: str,
                    egg_period_safe: bool,
-                   farm_scale: str) -> Dict:
+                   farm_scale: str,
+                   excluded_drugs: List[str] = None) -> Dict:
     """快速推荐函数"""
     request = RecommendationRequest(
         animal_type=animal_type,
@@ -1343,6 +1456,7 @@ def quick_recommend(recommender: DrugRecommender,
         disease_type=disease_type,
         usage=usage,
         egg_period_safe=egg_period_safe,
-        farm_scale=farm_scale
+        farm_scale=farm_scale,
+        excluded_drugs=excluded_drugs
     )
     return recommender.recommend(request)
