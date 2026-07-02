@@ -1,0 +1,22 @@
+[
+  {
+    "id": "e3740004-54af-43c3-bcbe-6185a4449e46",
+    "name": "张三",
+    "phone": "13800138000",
+    "id_card_hash": "",
+    "farming_years": 0,
+    "technical_level": "初级",
+    "create_time": "2026-07-01T09:36:14.985570",
+    "update_time": "2026-07-01T09:36:14.985570"
+  },
+  {
+    "id": "614b2a31-6a9f-4af3-bf86-6888e9f3dc39",
+    "name": "李四",
+    "phone": "1000000000",
+    "id_card_hash": "af53aaf87656940fccd31afc9a799fb65b14ca21ceacfe3a4536951a8699b78a",
+    "farming_years": 15,
+    "technical_level": "中级",
+    "create_time": "2026-07-01T09:39:08.892166",
+    "update_time": "2026-07-01T09:39:08.892166"
+  }
+]

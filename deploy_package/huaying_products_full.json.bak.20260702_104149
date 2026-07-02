@@ -536,6 +536,490 @@
     "product_name": "80%延胡索酸泰妙菌素（呼吸道）"
   },
   {
+    "id": "S1",
+    "name": "浆小白(水禽)",
+    "content": "/",
+    "spec": "250ml/瓶*40瓶/箱",
+    "water": "",
+    "price": 45.5,
+    "indications": [
+      "详见产品说明"
+    ],
+    "main_component": "浆小白(水禽)",
+    "category": "明星产品",
+    "egg_period_safe": true,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "详见说明书",
+    "source": "明星产品",
+    "timing": "",
+    "brand_name": "浆小白(水禽)",
+    "product_name": "浆小白(水禽)"
+  },
+  {
+    "id": "S2",
+    "name": "控孤",
+    "content": "混合型饲料添加剂L-抗坏血酸",
+    "spec": "5g/瓶*80瓶/箱",
+    "water": "",
+    "price": 20.5,
+    "indications": [
+      "详见产品说明"
+    ],
+    "main_component": "控孤",
+    "category": "明星产品",
+    "egg_period_safe": true,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "详见说明书",
+    "source": "明星产品",
+    "timing": "",
+    "brand_name": "控孤",
+    "product_name": "控孤"
+  },
+  {
+    "id": "S3",
+    "name": "抚风",
+    "content": "混合型饲料添加剂牛磺酸",
+    "spec": "6g/瓶*80瓶/箱",
+    "water": "",
+    "price": 39.8,
+    "indications": [
+      "详见产品说明"
+    ],
+    "main_component": "抚风",
+    "category": "明星产品",
+    "egg_period_safe": true,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "详见说明书",
+    "source": "明星产品",
+    "timing": "",
+    "brand_name": "抚风",
+    "product_name": "抚风"
+  },
+  {
+    "id": "S4",
+    "name": "浆小白(清解合剂)",
+    "content": "/",
+    "spec": "250ml/瓶*40瓶/箱",
+    "water": "",
+    "price": 45.5,
+    "indications": [
+      "详见产品说明"
+    ],
+    "main_component": "浆小白(清解合剂)",
+    "category": "明星产品",
+    "egg_period_safe": true,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "详见说明书",
+    "source": "明星产品",
+    "timing": "",
+    "brand_name": "浆小白(清解合剂)",
+    "product_name": "浆小白(清解合剂)"
+  },
+  {
+    "id": "S5",
+    "name": "海健素",
+    "content": "黄芪多糖口服液(β防御素、干扰素β、γ）",
+    "spec": "10ml/瓶*10瓶/盒*11盒/箱",
+    "water": "",
+    "price": 20.5,
+    "indications": [
+      "详见产品说明"
+    ],
+    "main_component": "海健素",
+    "category": "明星产品",
+    "egg_period_safe": true,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "详见说明书",
+    "source": "明星产品",
+    "timing": "",
+    "brand_name": "海健素",
+    "product_name": "海健素"
+  },
+  {
+    "id": "S6",
+    "name": "（中药）金舒利（小柴胡）500g",
+    "content": "混合型饲料添加剂 牛磺酸",
+    "spec": "500g/袋*20袋/箱",
+    "water": "",
+    "price": 45.5,
+    "indications": [
+      "详见产品说明"
+    ],
+    "main_component": "（中药）金舒利（小柴胡）500g",
+    "category": "明星产品",
+    "egg_period_safe": true,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "详见说明书",
+    "source": "明星产品",
+    "timing": "",
+    "brand_name": "（中药）金舒利（小柴胡）500g",
+    "product_name": "（中药）金舒利（小柴胡）500g"
+  },
+  {
+    "id": "S7",
+    "name": "（中药）金舒利（小柴胡）100g",
+    "content": "混合型饲料添加剂 牛磺酸",
+    "spec": "100g/袋*100袋/箱",
+    "water": "",
+    "price": 10.8,
+    "indications": [
+      "详见产品说明"
+    ],
+    "main_component": "（中药）金舒利（小柴胡）100g",
+    "category": "明星产品",
+    "egg_period_safe": true,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "详见说明书",
+    "source": "明星产品",
+    "timing": "",
+    "brand_name": "（中药）金舒利（小柴胡）100g",
+    "product_name": "（中药）金舒利（小柴胡）100g"
+  },
+  {
+    "id": "S8",
+    "name": "严立康",
+    "content": "盐酸大观霉素盐酸林可霉素可溶性粉",
+    "spec": "20g/瓶*40瓶/箱",
+    "water": "",
+    "price": 25.0,
+    "indications": [
+      "详见产品说明"
+    ],
+    "main_component": "严立康",
+    "category": "明星产品",
+    "egg_period_safe": true,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "详见说明书",
+    "source": "明星产品",
+    "timing": "",
+    "brand_name": "严立康",
+    "product_name": "严立康"
+  },
+  {
+    "id": "S9",
+    "name": "超吉拍档",
+    "content": "盐酸大观霉素盐酸林可霉素可溶性粉",
+    "spec": "20g/瓶*40瓶/箱",
+    "water": "",
+    "price": 23.9,
+    "indications": [
+      "详见产品说明"
+    ],
+    "main_component": "超吉拍档",
+    "category": "明星产品",
+    "egg_period_safe": true,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "详见说明书",
+    "source": "明星产品",
+    "timing": "",
+    "brand_name": "超吉拍档",
+    "product_name": "超吉拍档"
+  },
+  {
+    "id": "S10",
+    "name": "新达罗",
+    "content": "硫酸庆大霉素可溶性粉",
+    "spec": "20g/瓶*40瓶/箱",
+    "water": "",
+    "price": 22.7,
+    "indications": [
+      "详见产品说明"
+    ],
+    "main_component": "新达罗",
+    "category": "明星产品",
+    "egg_period_safe": true,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "详见说明书",
+    "source": "明星产品",
+    "timing": "",
+    "brand_name": "新达罗",
+    "product_name": "新达罗"
+  },
+  {
+    "id": "S11",
+    "name": "菲清",
+    "content": "液态甘草鱼腥草粗提物(复配型)",
+    "spec": "1000ml/瓶*15瓶/箱",
+    "water": "",
+    "price": 102.3,
+    "indications": [
+      "详见产品说明"
+    ],
+    "main_component": "菲清",
+    "category": "明星产品",
+    "egg_period_safe": true,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "详见说明书",
+    "source": "明星产品",
+    "timing": "",
+    "brand_name": "菲清",
+    "product_name": "菲清"
+  },
+  {
+    "id": "S12",
+    "name": "热感清100ml",
+    "content": "鱼腥草提取液",
+    "spec": "100ml/瓶*40瓶/箱",
+    "water": "",
+    "price": 20.5,
+    "indications": [
+      "详见产品说明"
+    ],
+    "main_component": "热感清100ml",
+    "category": "明星产品",
+    "egg_period_safe": true,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "详见说明书",
+    "source": "明星产品",
+    "timing": "",
+    "brand_name": "热感清100ml",
+    "product_name": "热感清100ml"
+  },
+  {
+    "id": "S13",
+    "name": "热感清250ml",
+    "content": "鱼腥草提取液",
+    "spec": "250ml/瓶*40瓶/箱",
+    "water": "",
+    "price": 30.7,
+    "indications": [
+      "详见产品说明"
+    ],
+    "main_component": "热感清250ml",
+    "category": "明星产品",
+    "egg_period_safe": true,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "详见说明书",
+    "source": "明星产品",
+    "timing": "",
+    "brand_name": "热感清250ml",
+    "product_name": "热感清250ml"
+  },
+  {
+    "id": "S14",
+    "name": "肽芪剑（蛋鸡）",
+    "content": "液态低聚壳聚糖",
+    "spec": "250ml/瓶*40瓶/箱",
+    "water": "",
+    "price": 56.8,
+    "indications": [
+      "详见产品说明"
+    ],
+    "main_component": "肽芪剑（蛋鸡）",
+    "category": "明星产品",
+    "egg_period_safe": true,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "详见说明书",
+    "source": "明星产品",
+    "timing": "",
+    "brand_name": "肽芪剑（蛋鸡）",
+    "product_name": "肽芪剑（蛋鸡）"
+  },
+  {
+    "id": "S15",
+    "name": "卡迪欧100ml",
+    "content": "鸡传染性法氏囊病精制蛋黄抗体",
+    "spec": "100ml/瓶*40瓶/箱",
+    "water": "",
+    "price": 28.4,
+    "indications": [
+      "详见产品说明"
+    ],
+    "main_component": "卡迪欧100ml",
+    "category": "明星产品",
+    "egg_period_safe": true,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "详见说明书",
+    "source": "明星产品",
+    "timing": "",
+    "brand_name": "卡迪欧100ml",
+    "product_name": "卡迪欧100ml"
+  },
+  {
+    "id": "S16",
+    "name": "卡迪欧250ml",
+    "content": "鸡传染性法氏囊病精制蛋黄抗体",
+    "spec": "250ml/瓶*40瓶/箱",
+    "water": "",
+    "price": 68.2,
+    "indications": [
+      "详见产品说明"
+    ],
+    "main_component": "卡迪欧250ml",
+    "category": "明星产品",
+    "egg_period_safe": true,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "详见说明书",
+    "source": "明星产品",
+    "timing": "",
+    "brand_name": "卡迪欧250ml",
+    "product_name": "卡迪欧250ml"
+  },
+  {
+    "id": "S17",
+    "name": "甘舒乐",
+    "content": "甘露寡糖",
+    "spec": "1000g/袋*20袋/箱",
+    "water": "",
+    "price": 22.7,
+    "indications": [
+      "详见产品说明"
+    ],
+    "main_component": "甘舒乐",
+    "category": "明星产品",
+    "egg_period_safe": true,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "详见说明书",
+    "source": "明星产品",
+    "timing": "",
+    "brand_name": "甘舒乐",
+    "product_name": "甘舒乐"
+  },
+  {
+    "id": "S18",
+    "name": "（中药）温炎消",
+    "content": "混合型饲料添加剂液态牛磺酸",
+    "spec": "500m/瓶*30瓶/箱",
+    "water": "",
+    "price": 56.8,
+    "indications": [
+      "详见产品说明"
+    ],
+    "main_component": "（中药）温炎消",
+    "category": "明星产品",
+    "egg_period_safe": true,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "详见说明书",
+    "source": "明星产品",
+    "timing": "",
+    "brand_name": "（中药）温炎消",
+    "product_name": "（中药）温炎消"
+  },
+  {
+    "id": "S19",
+    "name": "（中药）双胃康",
+    "content": "液态苍术木香粗提物(复配型)",
+    "spec": "1000ml/瓶*15瓶/箱",
+    "water": "",
+    "price": 90.9,
+    "indications": [
+      "详见产品说明"
+    ],
+    "main_component": "（中药）双胃康",
+    "category": "明星产品",
+    "egg_period_safe": true,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "详见说明书",
+    "source": "明星产品",
+    "timing": "",
+    "brand_name": "（中药）双胃康",
+    "product_name": "（中药）双胃康"
+  },
+  {
+    "id": "S20",
+    "name": "（中药）羡康100g",
+    "content": "天然植物饲料原料、干姜粗提物",
+    "spec": "100g/袋*100袋/箱",
+    "water": "",
+    "price": 11.4,
+    "indications": [
+      "详见产品说明"
+    ],
+    "main_component": "（中药）羡康100g",
+    "category": "明星产品",
+    "egg_period_safe": true,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "详见说明书",
+    "source": "明星产品",
+    "timing": "",
+    "brand_name": "（中药）羡康100g",
+    "product_name": "（中药）羡康100g"
+  },
+  {
+    "id": "S21",
+    "name": "（中药）羡康500g",
+    "content": "天然植物饲料原料、干姜粗提物",
+    "spec": "500g/袋*20袋/箱",
+    "water": "",
+    "price": 54.0,
+    "indications": [
+      "详见产品说明"
+    ],
+    "main_component": "（中药）羡康500g",
+    "category": "明星产品",
+    "egg_period_safe": true,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "详见说明书",
+    "source": "明星产品",
+    "timing": "",
+    "brand_name": "（中药）羡康500g",
+    "product_name": "（中药）羡康500g"
+  },
+  {
+    "id": "S22",
+    "name": "（中药）畅健",
+    "content": "混合型饲料添加剂液态甘露寡糖",
+    "spec": "500ml/瓶*30瓶/箱",
+    "water": "",
+    "price": 45.5,
+    "indications": [
+      "详见产品说明"
+    ],
+    "main_component": "（中药）畅健",
+    "category": "明星产品",
+    "egg_period_safe": true,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "详见说明书",
+    "source": "明星产品",
+    "timing": "",
+    "brand_name": "（中药）畅健",
+    "product_name": "（中药）畅健"
+  },
+  {
     "id": "H1",
     "name": "严立康®（明星产品）",
     "content": "盐酸大观霉素盐酸林可霉素可溶性粉",

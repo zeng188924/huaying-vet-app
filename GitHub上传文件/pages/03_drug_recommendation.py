@@ -1,0 +1,543 @@
+import streamlit as st
+import pandas as pd
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from drug_recommendation_system_full import create_recommender, quick_recommend
+from disease_knowledge import get_disease_knowledge_base
+from key_matters import get_key_matters, get_summary_points
+from environment_adjustment import get_environment_adjustment_engine, ShedEnvironment
+from utils.data_manager import get_all_farmer_profiles, get_sheds_by_farmer
+
+st.set_page_config(
+    page_title="智能用药推荐",
+    page_icon="💊",
+    layout="wide"
+)
+
+@st.cache_resource
+def get_recommender():
+    json_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'huaying_products_full.json')
+    recommender = create_recommender(json_path)
+    return recommender
+
+def local_css():
+    st.markdown("""
+    <style>
+    .main-header {
+        background: linear-gradient(90deg, #1e88e5 0%, #43a047 100%);
+        padding: 20px;
+        border-radius: 10px;
+        color: white;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .main-header h1 { margin: 0; font-size: 2.2em; }
+    .main-header p { margin: 10px 0 0 0; font-size: 1.1em; opacity: 0.9; }
+    
+    .drug-card {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-radius: 15px;
+        padding: 20px;
+        margin: 10px 0;
+        border-left: 5px solid #1e88e5;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .drug-card h3 { color: #1565c0; margin-bottom: 10px; }
+    
+    .combination-card {
+        background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        border-radius: 15px;
+        padding: 20px;
+        margin: 10px 0;
+        border-left: 5px solid #f57c00;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .info-badge {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85em;
+        margin: 3px;
+        font-weight: 500;
+    }
+    .badge-blue { background-color: #e3f2fd; color: #1565c0; }
+    .badge-green { background-color: #e8f5e9; color: #2e7d32; }
+    .badge-orange { background-color: #fff3e0; color: #ef6c00; }
+    .badge-red { background-color: #ffebee; color: #c62828; }
+    
+    .stButton>button {
+        background: linear-gradient(90deg, #1e88e5 0%, #43a047 100%);
+        color: white;
+        font-weight: bold;
+        padding: 12px 24px;
+        border-radius: 25px;
+        border: none;
+        width: 100%;
+    }
+    
+    .key-matter-card {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border-radius: 10px;
+        padding: 15px;
+        margin: 8px 0;
+        border-left: 4px solid #1976d2;
+    }
+    
+    .warning-box {
+        background-color: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+    }
+    
+    .profile-section {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #e9ecef;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+local_css()
+
+st.markdown("""
+<div class="main-header">
+    <h1>💊 智能用药推荐系统</h1>
+    <p>基于养殖环境和病症信息，生成精准用药方案</p>
+</div>
+""", unsafe_allow_html=True)
+
+farmers = get_all_farmer_profiles()
+
+if not farmers:
+    st.warning("⚠️ 请先在「用户档案」页面创建养殖户档案")
+    st.stop()
+
+col1, col2 = st.columns(2)
+
+with col1:
+    selected_farmer = st.selectbox(
+        "选择养殖户",
+        farmers,
+        format_func=lambda f: f"{f.name} (养殖{str(f.farming_years)}年)",
+        key="farmer_select"
+    )
+
+with col2:
+    sheds = get_sheds_by_farmer(selected_farmer.id) if selected_farmer else []
+    shed_options = [(s.id, s.name) for s in sheds]
+    
+    if sheds:
+        selected_shed_name = st.selectbox(
+            "选择棚舍",
+            [s.name for s in sheds],
+            key="shed_select"
+        )
+        selected_shed = next((s for s in sheds if s.name == selected_shed_name), None)
+    else:
+        selected_shed = None
+        st.info("该养殖户暂无棚舍信息，请先添加")
+
+st.divider()
+
+with st.sidebar:
+    st.header("📝 病情信息录入")
+    
+    if selected_shed:
+        breed_mapping = {
+            "白羽肉鸡": "肉鸡", "黄羽肉鸡": "肉鸡", "蛋鸡": "蛋鸡",
+            "种鸡": "种鸡", "樱桃谷鸭": "肉鸭", "麻鸭": "蛋鸭",
+            "鹅": "鹅", "火鸡": "火鸡", "鸽子": "鸽子", "鹌鹑": "鹌鹑"
+        }
+        animal_type_default = breed_mapping.get(selected_shed.breed, selected_shed.breed)
+        scale_default = selected_shed.scale
+    else:
+        animal_type_default = "肉鸡"
+        scale_default = "中规模(1000-10000只)"
+    
+    animal_type = st.selectbox(
+        "动物种类",
+        ["肉鸡", "蛋鸡", "种鸡", "肉鸭", "蛋鸭", "鹅", "火鸡", "鸽子", "鹌鹑"],
+        index=["肉鸡", "蛋鸡", "种鸡", "肉鸭", "蛋鸭", "鹅", "火鸡", "鸽子", "鹌鹑"].index(animal_type_default),
+        help="选择养殖的动物种类"
+    )
+    
+    age_stage = st.selectbox(
+        "日龄/养殖阶段",
+        ["育雏期(0-14日龄)", "育成期(15-35日龄)", "育肥期(36日龄-出栏)", 
+         "产蛋前期", "产蛋高峰期", "产蛋后期"],
+        help="选择当前的养殖阶段"
+    )
+    
+    symptom = st.text_input(
+        "主要症状",
+        placeholder="例如：咳嗽、拉稀、球虫病、精神沉郁...",
+        help="描述动物的主要症状",
+        key="symptom_input"
+    )
+    
+    disease_type = st.selectbox(
+        "发病类型",
+        ["呼吸道疾病", "消化道疾病", "寄生虫病", "细菌性疾病", "病毒性疾病", "营养代谢病", "混合感染"],
+        help="选择疾病的类型"
+    )
+    
+    usage = st.radio(
+        "用途",
+        ["治疗", "预防"],
+        horizontal=True
+    )
+    
+    egg_period_safe = st.checkbox(
+        "产蛋期可用（禁用产蛋期禁用的药物）",
+        value=True if "蛋鸡" in animal_type or "蛋鸭" in animal_type else False
+    )
+    
+    farm_scale = st.selectbox(
+        "养殖规模",
+        ["小规模(1000只以下)", "中规模(1000-10000只)", "大规模(10000只以上)"],
+        index=["小规模(1000只以下)", "中规模(1000-10000只)", "大规模(10000只以上)"].index(scale_default),
+        help="选择养殖规模以推荐合适规格"
+    )
+
+if selected_shed:
+    st.subheader("📊 当前棚舍信息")
+    with st.container():
+        st.markdown(f"""
+        <div class="profile-section">
+            <strong>棚舍名称:</strong> {selected_shed.name}<br>
+            <strong>类型:</strong> {selected_shed.type} | 
+            <strong>品种:</strong> {selected_shed.breed} | 
+            <strong>面积:</strong> {selected_shed.area} ㎡ | 
+            <strong>规模:</strong> {selected_shed.scale} | 
+            <strong>位置:</strong> {selected_shed.location}
+        </div>
+        """, unsafe_allow_html=True)
+
+recommend_clicked = st.button("🔍 获取用药推荐", use_container_width=True)
+
+if recommend_clicked:
+    if not symptom:
+        st.warning("⚠️ 请输入主要症状后再获取推荐")
+    else:
+        with st.spinner("正在分析病情并推荐最佳用药方案..."):
+            try:
+                recommender = get_recommender()
+                
+                environment_factors = {}
+                if selected_shed:
+                    environment_factors = {
+                        'facilities': selected_shed.facilities,
+                        'environment_control': selected_shed.environment_control,
+                        'location': selected_shed.location,
+                        'area': selected_shed.area
+                    }
+                
+                result = quick_recommend(
+                    recommender,
+                    animal_type=animal_type,
+                    age_stage=age_stage,
+                    symptom=symptom,
+                    disease_type=disease_type,
+                    usage=usage,
+                    egg_period_safe=egg_period_safe,
+                    farm_scale=farm_scale
+                )
+                
+                st.session_state['recommendation_result'] = result
+                st.session_state['show_results'] = True
+                
+            except Exception as e:
+                st.error(f"推荐过程中出现错误: {str(e)}")
+
+if st.session_state.get('show_results', False):
+    result = st.session_state['recommendation_result']
+    analysis = result['input_analysis']
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f"**症状:** {analysis['symptom']}")
+        st.markdown(f"**动物种类:** {analysis['animal_type']}")
+    with col2:
+        st.markdown(f"**可能疾病:** {', '.join(analysis['possible_diseases'])}")
+        st.markdown(f"**疾病类型:** {analysis['disease_type']}")
+    with col3:
+        st.markdown(f"**养殖阶段:** {analysis['age_stage']}")
+        st.markdown(f"**用途:** {usage}")
+    
+    st.markdown("---")
+    st.subheader("💊 单药推荐（性价比TOP 3）")
+    
+    single_recs = result['single_recommendations']
+    if single_recs:
+        for i, rec in enumerate(single_recs, 1):
+            drug = rec.get('drug', {})
+            
+            drug_name = drug.get('name', '未知产品')
+            drug_price = drug.get('price', 0)
+            drug_component = drug.get('main_component', '未知')
+            drug_spec = drug.get('spec', '')
+            drug_water = drug.get('water', '')
+            drug_source = drug.get('source', '')
+            drug_egg_safe = drug.get('egg_period_safe', True)
+            drug_indications = drug.get('indications', [])
+            rec_reason = rec.get('reason', '')
+            rec_dosage = rec.get('dosage_recommendation', '')
+            
+            with st.container():
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    st.write(f"### #{i} {drug_name}")
+                with col2:
+                    st.write(f"**价格: ¥{drug_price:.1f}**")
+                
+                cols = st.columns(4)
+                with cols[0]:
+                    st.caption(f"主要成分: {drug_component}")
+                with cols[1]:
+                    st.caption(f"规格: {drug_spec}")
+                with cols[2]:
+                    st.caption(f"兑水量: {drug_water}")
+                with cols[3]:
+                    st.caption(f"来源: {drug_source}")
+                
+                if drug_egg_safe:
+                    st.success("✅ 产蛋期可用")
+                else:
+                    st.error("❌ 产蛋期禁用")
+                
+                if drug_indications:
+                    st.write(f"**适应症:** {', '.join(drug_indications)}")
+                else:
+                    st.write("**适应症:** 详见说明书")
+                
+                st.info(f"**推荐理由:** {rec_reason}")
+                st.write(f"**用法用量:** {rec_dosage}")
+                
+                st.divider()
+    else:
+        st.warning("未找到匹配的单药推荐，请尝试调整搜索条件")
+    
+    compatibility_warnings = result.get('compatibility_warnings', [])
+    if compatibility_warnings:
+        st.markdown("---")
+        st.subheader("⚠️ 配伍禁忌警告")
+        st.error("检测到以下药物组合存在配伍禁忌，请谨慎使用！")
+        
+        for warning in compatibility_warnings:
+            with st.container():
+                st.warning(f"**方案: {warning.get('scheme_name', '未知方案')}** - 等级: {warning.get('level', '未知')}")
+                
+                conflicts = warning.get('conflicts', [])
+                for conflict in conflicts:
+                    with st.expander(f"查看详情: {conflict.get('drug_a', '')} + {conflict.get('drug_b', '')}"):
+                        st.markdown(f"**涉及药物:** {conflict.get('drug_a', '')} + {conflict.get('drug_b', '')}")
+                        st.markdown(f"**禁忌原因:** {conflict.get('reason', '')}")
+                        st.markdown(f"**处理建议:** {conflict.get('suggestion', '')}")
+    
+    st.markdown("---")
+    st.subheader("🎯 药物组合方案推荐")
+    
+    combo_recs = result['combination_recommendations']
+    if combo_recs:
+        for i, combo in enumerate(combo_recs, 1):
+            combo_name = combo.get('scheme_name', '未命名方案')
+            combo_desc = combo.get('description', '')
+            combo_price = combo.get('total_price', 0)
+            combo_drugs = combo.get('drugs', [])
+            
+            compatibility_check = combo.get('compatibility_check', {})
+            is_safe = compatibility_check.get('is_safe', True)
+            level = compatibility_check.get('level', '安全')
+            
+            type_compliance = combo.get('type_compliance', {})
+            is_compliant = type_compliance.get('compliant', True)
+            chem_count = type_compliance.get('chem_count', 0)
+            tcm_count = type_compliance.get('tcm_count', 0)
+            type_labels = type_compliance.get('drug_type_labels', [])
+            
+            with st.container():
+                col1, col2, col3 = st.columns([3, 1, 1])
+                with col1:
+                    st.write(f"### 🎖️ {combo_name}")
+                with col2:
+                    st.write(f"**合计: ¥{combo_price:.1f}**")
+                with col3:
+                    if is_safe:
+                        st.success("✅ 配伍安全")
+                    elif level == '禁忌':
+                        st.error("❌ 配伍禁忌")
+                    else:
+                        st.warning("⚠️ 慎用")
+                
+                st.write(f"**方案说明:** {combo_desc}")
+                
+                if not is_safe:
+                    conflicts = compatibility_check.get('conflicts', [])
+                    with st.expander("⚠️ 配伍问题详情", expanded=True):
+                        for conflict in conflicts:
+                            st.error(f"**配伍问题:** {conflict.get('drug_a', '')} + {conflict.get('drug_b', '')}")
+                            st.write(f"原因: {conflict.get('reason', '')}")
+                            st.write(f"建议: {conflict.get('suggestion', '')}")
+                
+                with st.expander("查看药物详情"):
+                    for j, drug in enumerate(combo_drugs, 1):
+                        cur_label = next(
+                            (lb for lb in type_labels if lb.get('name') == drug.get('name')),
+                            None,
+                        )
+                        cur_type = cur_label.get('drug_type', '未知') if cur_label else '未知'
+                        
+                        if cur_type == '化药':
+                            type_badge = "<span class='info-badge badge-blue'>💊 化药</span>"
+                        elif cur_type == '中兽药':
+                            type_badge = "<span class='info-badge badge-green'>🌿 中兽药</span>"
+                        else:
+                            type_badge = f"<span class='info-badge badge-orange'>{cur_type}</span>"
+                        
+                        st.markdown(
+                            f"**药物{j}: {drug.get('name', '未知')}** {type_badge}",
+                            unsafe_allow_html=True,
+                        )
+                        st.write(f"  - 时机: {drug.get('timing', '/')}")
+                        st.write(f"  - 商品名: {drug.get('brand_name', '/')}")
+                        st.write(f"  - 包装规格: {drug.get('spec', '')}")
+                        st.write(f"  - 适应症状: {', '.join(drug.get('indications', []))}")
+                        st.write(f"  - 用法用量: {drug.get('usage_info', '')}")
+                        st.write(f"  - 价格: ¥{drug.get('price', 0):.1f}")
+                        
+                        if drug.get('egg_period_safe', True):
+                            st.success("  ✅ 产蛋期可用")
+                        else:
+                            st.error("  ❌ 产蛋期禁用")
+                        
+                        st.write("")
+                
+                st.divider()
+    else:
+        st.info("当前条件下暂无推荐的组合方案")
+    
+    st.markdown("---")
+    st.subheader("📚 疾病知识")
+    
+    try:
+        kb = get_disease_knowledge_base()
+        diseases = analysis['possible_diseases']
+        
+        for disease_name in diseases[:2]:
+            disease_info = kb.get_disease_info(disease_name)
+            if disease_info:
+                with st.expander(f"🔍 {disease_name} 详细信息"):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.markdown(f"**病原体:** {disease_info.pathogen}")
+                        st.markdown(f"**传播途径:** {disease_info.transmission}")
+                        st.markdown(f"**典型症状:** {', '.join(disease_info.symptoms[:5])}")
+                    with col2:
+                        st.markdown(f"**治疗原则:** {disease_info.treatment_principles}")
+                        st.markdown(f"**常用药物:** {', '.join(disease_info.common_drugs)}")
+                        st.markdown(f"**注意事项:** {disease_info.notes}")
+                    
+                    st.markdown("**预防措施:**")
+                    for i, prevention in enumerate(disease_info.prevention, 1):
+                        st.markdown(f"{i}. {prevention}")
+    except Exception as e:
+        st.info("疾病知识库加载中...")
+    
+    st.markdown("---")
+    st.subheader("⚠️ 用药注意事项")
+    
+    st.markdown("""
+    <div class="warning-box">
+        <strong>重要提示:</strong>
+        <ul>
+            <li>请严格按照推荐剂量使用，不可随意增减</li>
+            <li>产蛋期禁用药物在蛋鸡/蛋鸭养殖中严禁使用</li>
+            <li>用药期间注意观察动物反应，如有异常立即停药</li>
+            <li>建议轮换使用不同作用机制的药物，防止耐药性产生</li>
+            <li>严重病例请及时联系兽医进行诊断治疗</li>
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    st.subheader("🌡️ 环境调整建议")
+    st.info("💡 根据当前病症和棚舍环境信息，制定科学的环境调整方案，助力疾病康复和预防复发")
+    
+    try:
+        env_engine = get_environment_adjustment_engine()
+        
+        shed_env = None
+        if selected_shed:
+            shed_env = ShedEnvironment(
+                temperature=selected_shed.temperature,
+                humidity=selected_shed.humidity,
+                ventilation_status=selected_shed.ventilation_status,
+                stocking_density=selected_shed.stocking_density,
+                cleanliness_level=selected_shed.cleanliness_level,
+                ammonia_level=selected_shed.ammonia_level,
+                lighting_hours=selected_shed.lighting_hours
+            )
+        
+        diseases = analysis['possible_diseases']
+        adjustments = env_engine.generate_comprehensive_adjustments(diseases, shed_env=shed_env, age_stage=age_stage)
+        
+        if adjustments:
+            for adj in adjustments:
+                with st.expander(f"🔧 {adj.category} - {adj.title}", expanded=True):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.markdown(f"**当前状态:** {adj.current_value}")
+                    with col2:
+                        st.markdown(f"**目标状态:** <span style='color: #2e7d32; font-weight: bold;'>{adj.target_value}</span>", unsafe_allow_html=True)
+                    
+                    st.markdown("**调整步骤:**")
+                    for i, step in enumerate(adj.adjustment_steps, 1):
+                        st.markdown(f"{i}. {step}")
+                    
+                    st.markdown(f"**预期效果:** {adj.expected_effect}")
+                    
+                    if adj.precautions:
+                        st.markdown("**注意事项:**")
+                        for precaution in adj.precautions:
+                            st.markdown(f"- ⚠️ {precaution}")
+        else:
+            st.info("当前病症暂无特定环境调整建议，请参考常规饲养管理")
+    except Exception as e:
+        st.info(f"环境调整建议加载中... ({str(e)})")
+    
+    st.markdown("---")
+    st.subheader("📋 兽医诊疗关键事项（同步告知）")
+    st.info("💡 根据病症同步整合的专业建议，确保用药效果和养殖安全")
+    
+    summary_points = get_summary_points()
+    st.markdown("### 🎯 核心要点速览")
+    summary_cols = st.columns(3)
+    for i, point in enumerate(summary_points):
+        with summary_cols[i % 3]:
+            st.markdown(f"""
+            <div class="key-matter-card">
+                <span style="font-size: 1.2em;">{'🔸' if i % 2 == 0 else '🔹'}</span> {point}
+            </div>
+            """, unsafe_allow_html=True)
+    
+    key_matters = get_key_matters()
+    for matter in key_matters:
+        with st.expander(f"📌 {matter['title']}（{matter['description']}）"):
+            for item in matter['items']:
+                st.markdown(f"""
+                <div style="margin-bottom: 8px; padding-left: 15px; border-left: 2px solid #90caf9;">
+                    <div style="font-weight: bold; color: #1565c0; margin-bottom: 5px;">• {item['title']}</div>
+                    <div style="color: #424242; font-size: 0.9em;">{item['content']}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+st.markdown("---")
+st.caption("© 2025 华英兽药智能推荐系统 | 专业养殖用药助手")

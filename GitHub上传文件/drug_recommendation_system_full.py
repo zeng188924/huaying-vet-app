@@ -1,18 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-兽药智能推荐系统 - 完整版（数据清理后）
-整合清洗后的产品数据：
-- 底价目录：21个产品
-- 产品信息_华英：74个产品
-总计：95个产品
-
-清理说明：已移除所有标记为"明星产品"（source=明星产品）的记录，
-仅保留同时属于"底价目录"和"产品信息_华英"分类体系的产品数据。
-
-推荐逻辑调整：
-- 取消对明星产品的额外加权，确保底价目录与华英产品公平竞争
-- 以适应症匹配为核心权重，疾病类型与用途场景作为辅助权重
-- 华英产品信息来源给予少量信息完整度加成
+兽药智能推荐系统 - 完整版
+整合所有产品数据：
+- 底价目录：22个产品
+- 明星产品：23个产品
+- 产品信息_华英：66个产品
+总计：111个产品
 
 新增功能：配伍禁忌自动检测
 """
@@ -846,15 +839,11 @@ class DrugRecommender:
                                           request: RecommendationRequest,
                                           diseases: List[str],
                                           disease_type: str = "MIXED") -> List[DrugRecommendation]:
-        """计算单药推荐（清理后产品体系）
-
-        仅保留底价目录与产品信息_华英数据，不再对明星产品做特殊兜底。
-        推荐结果完全基于匹配分数排序，取前3个不重复产品。
-        """
+        """计算单药推荐，确保包含明星产品和华英产品"""
         recommendations = []
         
         for drug in drugs:
-            match_score = self._calculate_match_score(drug, diseases, request, disease_type)
+            match_score = self._calculate_match_score(drug, diseases, request)
             reason = self._generate_reason(drug, diseases, match_score)
             dosage = self._generate_dosage(drug, request)
             
@@ -915,72 +904,87 @@ class DrugRecommender:
                             has_related = True
                             break
                     if has_related and "BACTERIAL" in drug.disease_types:
-                            match_score = self._calculate_match_score(drug, diseases, request, disease_type)
-                            reason = self._generate_reason(drug, diseases, match_score)
-                            dosage = self._generate_dosage(drug, request)
-                            rec = DrugRecommendation(
-                                drug=drug,
-                                match_score=match_score,
-                                reason=reason + "（注意：本产品适应症未明确提及输卵管炎，但可用于相关细菌感染）",
-                                dosage_recommendation=dosage
-                            )
-                            truly_matched_recommendations.append(rec)
-                            if len(truly_matched_recommendations) >= 3:
-                                break
-
+                        match_score = self._calculate_match_score(drug, diseases, request)
+                        reason = self._generate_reason(drug, diseases, match_score)
+                        dosage = self._generate_dosage(drug, request)
+                        rec = DrugRecommendation(
+                            drug=drug,
+                            match_score=match_score,
+                            reason=reason + "（注意：本产品适应症未明确提及输卵管炎，但可用于相关细菌感染）",
+                            dosage_recommendation=dosage
+                        )
+                        truly_matched_recommendations.append(rec)
+                        if len(truly_matched_recommendations) >= 3:
+                            break
+            
             # 如果仍然没有匹配的产品，返回空列表
             if not truly_matched_recommendations:
                 return []
-
-        # 基于统一匹配分数取前3个不重复产品
-        truly_matched_recommendations.sort(key=lambda x: x.match_score, reverse=True)
+        
+        # 从匹配的产品中选择最优的3个
+        # 优先选择明星产品和华英产品，但前提是它们真正匹配
         final_recommendations = []
-        seen_ids = set()
+        base_recommendations = []  # 底价目录产品
+        star_huaying_recommendations = []  # 明星产品和华英产品
+        
         for rec in truly_matched_recommendations:
-            if rec.drug.id not in seen_ids:
-                final_recommendations.append(rec)
-                seen_ids.add(rec.drug.id)
+            if rec.drug.source == "底价目录":
+                base_recommendations.append(rec)
+            else:
+                star_huaying_recommendations.append(rec)
+        
+        # 优先添加明星产品和华英产品（最多2个），但前提是它们真正匹配
+        final_recommendations.extend(star_huaying_recommendations[:2])
+        
+        # 如果明星/华英产品不足2个，从底价目录补充
+        if len(final_recommendations) < 2:
+            needed = 2 - len(final_recommendations)
+            final_recommendations.extend(base_recommendations[:needed])
+        
+        # 如果还有空间，再添加1个（优先明星/华英产品）
+        existing_ids = {r.drug.id for r in final_recommendations}
+        for rec in star_huaying_recommendations[2:]:
             if len(final_recommendations) >= 3:
                 break
-
+            if rec.drug.id not in existing_ids:
+                final_recommendations.append(rec)
+                existing_ids.add(rec.drug.id)
+        
+        # 如果仍然不足3个，从底价目录补充
+        for rec in base_recommendations:
+            if len(final_recommendations) >= 3:
+                break
+            if rec.drug.id not in existing_ids:
+                final_recommendations.append(rec)
+                existing_ids.add(rec.drug.id)
+        
         return final_recommendations[:3]
     
     def _calculate_match_score(self, drug: DrugInfo, diseases: List[str], 
-                               request: RecommendationRequest,
-                               disease_type: str = "MIXED") -> float:
-        """计算药物与疾病的匹配分数（清理后产品体系）
-
-        权重设计原则：
-        - 以适应症匹配为核心（+3.0/命中）
-        - 疾病类型直接命中给予稳定加成（+1.0）
-        - 用途场景匹配给予适度加成（+0.5）
-        - 华英产品信息来源给予少量信息完整度加成（+0.3）
-        - 不再对明星产品设置额外加成，确保底价目录与华英产品公平竞争
-        """
+                               request: RecommendationRequest) -> float:
+        """计算药物与疾病的匹配分数"""
         score = 1.0
         
-        # 适应症匹配（核心权重）
+        # 适应症匹配
         for indication in drug.indications:
             for disease in diseases:
                 if disease in indication or indication in disease:
                     score += 3.0
         
-        # 疾病类型直接命中
-        if disease_type in (drug.disease_types or []):
-            score += 1.0
-        
         # 用途匹配
         if request.usage == "预防":
-            if drug.category in ['中药', '免疫增强剂', '维生素', '抗病毒类产品']:
+            if drug.category in ['中药', '免疫增强剂', '维生素']:
                 score += 0.5
         else:  # 治疗
             if drug.category in ['抗生素', '化药']:
                 score += 0.5
         
-        # 来源信息完整度加成：华英产品信息相对完整，给予小幅加成
-        if drug.source == "产品信息_华英":
-            score += 0.3
-        # 底价目录产品不额外加分，依靠适应症和用途匹配
+        # 产品来源优先级加成：明星产品和华英产品获得额外分数
+        if drug.source == "明星产品":
+            score += 2.0  # 明星产品加2分
+        elif drug.source == "产品信息_华英":
+            score += 1.5  # 华英产品加1.5分
+        # 底价目录产品不加分
         
         return score
     
@@ -1029,51 +1033,51 @@ class DrugRecommender:
         """获取药物组合推荐"""
         combinations = []
         
-        # 定义组合方案库（已根据清理后的产品数据替换明星产品为保留产品）
+        # 定义组合方案库
         combination_schemes = {
             "PARASITIC": [
-                {"name": "经典抗球虫方案", "drugs": ["磺胺喹噁啉钠可溶性粉（去球虫病）", "地美硝唑预混剂"], "description": "磺胺类联合抗原虫药，对各类球虫效果显著", "priority": 1, "egg_safe": False},
-                {"name": "强化止血方案", "drugs": ["磺胺氯吡嗪钠可溶性粉（去球虫病）", "地美硝唑预混剂"], "description": "针对盲肠球虫特效，快速止血止痢", "priority": 2, "egg_safe": False},
-                {"name": "全面抗虫方案", "drugs": ["磺胺喹噁啉钠可溶性粉（去球虫病）", "硫酸新霉素可溶性粉"], "description": "抗球虫同时预防继发细菌感染", "priority": 3, "egg_safe": False},
-                {"name": "产蛋期安全抗球方案", "drugs": ["球立欣", "舒感康"], "description": "中药调理肠道、增强免疫力，产蛋期安全", "priority": 4, "egg_safe": True}
+                {"name": "经典抗球虫方案", "drugs": ["磺胺喹噁啉钠可溶性粉（去球虫）", "地美硝唑预混剂"], "description": "磺胺类联合抗原虫药，对各类球虫效果显著", "priority": 1, "egg_safe": False},
+                {"name": "强化止血方案", "drugs": ["磺胺氯吡嗪钠可溶性粉（去球虫）", "地美硝唑预混剂"], "description": "针对盲肠球虫特效，快速止血止痢", "priority": 2, "egg_safe": False},
+                {"name": "全面抗虫方案", "drugs": ["磺胺喹噁啉钠可溶性粉（去球虫）", "硫酸新霉素可溶性粉"], "description": "抗球虫同时预防继发细菌感染", "priority": 3, "egg_safe": False},
+                {"name": "产蛋期安全抗球方案", "drugs": ["（中药）畅健", "海健素"], "description": "中药调理肠道，增强免疫力，产蛋期安全", "priority": 4, "egg_safe": True}
             ],
             "RESPIRATORY": [
                 {"name": "经典呼吸道方案", "drugs": ["替米考星溶液", "盐酸多西环素可溶性粉"], "description": "大环内酯类联合四环素类，对支原体和细菌双重作用", "priority": 1, "egg_safe": False},
                 {"name": "强化呼吸道方案", "drugs": ["80%延胡索酸泰妙菌素（呼吸道）", "盐酸多西环素可溶性粉"], "description": "高含量泰妙菌素，针对顽固性呼吸道病", "priority": 2, "egg_safe": False},
-                {"name": "中西结合方案", "drugs": ["盐酸多西环素可溶性粉", "奇美诺250ml"], "description": "抗生素联合中药口服液，标本兼治", "priority": 3, "egg_safe": False},
-                {"name": "产蛋期安全方案1", "drugs": ["奇美诺250ml", "感美舒®"], "description": "纯中药组合，产蛋期安全，针对呼吸道症状", "priority": 4, "egg_safe": True},
-                {"name": "产蛋期安全方案2", "drugs": ["感美舒®", "欣控"], "description": "中药抗病毒组合，产蛋期可用", "priority": 5, "egg_safe": True},
-                {"name": "产蛋期安全方案3", "drugs": ["舒感康", "感美舒®"], "description": "清热解毒组合，全面覆盖呼吸道病原", "priority": 6, "egg_safe": True}
+                {"name": "中西结合方案", "drugs": ["盐酸多西环素可溶性粉", "桑仁清肺口服液"], "description": "抗生素联合中药口服液，标本兼治", "priority": 3, "egg_safe": False},
+                {"name": "产蛋期安全方案1", "drugs": ["桑仁清肺口服液", "麻杏石甘口服液"], "description": "纯中药组合，产蛋期安全，针对呼吸道症状", "priority": 4, "egg_safe": True},
+                {"name": "产蛋期安全方案2", "drugs": ["双黄连口服液250ml", "银黄口服液"], "description": "中药抗病毒组合，产蛋期可用", "priority": 5, "egg_safe": True},
+                {"name": "产蛋期安全方案3", "drugs": ["清解合剂", "双黄连口服液250ml"], "description": "清热解毒组合，全面覆盖呼吸道病原", "priority": 6, "egg_safe": True}
             ],
             "DIGESTIVE": [
                 {"name": "经典肠道方案", "drugs": ["硫酸黏菌素预混剂1000g", "阿莫西林可溶性粉"], "description": "黏菌素针对革兰氏阴性菌，阿莫西林广谱抗菌", "priority": 1, "egg_safe": False},
                 {"name": "强化杀菌方案", "drugs": ["硫酸新霉素可溶性粉", "地美硝唑预混剂"], "description": "新霉素肠道浓度高，配合抗原虫药", "priority": 2, "egg_safe": False},
-                {"name": "微生态调理方案", "drugs": ["杆 福", "益欣康"], "description": "益生菌/中药调理肠道，辅助治疗", "priority": 3, "egg_safe": False},
+                {"name": "微生态调理方案", "drugs": ["严立康", "（中药）畅健"], "description": "益生菌调理肠道，中药辅助治疗", "priority": 3, "egg_safe": False},
                 {"name": "全面肠道方案", "drugs": ["硫酸黏菌素预混剂1000g", "硫酸新霉素可溶性粉", "地美硝唑预混剂"], "description": "三重杀菌，针对顽固性肠道感染", "priority": 4, "egg_safe": False},
-                {"name": "产蛋期安全肠道方案", "drugs": ["杆 福", "益欣康"], "description": "纯中药/微生态调理肠胃，产蛋期安全", "priority": 5, "egg_safe": True}
+                {"name": "产蛋期安全肠道方案", "drugs": ["（中药）双胃康", "（中药）羡康100g"], "description": "纯中药调理肠胃，产蛋期安全", "priority": 5, "egg_safe": True}
             ],
             "BACTERIAL": [
-                {"name": "广谱杀菌方案", "drugs": ["30%氟苯尼考可溶性粉", "盐酸多西环素可溶性粉"], "description": "广谱抗菌，对大多数细菌性疾病有效", "priority": 1, "egg_safe": False},
+                {"name": "广谱杀菌方案", "drugs": ["氟苯尼考粉", "盐酸多西环素可溶性粉"], "description": "广谱抗菌，对大多数细菌性疾病有效", "priority": 1, "egg_safe": False},
                 {"name": "肠道细菌方案", "drugs": ["硫酸黏菌素预混剂1000g", "阿莫西林可溶性粉"], "description": "针对肠道细菌感染", "priority": 2, "egg_safe": False},
                 {"name": "强化抗菌方案", "drugs": ["盐酸恩诺沙星可溶性粉", "硫酸黏菌素预混剂1000g"], "description": "氟喹诺酮类联合多肽类，杀菌效果强", "priority": 3, "egg_safe": False},
-                {"name": "全面抗菌方案", "drugs": ["30%氟苯尼考可溶性粉", "盐酸多西环素可溶性粉", "硫酸黏菌素预混剂1000g"], "description": "三重广谱抗菌，覆盖各类细菌", "priority": 4, "egg_safe": False},
-                {"name": "产蛋期安全抗菌方案", "drugs": ["感美舒®", "杆 福"], "description": "中药增强免疫配合抗菌，产蛋期安全", "priority": 5, "egg_safe": True}
+                {"name": "全面抗菌方案", "drugs": ["氟苯尼考粉", "盐酸多西环素可溶性粉", "硫酸黏菌素预混剂1000g"], "description": "三重广谱抗菌，覆盖各类细菌", "priority": 4, "egg_safe": False},
+                {"name": "产蛋期安全抗菌方案", "drugs": ["（中药）金舒利（小柴胡）100g", "肽芪剑（蛋鸡）"], "description": "中药抗菌增强免疫，产蛋期安全", "priority": 5, "egg_safe": True}
             ],
             "VIRAL": [
-                {"name": "抗病毒中药方案", "drugs": ["感美舒®", "舒感康"], "description": "中药清热解毒，增强免疫力", "priority": 1, "egg_safe": True},
+                {"name": "抗病毒中药方案", "drugs": ["（中药）金舒利（小柴胡）100g", "肽芪剑（蛋鸡）"], "description": "中药清热解毒，增强免疫力", "priority": 1, "egg_safe": True},
                 {"name": "防继发感染方案", "drugs": ["阿莫西林可溶性粉", "卡巴匹林钙粉"], "description": "预防细菌继发感染，缓解症状", "priority": 2, "egg_safe": False},
-                {"name": "综合抗病毒方案", "drugs": ["感美舒®", "舒感康", "阿莫西林可溶性粉"], "description": "中药+抗生素，抗病毒防继发", "priority": 3, "egg_safe": False},
-                {"name": "产蛋期安全抗病毒方案", "drugs": ["感美舒®", "欣控"], "description": "纯中药抗病毒，产蛋期安全", "priority": 4, "egg_safe": True}
+                {"name": "综合抗病毒方案", "drugs": ["（中药）金舒利（小柴胡）100g", "肽芪剑（蛋鸡）", "阿莫西林可溶性粉"], "description": "中药+抗生素，抗病毒防继发", "priority": 3, "egg_safe": False},
+                {"name": "产蛋期安全抗病毒方案", "drugs": ["（中药）金舒利（小柴胡）100g", "双黄连口服液250ml"], "description": "纯中药抗病毒，产蛋期安全", "priority": 4, "egg_safe": True}
             ],
             "MIXED": [
-                {"name": "全面覆盖方案", "drugs": ["30%氟苯尼考可溶性粉", "盐酸多西环素可溶性粉", "卡巴匹林钙粉"], "description": "广谱抗菌+解热镇痛，应对复杂病情", "priority": 1, "egg_safe": False},
+                {"name": "全面覆盖方案", "drugs": ["氟苯尼考粉", "盐酸多西环素可溶性粉", "卡巴匹林钙粉"], "description": "广谱抗菌+解热镇痛，应对复杂病情", "priority": 1, "egg_safe": False},
                 {"name": "肠道呼吸道混合", "drugs": ["替米考星溶液", "硫酸黏菌素预混剂1000g"], "description": "同时覆盖呼吸道和肠道病原", "priority": 2, "egg_safe": False},
                 {"name": "抗菌消炎方案", "drugs": ["阿莫西林可溶性粉", "卡巴匹林钙粉"], "description": "抗菌+消炎，适合混合感染", "priority": 3, "egg_safe": False},
-                {"name": "产蛋期安全混合方案", "drugs": ["感美舒®", "传支净", "舒感康"], "description": "中药+保肝护肾支持，产蛋期安全", "priority": 4, "egg_safe": True}
+                {"name": "产蛋期安全混合方案", "drugs": ["（中药）金舒利（小柴胡）100g", "甘舒乐", "海健素"], "description": "中药+营养支持，产蛋期安全", "priority": 4, "egg_safe": True}
             ],
             "NUTRITIONAL": [
-                {"name": "营养支持方案", "drugs": ["传支净", "利美佳康"], "description": "保肝护肾，营养支持", "priority": 1, "egg_safe": True},
-                {"name": "全面营养方案", "drugs": ["传支净", "利美佳康", "感美舒®"], "description": "营养+免疫，全面调理", "priority": 2, "egg_safe": True}
+                {"name": "营养支持方案", "drugs": ["海健素", "甘舒乐"], "description": "补充营养，保肝护肾", "priority": 1, "egg_safe": True},
+                {"name": "全面营养方案", "drugs": ["海健素", "甘舒乐", "肽芪剑（蛋鸡）"], "description": "营养+免疫，全面调理", "priority": 2, "egg_safe": True}
             ]
         }
         

@@ -1,0 +1,39 @@
+{
+  "创建时间": "2026-05-18 18:57:04",
+  "部署包内容": {
+    "核心应用文件": [
+      "app_mobile.py",
+      "app.py",
+      "drug_recommendation_system_full.py",
+      "drug_compatibility.py",
+      "disease_knowledge.py",
+      "requirements.txt"
+    ],
+    "数据文件": [
+      "huaying_products_full.json",
+      "huaying_products.json",
+      "合并产品信息表修改后.xlsx"
+    ],
+    "配置文件": [
+      ".streamlit/config.toml"
+    ],
+    "文档文件": [
+      "使用说明.md",
+      "部署指南.md",
+      "华英产品信息整理完成报告.md"
+    ]
+  },
+  "部署说明": {
+    "目标平台": "Streamlit Cloud",
+    "入口文件": "app_mobile.py",
+    "Python版本": "3.9+",
+    "数据更新": "huaying_products_full.json 已包含114个产品"
+  },
+  "上传步骤": [
+    "1. 将整个 deploy_package 文件夹内容上传到GitHub仓库",
+    "2. 登录 Streamlit Cloud (https://share.streamlit.io)",
+    "3. 创建新应用，选择GitHub仓库",
+    "4. 主文件路径填写: app_mobile.py",
+    "5. 点击 Deploy 部署"
+  ]
+}
