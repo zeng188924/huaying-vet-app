@@ -629,9 +629,7 @@ def validate_combination_compliance(drugs: List["DrugInfo"]) -> Dict:
 
     return {
         "compliant": True,
-        "reason": (
-            "化药+中兽药组合" if chem_count > 0 else "中兽药+中兽药组合"
-        ) + "，符合业务规则",
+        "reason": "符合业务规则",
         "types": types,
         "type_set": type_set,
         "chem_count": chem_count,

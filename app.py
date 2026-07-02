@@ -2,7 +2,7 @@ import streamlit as st
 import os
 
 st.set_page_config(
-    page_title="华英兽药智能推荐系统",
+    page_title="华英兽医宝（专家版）",
     page_icon="💊",
     layout="wide"
 )
@@ -50,8 +50,8 @@ def show_home():
 
     st.markdown("""
     <div class="main-header">
-        <h1>💊 华英兽药智能推荐系统</h1>
-        <p>专业的禽药推荐工具，为您的养殖保驾护航</p>
+        <h1>💊 华英兽医宝（专家版）</h1>
+        <p>用好华英兽医宝，专家药方护禽好</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -936,7 +936,7 @@ def show_recommend():
                     """, unsafe_allow_html=True)
 
     st.markdown("---")
-    st.caption("© 2025 华英兽药智能推荐系统 | 专业养殖用药助手")
+    st.caption("© 2025 华英兽医宝（专家版） | 专业养殖用药助手")
 
 def show_product_catalog():
     import json

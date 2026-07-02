@@ -79,6 +79,20 @@ class EnvironmentAdjustmentEngine:
                     "steps": ["分群饲养", "增加活动空间", "避免拥挤"],
                     "effect": "减少接触传播，降低感染压力",
                     "precautions": ["保证每只动物有足够采食空间"]
+                },
+                "lighting": {
+                    "target_hours": "16-18",
+                    "adjustment": "合理光照管理",
+                    "steps": ["保持16-18小时光照", "使用60-100勒克斯光照强度", "保持光照均匀"],
+                    "effect": "促进采食，增强抵抗力",
+                    "precautions": ["避免强光刺激", "保持明暗周期"]
+                },
+                "bedding": {
+                    "target_condition": "干燥松软",
+                    "adjustment": "加强垫料管理",
+                    "steps": ["及时更换潮湿垫料", "保持垫料厚度5-8cm", "定期翻松垫料", "使用吸水性好的垫料"],
+                    "effect": "减少卵囊生存环境，降低感染风险",
+                    "precautions": ["避免垫料霉变", "新垫料需预干燥"]
                 }
             },
             "盲肠球虫": {
@@ -102,6 +116,20 @@ class EnvironmentAdjustmentEngine:
                     "steps": ["每日多次清理", "使用火焰消毒", "彻底清洁饮水系统"],
                     "effect": "快速降低卵囊污染",
                     "precautions": ["注意消毒频率，避免应激"]
+                },
+                "lighting": {
+                    "target_hours": "16-18",
+                    "adjustment": "合理光照管理",
+                    "steps": ["保持16-18小时光照", "使用60-80勒克斯光照强度", "保持光照均匀"],
+                    "effect": "促进采食和恢复",
+                    "precautions": ["避免强光刺激"]
+                },
+                "bedding": {
+                    "target_condition": "干燥松软",
+                    "adjustment": "加强垫料管理",
+                    "steps": ["及时更换潮湿垫料", "保持垫料厚度5-8cm", "定期翻松垫料"],
+                    "effect": "减少卵囊生存环境",
+                    "precautions": ["避免垫料霉变"]
                 }
             },
             "小肠球虫": {
@@ -125,6 +153,20 @@ class EnvironmentAdjustmentEngine:
                     "steps": ["每周深度清洁", "消毒料槽", "清理死角"],
                     "effect": "减少感染源",
                     "precautions": ["清洁后彻底干燥"]
+                },
+                "lighting": {
+                    "target_hours": "16-18",
+                    "adjustment": "合理光照管理",
+                    "steps": ["保持16-18小时光照", "使用60-100勒克斯光照强度"],
+                    "effect": "促进采食，增强体质",
+                    "precautions": ["避免强光刺激"]
+                },
+                "bedding": {
+                    "target_condition": "干燥松软",
+                    "adjustment": "加强垫料管理",
+                    "steps": ["及时更换潮湿垫料", "保持垫料厚度5-8cm", "定期翻松"],
+                    "effect": "减少卵囊生存环境",
+                    "precautions": ["避免垫料霉变"]
                 }
             },
             "慢性呼吸道病": {
@@ -155,6 +197,20 @@ class EnvironmentAdjustmentEngine:
                     "steps": ["及时清理粪便", "加强通风", "使用垫料添加剂"],
                     "effect": "减轻呼吸道黏膜损伤",
                     "precautions": ["监测氨气浓度"]
+                },
+                "lighting": {
+                    "target_hours": "14-16",
+                    "adjustment": "合理光照管理",
+                    "steps": ["保持14-16小时光照", "使用50-80勒克斯光照强度", "避免强光"],
+                    "effect": "减少应激，保护呼吸道",
+                    "precautions": ["避免强光刺激呼吸道黏膜"]
+                },
+                "bedding": {
+                    "target_condition": "干燥清洁",
+                    "adjustment": "加强垫料管理",
+                    "steps": ["及时更换潮湿垫料", "保持垫料厚度5-8cm", "定期翻松垫料"],
+                    "effect": "减少氨气产生，改善空气质量",
+                    "precautions": ["避免垫料粉尘飞扬"]
                 }
             },
             "大肠杆菌病": {
@@ -185,6 +241,20 @@ class EnvironmentAdjustmentEngine:
                     "steps": ["分群", "增加空间", "避免过度拥挤"],
                     "effect": "减少接触传播",
                     "precautions": ["保证足够采食饮水位置"]
+                },
+                "lighting": {
+                    "target_hours": "14-16",
+                    "adjustment": "合理光照管理",
+                    "steps": ["保持14-16小时光照", "使用50-80勒克斯光照强度"],
+                    "effect": "减少应激，增强免疫力",
+                    "precautions": ["避免强光刺激"]
+                },
+                "bedding": {
+                    "target_condition": "干燥清洁",
+                    "adjustment": "加强垫料管理",
+                    "steps": ["及时更换潮湿垫料", "保持垫料厚度5-8cm", "定期翻松"],
+                    "effect": "减少细菌滋生环境",
+                    "precautions": ["避免垫料霉变"]
                 }
             },
             "沙门氏菌病": {
@@ -208,6 +278,20 @@ class EnvironmentAdjustmentEngine:
                     "steps": ["定时通风换气", "保持空气新鲜", "降低氨气"],
                     "effect": "减少病原体传播",
                     "precautions": ["避免冷风直吹"]
+                },
+                "lighting": {
+                    "target_hours": "16-18",
+                    "adjustment": "合理光照管理",
+                    "steps": ["保持16-18小时光照", "使用60-100勒克斯光照强度"],
+                    "effect": "促进采食，增强抵抗力",
+                    "precautions": ["避免强光刺激"]
+                },
+                "bedding": {
+                    "target_condition": "干燥清洁",
+                    "adjustment": "加强垫料管理",
+                    "steps": ["及时更换潮湿垫料", "使用新垫料", "保持垫料厚度5-8cm"],
+                    "effect": "减少沙门氏菌生存环境",
+                    "precautions": ["新垫料需预干燥"]
                 }
             },
             "鸡白痢": {
@@ -231,6 +315,20 @@ class EnvironmentAdjustmentEngine:
                     "steps": ["每日清理粪便", "定期消毒", "更换垫料"],
                     "effect": "控制传染源",
                     "precautions": ["注意消毒频率"]
+                },
+                "lighting": {
+                    "target_hours": "22-24",
+                    "adjustment": "延长光照时间",
+                    "steps": ["保持22-24小时光照", "使用40-60勒克斯光照强度"],
+                    "effect": "促进雏鸡采食，提高成活率",
+                    "precautions": ["逐步减少光照时间"]
+                },
+                "bedding": {
+                    "target_condition": "干燥松软",
+                    "adjustment": "加强垫料管理",
+                    "steps": ["及时更换潮湿垫料", "保持垫料厚度3-5cm", "定期翻松"],
+                    "effect": "减少病菌滋生环境",
+                    "precautions": ["避免垫料霉变"]
                 }
             },
             "禽霍乱": {
@@ -261,6 +359,20 @@ class EnvironmentAdjustmentEngine:
                     "steps": ["分群隔离", "增加空间", "避免拥挤"],
                     "effect": "减少传播风险",
                     "precautions": ["注意观察病禽"]
+                },
+                "lighting": {
+                    "target_hours": "14-16",
+                    "adjustment": "合理光照管理",
+                    "steps": ["保持14-16小时光照", "使用50-80勒克斯光照强度"],
+                    "effect": "减少应激，增强免疫力",
+                    "precautions": ["避免强光刺激"]
+                },
+                "bedding": {
+                    "target_condition": "干燥清洁",
+                    "adjustment": "加强垫料管理",
+                    "steps": ["及时更换潮湿垫料", "保持垫料厚度5-8cm", "定期翻松"],
+                    "effect": "减少细菌滋生环境",
+                    "precautions": ["避免垫料霉变"]
                 }
             },
             "传染性鼻炎": {
@@ -291,6 +403,20 @@ class EnvironmentAdjustmentEngine:
                     "steps": ["带禽消毒", "器具消毒", "环境消毒"],
                     "effect": "减少病原体",
                     "precautions": ["注意消毒时间"]
+                },
+                "lighting": {
+                    "target_hours": "14-16",
+                    "adjustment": "合理光照管理",
+                    "steps": ["保持14-16小时光照", "使用50-80勒克斯光照强度"],
+                    "effect": "减少应激，保护呼吸道",
+                    "precautions": ["避免强光刺激"]
+                },
+                "bedding": {
+                    "target_condition": "干燥清洁",
+                    "adjustment": "加强垫料管理",
+                    "steps": ["及时更换潮湿垫料", "保持垫料厚度5-8cm", "定期翻松"],
+                    "effect": "减少氨气产生，改善空气质量",
+                    "precautions": ["避免垫料粉尘飞扬"]
                 }
             },
             "坏死性肠炎": {
@@ -321,6 +447,20 @@ class EnvironmentAdjustmentEngine:
                     "steps": ["分群", "增加空间", "避免拥挤"],
                     "effect": "减少接触传播",
                     "precautions": ["保证足够饮水"]
+                },
+                "lighting": {
+                    "target_hours": "14-16",
+                    "adjustment": "合理光照管理",
+                    "steps": ["保持14-16小时光照", "使用50-80勒克斯光照强度"],
+                    "effect": "减少应激，促进肠道恢复",
+                    "precautions": ["避免强光刺激"]
+                },
+                "bedding": {
+                    "target_condition": "干燥清洁",
+                    "adjustment": "加强垫料管理",
+                    "steps": ["及时更换潮湿垫料", "保持垫料厚度5-8cm", "定期翻松"],
+                    "effect": "减少梭菌滋生环境",
+                    "precautions": ["避免垫料霉变"]
                 }
             },
             "滑液囊支原体": {
@@ -344,6 +484,20 @@ class EnvironmentAdjustmentEngine:
                     "steps": ["带禽消毒", "环境消毒", "器具消毒"],
                     "effect": "减少病原体传播",
                     "precautions": ["交替使用消毒剂"]
+                },
+                "lighting": {
+                    "target_hours": "14-16",
+                    "adjustment": "合理光照管理",
+                    "steps": ["保持14-16小时光照", "使用50-80勒克斯光照强度"],
+                    "effect": "减少应激，促进关节恢复",
+                    "precautions": ["避免强光刺激"]
+                },
+                "bedding": {
+                    "target_condition": "干燥清洁",
+                    "adjustment": "加强垫料管理",
+                    "steps": ["及时更换潮湿垫料", "保持垫料厚度5-8cm", "定期翻松"],
+                    "effect": "减少支原体传播，保护关节",
+                    "precautions": ["避免垫料过硬"]
                 }
             },
             "新城疫": {
@@ -374,6 +528,20 @@ class EnvironmentAdjustmentEngine:
                     "steps": ["定时通风", "保持空气新鲜", "降低氨气"],
                     "effect": "减少病毒传播",
                     "precautions": ["避免冷风直吹"]
+                },
+                "lighting": {
+                    "target_hours": "14-16",
+                    "adjustment": "合理光照管理",
+                    "steps": ["保持14-16小时光照", "使用50-80勒克斯光照强度"],
+                    "effect": "减少应激，提高抵抗力",
+                    "precautions": ["避免强光刺激"]
+                },
+                "bedding": {
+                    "target_condition": "干燥清洁",
+                    "adjustment": "加强垫料管理",
+                    "steps": ["及时更换潮湿垫料", "保持垫料厚度5-8cm", "定期翻松"],
+                    "effect": "减少病毒污染环境",
+                    "precautions": ["避免垫料霉变"]
                 }
             },
             "传染性支气管炎": {
@@ -404,6 +572,20 @@ class EnvironmentAdjustmentEngine:
                     "steps": ["带禽消毒", "环境消毒", "器具消毒"],
                     "effect": "减少病毒数量",
                     "precautions": ["注意消毒频率"]
+                },
+                "lighting": {
+                    "target_hours": "14-16",
+                    "adjustment": "合理光照管理",
+                    "steps": ["保持14-16小时光照", "使用50-80勒克斯光照强度"],
+                    "effect": "减少应激，保护呼吸道",
+                    "precautions": ["避免强光刺激"]
+                },
+                "bedding": {
+                    "target_condition": "干燥清洁",
+                    "adjustment": "加强垫料管理",
+                    "steps": ["及时更换潮湿垫料", "保持垫料厚度5-8cm", "定期翻松"],
+                    "effect": "减少病毒污染，改善空气质量",
+                    "precautions": ["避免垫料粉尘飞扬"]
                 }
             },
             "组织滴虫病": {
@@ -427,6 +609,20 @@ class EnvironmentAdjustmentEngine:
                     "steps": ["每日清理粪便", "定期消毒", "更换垫料"],
                     "effect": "减少虫卵污染",
                     "precautions": ["注意消毒效果"]
+                },
+                "lighting": {
+                    "target_hours": "14-16",
+                    "adjustment": "合理光照管理",
+                    "steps": ["保持14-16小时光照", "使用50-80勒克斯光照强度"],
+                    "effect": "减少应激，提高抵抗力",
+                    "precautions": ["避免强光刺激"]
+                },
+                "bedding": {
+                    "target_condition": "干燥清洁",
+                    "adjustment": "加强垫料管理",
+                    "steps": ["及时更换潮湿垫料", "保持垫料厚度5-8cm", "定期翻松"],
+                    "effect": "减少虫卵生存环境",
+                    "precautions": ["避免垫料霉变"]
                 }
             },
             "蛔虫病": {
@@ -450,6 +646,20 @@ class EnvironmentAdjustmentEngine:
                     "steps": ["每日清理粪便", "定期消毒", "清理料槽"],
                     "effect": "减少环境中虫卵",
                     "precautions": ["粪便需发酵处理"]
+                },
+                "lighting": {
+                    "target_hours": "14-16",
+                    "adjustment": "合理光照管理",
+                    "steps": ["保持14-16小时光照", "使用50-80勒克斯光照强度"],
+                    "effect": "减少应激，提高驱虫效果",
+                    "precautions": ["避免强光刺激"]
+                },
+                "bedding": {
+                    "target_condition": "干燥清洁",
+                    "adjustment": "加强垫料管理",
+                    "steps": ["及时更换潮湿垫料", "保持垫料厚度5-8cm", "定期翻松"],
+                    "effect": "减少虫卵生存环境",
+                    "precautions": ["粪便需发酵处理"]
                 }
             },
             "绦虫病": {
@@ -465,6 +675,20 @@ class EnvironmentAdjustmentEngine:
                     "adjustment": "加强清洁",
                     "steps": ["每日清理粪便", "定期消毒", "清理环境"],
                     "effect": "减少中间宿主滋生",
+                    "precautions": ["注意消灭昆虫宿主"]
+                },
+                "lighting": {
+                    "target_hours": "14-16",
+                    "adjustment": "合理光照管理",
+                    "steps": ["保持14-16小时光照", "使用50-80勒克斯光照强度"],
+                    "effect": "减少应激，提高驱虫效果",
+                    "precautions": ["避免强光刺激"]
+                },
+                "bedding": {
+                    "target_condition": "干燥清洁",
+                    "adjustment": "加强垫料管理",
+                    "steps": ["及时更换潮湿垫料", "保持垫料厚度5-8cm", "定期翻松"],
+                    "effect": "减少中间宿主滋生环境",
                     "precautions": ["注意消灭昆虫宿主"]
                 }
             }
@@ -590,6 +814,32 @@ class EnvironmentAdjustmentEngine:
                 title=rule["adjustment"],
                 current_value=current_ammonia,
                 target_value=f"{rule['target_level']}ppm",
+                adjustment_steps=rule["steps"],
+                expected_effect=rule["effect"],
+                precautions=rule["precautions"]
+            ))
+        
+        if "lighting" in rules:
+            rule = rules["lighting"]
+            current_light = str(shed_env.lighting_hours) + "小时" if shed_env and shed_env.lighting_hours else "未知"
+            adjustments.append(EnvironmentAdjustment(
+                category="光照管理",
+                title=rule["adjustment"],
+                current_value=current_light,
+                target_value=f"{rule['target_hours']}小时",
+                adjustment_steps=rule["steps"],
+                expected_effect=rule["effect"],
+                precautions=rule["precautions"]
+            ))
+        
+        if "bedding" in rules:
+            rule = rules["bedding"]
+            current_bedding = "未知"
+            adjustments.append(EnvironmentAdjustment(
+                category="垫料管理",
+                title=rule["adjustment"],
+                current_value=current_bedding,
+                target_value=rule["target_condition"],
                 adjustment_steps=rule["steps"],
                 expected_effect=rule["effect"],
                 precautions=rule["precautions"]

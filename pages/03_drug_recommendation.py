@@ -9,6 +9,7 @@ from drug_recommendation_system_full import create_recommender, quick_recommend
 from disease_knowledge import get_disease_knowledge_base
 from key_matters import get_key_matters, get_summary_points
 from environment_adjustment import get_environment_adjustment_engine, ShedEnvironment
+from diagnosis_engine import get_diagnosis_engine, get_safety_guardian
 from utils.data_manager import get_all_farmer_profiles, get_sheds_by_farmer
 
 st.set_page_config(
@@ -261,19 +262,67 @@ if st.session_state.get('show_results', False):
     result = st.session_state['recommendation_result']
     analysis = result['input_analysis']
     
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown(f"**症状:** {analysis['symptom']}")
-        st.markdown(f"**动物种类:** {analysis['animal_type']}")
-    with col2:
-        st.markdown(f"**可能疾病:** {', '.join(analysis['possible_diseases'])}")
-        st.markdown(f"**疾病类型:** {analysis['disease_type']}")
-    with col3:
-        st.markdown(f"**养殖阶段:** {analysis['age_stage']}")
-        st.markdown(f"**用途:** {usage}")
+    st.markdown("---")
+    st.subheader("🔍 症状分析与病因诊断")
+    
+    diagnosis_col1, diagnosis_col2 = st.columns(2)
+    with diagnosis_col1:
+        st.markdown("### 📋 症状信息")
+        st.markdown(f"""
+        <div class="profile-section">
+            <strong>主要症状:</strong> {analysis['symptom']}<br>
+            <strong>动物种类:</strong> {analysis['animal_type']}<br>
+            <strong>养殖阶段:</strong> {analysis['age_stage']}<br>
+            <strong>发病类型:</strong> {analysis['disease_type']}
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("### 🎯 病因诊断")
+        disease_engine = get_disease_knowledge_base()
+        for disease_name in analysis['possible_diseases'][:2]:
+            disease_info = disease_engine.get_disease_info(disease_name)
+            if disease_info:
+                with st.expander(f"🩺 {disease_name}"):
+                    st.markdown(f"**病原体:** {disease_info.pathogen}")
+                    st.markdown(f"**传播途径:** {disease_info.transmission}")
+                    st.markdown(f"**典型症状:** {', '.join(disease_info.symptoms[:5])}")
+                    st.markdown(f"**治疗原则:** {disease_info.treatment_principles}")
+    
+    with diagnosis_col2:
+        st.markdown("### 📊 诊断置信度评估")
+        safety_guardian = get_safety_guardian()
+        st.markdown(f"""
+        <div class="profile-section">
+            <strong>可能疾病:</strong> {', '.join(analysis['possible_diseases'])}<br>
+            <strong>用途:</strong> {usage}<br>
+            <strong>用药安全等级:</strong> 
+            <span style="color: {'#2e7d32' if len(analysis['possible_diseases']) >= 2 else '#f57c00'}; font-weight: bold;">
+                {'常规用药' if len(analysis['possible_diseases']) >= 2 else '谨慎用药'}
+            </span>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("### 🔬 病因分类分析")
+        etiological_factors = []
+        for disease_name in analysis['possible_diseases'][:2]:
+            disease_info = disease_engine.get_disease_info(disease_name)
+            if disease_info:
+                if '病毒' in disease_info.pathogen:
+                    etiological_factors.append(f"🦠 {disease_name}: 病毒感染")
+                elif '细菌' in disease_info.pathogen or '杆菌' in disease_info.pathogen or '球菌' in disease_info.pathogen:
+                    etiological_factors.append(f"🔬 {disease_name}: 细菌感染")
+                elif '球虫' in disease_info.pathogen or '虫' in disease_info.pathogen:
+                    etiological_factors.append(f"🐛 {disease_name}: 寄生虫感染")
+                elif '支原体' in disease_info.pathogen:
+                    etiological_factors.append(f"🦠 {disease_name}: 支原体感染")
+                else:
+                    etiological_factors.append(f"🤔 {disease_name}: 其他病因")
+        
+        for factor in etiological_factors:
+            st.markdown(f"- {factor}")
     
     st.markdown("---")
-    st.subheader("💊 单药推荐（性价比TOP 3）")
+    st.subheader("💊 用药推荐")
     
     single_recs = result['single_recommendations']
     if single_recs:
@@ -489,25 +538,83 @@ if st.session_state.get('show_results', False):
         diseases = analysis['possible_diseases']
         adjustments = env_engine.generate_comprehensive_adjustments(diseases, shed_env=shed_env, age_stage=age_stage)
         
+        adjustment_order = ["温度控制", "湿度控制", "通风管理", "光照管理", "饲养密度", "清洁消毒", "氨气控制", "垫料管理"]
+        
         if adjustments:
+            adjustments.sort(key=lambda x: adjustment_order.index(x.category) if x.category in adjustment_order else 99)
+            
             for adj in adjustments:
                 with st.expander(f"🔧 {adj.category} - {adj.title}", expanded=True):
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.markdown(f"**当前状态:** {adj.current_value}")
-                    with col2:
-                        st.markdown(f"**目标状态:** <span style='color: #2e7d32; font-weight: bold;'>{adj.target_value}</span>", unsafe_allow_html=True)
+                    st.markdown("""
+                    <style>
+                    .adjustment-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 15px;
+                        margin-bottom: 15px;
+                    }
+                    .adjustment-item {
+                        background: #f8f9fa;
+                        padding: 12px;
+                        border-radius: 8px;
+                        border-left: 4px solid #1e88e5;
+                    }
+                    .adjustment-step {
+                        background: #e8f5e9;
+                        padding: 10px 15px;
+                        border-radius: 6px;
+                        margin-bottom: 8px;
+                        border-left: 3px solid #43a047;
+                    }
+                    .adjustment-effect {
+                        background: #e3f2fd;
+                        padding: 12px;
+                        border-radius: 8px;
+                        margin-bottom: 15px;
+                    }
+                    .adjustment-precaution {
+                        background: #fff3e0;
+                        padding: 8px 12px;
+                        border-radius: 4px;
+                        margin-bottom: 5px;
+                        font-size: 0.9em;
+                    }
+                    </style>
+                    """, unsafe_allow_html=True)
                     
-                    st.markdown("**调整步骤:**")
+                    st.markdown(f"""
+                    <div class="adjustment-grid">
+                        <div class="adjustment-item">
+                            <strong>当前状态:</strong> {adj.current_value if adj.current_value else '未知'}
+                        </div>
+                        <div class="adjustment-item">
+                            <strong>目标状态:</strong> <span style='color: #2e7d32; font-weight: bold;'>{adj.target_value}</span>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    st.markdown("**📝 调整步骤:**")
                     for i, step in enumerate(adj.adjustment_steps, 1):
-                        st.markdown(f"{i}. {step}")
+                        st.markdown(f"""
+                        <div class="adjustment-step">
+                            <strong>{i}.</strong> {step}
+                        </div>
+                        """, unsafe_allow_html=True)
                     
-                    st.markdown(f"**预期效果:** {adj.expected_effect}")
+                    st.markdown(f"""
+                    <div class="adjustment-effect">
+                        <strong>🎯 预期效果:</strong> {adj.expected_effect}
+                    </div>
+                    """, unsafe_allow_html=True)
                     
                     if adj.precautions:
-                        st.markdown("**注意事项:**")
+                        st.markdown("**⚠️ 注意事项:**")
                         for precaution in adj.precautions:
-                            st.markdown(f"- ⚠️ {precaution}")
+                            st.markdown(f"""
+                            <div class="adjustment-precaution">
+                                {precaution}
+                            </div>
+                            """, unsafe_allow_html=True)
         else:
             st.info("当前病症暂无特定环境调整建议，请参考常规饲养管理")
     except Exception as e:
@@ -540,4 +647,4 @@ if st.session_state.get('show_results', False):
                 """, unsafe_allow_html=True)
 
 st.markdown("---")
-st.caption("© 2025 华英兽药智能推荐系统 | 专业养殖用药助手")
+st.caption("© 2025 华英兽医宝（专家版） | 专业养殖用药助手")

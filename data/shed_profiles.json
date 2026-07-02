@@ -41,5 +41,31 @@
     ],
     "create_time": "2026-07-01T14:58:49.142082",
     "update_time": "2026-07-01T14:59:14.358449"
+  },
+  {
+    "id": "17b12a8a-61d4-4bf0-8502-fab2584825f8",
+    "farmer_id": "e3740004-54af-43c3-bcbe-6185a4449e46",
+    "name": "2号鸭棚",
+    "type": "肉鸭舍",
+    "area": 100,
+    "breed": "麻鸭",
+    "scale": "大规模(10000只以上)",
+    "facilities": [
+      "自然通风",
+      "自动饮水系统",
+      "粪污处理系统",
+      "监控设备"
+    ],
+    "location": "淄博市桓台县",
+    "environment_control": [],
+    "temperature": null,
+    "humidity": null,
+    "ventilation_status": null,
+    "stocking_density": null,
+    "cleanliness_level": null,
+    "ammonia_level": null,
+    "lighting_hours": null,
+    "create_time": "2026-07-02T13:40:38.639003",
+    "update_time": "2026-07-02T13:40:38.639003"
   }
 ]
