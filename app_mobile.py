@@ -28,6 +28,8 @@ from utils.data_manager import (
     create_shed, get_sheds_by_farmer, get_shed, update_shed, delete_shed
 )
 from utils.encryption import hash_id_card
+from environment_adjustment import get_environment_adjustment_engine, ShedEnvironment
+from key_matters import get_key_matters, get_summary_points
 
 # 初始化推荐器 - 使用JSON文件加载数据
 @st.cache_resource
@@ -376,12 +378,67 @@ elif page == 'recommend':
     </div>
     """, unsafe_allow_html=True)
     
+    farmers = get_all_farmer_profiles()
+    
+    col_farmer, col_shed = st.columns(2)
+    selected_farmer = None
+    selected_shed = None
+    
+    with col_farmer:
+        if farmers:
+            farmer_options = [f"{f.id} - {f.name}" for f in farmers]
+            selected_farmer_str = st.selectbox(
+                "👤 选择养殖户",
+                farmer_options,
+                format_func=lambda x: x.split(" - ")[1],
+                key="mobile_farmer_select"
+            )
+            selected_farmer_id = selected_farmer_str.split(" - ")[0]
+            selected_farmer = get_farmer_profile(selected_farmer_id)
+            
+            sheds = get_sheds_by_farmer(selected_farmer_id)
+            with col_shed:
+                if sheds:
+                    shed_options = [s.name for s in sheds]
+                    selected_shed_name = st.selectbox(
+                        "🏠 选择棚舍",
+                        shed_options,
+                        key="mobile_shed_select"
+                    )
+                    selected_shed = next((s for s in sheds if s.name == selected_shed_name), None)
+                else:
+                    st.info("暂无棚舍")
+        else:
+            st.warning("⚠️ 请先创建养殖户档案")
+    
+    if selected_shed:
+        st.markdown(f"""
+        <div class="tip-box">
+            <strong>当前棚舍:</strong> {selected_shed.name} | 
+            <strong>品种:</strong> {selected_shed.breed} | 
+            <strong>规模:</strong> {selected_shed.scale}
+        </div>
+        """, unsafe_allow_html=True)
+    
     # 表单区域
     with st.form("recommend_form"):
+        if selected_shed:
+            breed_mapping = {
+                "白羽肉鸡": "肉鸡", "黄羽肉鸡": "肉鸡", "蛋鸡": "蛋鸡",
+                "种鸡": "种鸡", "樱桃谷鸭": "肉鸭", "麻鸭": "蛋鸭",
+                "鹅": "鹅", "火鸡": "火鸡", "鸽子": "鸽子", "鹌鹑": "鹌鹑"
+            }
+            animal_type_default = breed_mapping.get(selected_shed.breed, selected_shed.breed)
+            scale_default = selected_shed.scale
+        else:
+            animal_type_default = "肉鸡"
+            scale_default = "中规模(1000-10000只)"
+        
         # 动物种类
         animal_type = st.selectbox(
             "🐔 动物种类",
-            ["肉鸡", "蛋鸡", "种鸡", "肉鸭", "蛋鸭", "鹅", "火鸡", "鸽子", "鹌鹑"]
+            ["肉鸡", "蛋鸡", "种鸡", "肉鸭", "蛋鸭", "鹅", "火鸡", "鸽子", "鹌鹑"],
+            index=["肉鸡", "蛋鸡", "种鸡", "肉鸭", "蛋鸭", "鹅", "火鸡", "鸽子", "鹌鹑"].index(animal_type_default)
         )
         
         # 日龄/养殖阶段
@@ -416,6 +473,13 @@ elif page == 'recommend':
             value=True if "蛋鸡" in animal_type or "蛋鸭" in animal_type else False
         )
         
+        # 养殖规模
+        farm_scale = st.selectbox(
+            "📐 养殖规模",
+            ["小规模(1000只以下)", "中规模(1000-10000只)", "大规模(10000只以上)"],
+            index=["小规模(1000只以下)", "中规模(1000-10000只)", "大规模(10000只以上)"].index(scale_default)
+        )
+        
         # 提交按钮
         submitted = st.form_submit_button("🔍 获取用药推荐", use_container_width=True)
     
@@ -435,11 +499,13 @@ elif page == 'recommend':
                         disease_type=disease_type,
                         usage=usage,
                         egg_period_safe=egg_period_safe,
-                        farm_scale="中规模(1000-10000只)"
+                        farm_scale=farm_scale
                     )
                     
                     st.session_state.recommendation_result = result
                     st.session_state.show_results = True
+                    st.session_state.selected_shed = selected_shed
+                    st.session_state.selected_farmer = selected_farmer
                     
                 except Exception as e:
                     st.error(f"推荐出错: {str(e)}")
@@ -447,13 +513,26 @@ elif page == 'recommend':
     # 显示推荐结果
     if st.session_state.get('show_results', False) and st.session_state.recommendation_result:
         result = st.session_state.recommendation_result
+        selected_shed = st.session_state.get('selected_shed')
+        selected_farmer = st.session_state.get('selected_farmer')
         
         st.markdown("---")
         st.subheader("📊 病情分析")
         
         analysis = result['input_analysis']
+        
+        profile_info = ""
+        if selected_farmer:
+            profile_info = f"<p><b>养殖户:</b> {selected_farmer.name}（养殖{selected_farmer.farming_years}年）</p>"
+        
+        shed_info = ""
+        if selected_shed:
+            shed_info = f"<p><b>棚舍:</b> {selected_shed.name} | <b>品种:</b> {selected_shed.breed}</p>"
+        
         st.markdown(f"""
         <div class="mobile-card">
+            {profile_info}
+            {shed_info}
             <p><b>症状:</b> {analysis['symptom']}</p>
             <p><b>可能疾病:</b> {', '.join(analysis['possible_diseases'])}</p>
             <p><b>动物:</b> {analysis['animal_type']} | <b>阶段:</b> {analysis['age_stage']}</p>
@@ -505,7 +584,7 @@ elif page == 'recommend':
                         st.write(f"**价格:** ¥{drug.get('price', 0):.1f}")
                         egg_status = "✅ 产蛋期可用" if drug.get('egg_period_safe', True) else "❌ 产蛋期禁用"
                         st.write(f"**产蛋期:** {egg_status}")
-                        st.write(f"** 推荐理由:** {rec.get('reason', '')}")
+                        st.write(f"**推荐理由:** {rec.get('reason', '')}")
         
         # 组合方案推荐
         st.markdown("---")
@@ -534,7 +613,7 @@ elif page == 'recommend':
                     else:
                         compliance_badge = (
                             "<span class='info-tag' style='background:#e8f5e9;color:#2e7d32;'>"
-                            f"✅ 类型合规（中兽药 {tcm_count} + 中兽药 {tcm_count}）</span>"
+                            f"✅ 类型合规</span>"
                         )
                 else:
                     compliance_badge = (
@@ -651,10 +730,80 @@ elif page == 'recommend':
                             st.write(f"  - **产蛋期:** {egg_status}")
                             st.write("")
         
+        # 环境调整建议
+        st.markdown("---")
+        st.subheader("🌡️ 环境调整建议")
+        st.info("💡 根据当前病症和棚舍环境信息，制定科学的环境调整方案")
+        
+        try:
+            env_engine = get_environment_adjustment_engine()
+            
+            shed_env = None
+            if selected_shed:
+                shed_env = ShedEnvironment(
+                    temperature=selected_shed.temperature,
+                    humidity=selected_shed.humidity,
+                    ventilation_status=selected_shed.ventilation_status,
+                    stocking_density=selected_shed.stocking_density,
+                    cleanliness_level=selected_shed.cleanliness_level,
+                    ammonia_level=selected_shed.ammonia_level,
+                    lighting_hours=selected_shed.lighting_hours
+                )
+            
+            diseases = analysis['possible_diseases']
+            adjustments = env_engine.generate_comprehensive_adjustments(diseases, shed_env=shed_env, age_stage=age_stage)
+            
+            if adjustments:
+                for adj in adjustments:
+                    with st.expander(f"🔧 {adj.category} - {adj.title}", expanded=True):
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.markdown(f"**当前状态:** {adj.current_value}")
+                        with col2:
+                            st.markdown(f"**目标状态:** <span style='color: #2e7d32; font-weight: bold;'>{adj.target_value}</span>", unsafe_allow_html=True)
+                        
+                        st.markdown("**调整步骤:**")
+                        for i, step in enumerate(adj.adjustment_steps, 1):
+                            st.markdown(f"{i}. {step}")
+                        
+                        st.markdown(f"**预期效果:** {adj.expected_effect}")
+                        
+                        if adj.precautions:
+                            st.markdown("**注意事项:**")
+                            for precaution in adj.precautions:
+                                st.markdown(f"- ⚠️ {precaution}")
+            else:
+                st.info("当前病症暂无特定环境调整建议，请参考常规饲养管理")
+        except Exception as e:
+            st.info(f"环境调整建议加载中... ({str(e)})")
+        
+        # 兽医诊疗关键事项
+        st.markdown("---")
+        st.subheader("📋 兽医诊疗关键事项")
+        st.info("💡 根据病症同步整合的专业建议")
+        
+        summary_points = get_summary_points()
+        st.markdown("### 🎯 核心要点")
+        for point in summary_points:
+            st.markdown(f"• {point}")
+        
+        key_matters = get_key_matters()
+        for matter in key_matters:
+            with st.expander(f"📌 {matter['title']}"):
+                for item in matter['items']:
+                    st.markdown(f"""
+                    <div style="margin-bottom: 8px; padding-left: 15px; border-left: 2px solid #90caf9;">
+                        <div style="font-weight: bold; color: #1565c0; margin-bottom: 5px;">• {item['title']}</div>
+                        <div style="color: #424242; font-size: 0.9em;">{item['content']}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+        
         # 清除结果按钮
         if st.button("🔄 重新推荐", use_container_width=True):
             st.session_state.show_results = False
             st.session_state.recommendation_result = None
+            st.session_state.selected_shed = None
+            st.session_state.selected_farmer = None
             st.rerun()
 
 # ==================== 产品目录页面 ====================
