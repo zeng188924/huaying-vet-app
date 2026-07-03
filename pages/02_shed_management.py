@@ -2,7 +2,9 @@ import streamlit as st
 import sys
 import os
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(_root, 'src'))
+sys.path.insert(0, os.path.join(_root, 'src', 'utils'))
 
 from utils.data_manager import (
     create_shed, get_sheds_by_farmer, get_shed, update_shed, delete_shed,

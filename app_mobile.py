@@ -8,6 +8,13 @@ import pandas as pd
 import sys
 import os
 
+# 将 src 及子包加入模块搜索路径，确保核心模块可被导入
+_root = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(_root, 'src'))
+sys.path.insert(0, os.path.join(_root, 'src', 'core'))
+sys.path.insert(0, os.path.join(_root, 'src', 'admin'))
+sys.path.insert(0, os.path.join(_root, 'src', 'utils'))
+
 # 设置页面配置 - 移动端优化
 st.set_page_config(
     page_title="华英兽医宝（专家版）",
@@ -39,12 +46,12 @@ from diagnosis_engine import (
 @st.cache_resource
 def get_recommender():
     # 优先使用JSON文件，数据更新更可靠
-    json_path = "huaying_products_full.json"
+    json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
     if os.path.exists(json_path):
         recommender = create_recommender(json_path)
     else:
         # 回退到Excel文件
-        excel_path = "合并产品信息表修改后.xlsx"
+        excel_path = os.path.join(_root, 'assets', 'data_sources', '合并产品信息表修改后.xlsx')
         recommender = create_recommender(excel_path)
     return recommender
 
@@ -1128,7 +1135,7 @@ elif page == 'catalog':
     import json
     import os
     
-    DB_PATH = "huaying_products_full.json"
+    DB_PATH = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
     
     def load_products():
         if os.path.exists(DB_PATH):
@@ -1422,7 +1429,7 @@ elif page == 'admin':
         <p>增删改查 · 多媒体上传 · 配伍校验</p>
     </div>
     """, unsafe_allow_html=True)
-    render_admin_tab("huaying_products_full.json")
+    render_admin_tab()
 
 # ==================== 养殖户档案管理页面 ====================
 elif page == 'profile':

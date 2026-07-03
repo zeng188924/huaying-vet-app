@@ -1,5 +1,13 @@
 import streamlit as st
+import sys
 import os
+
+# 将 src 及子包加入模块搜索路径，确保核心模块可被导入
+_root = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(_root, 'src'))
+sys.path.insert(0, os.path.join(_root, 'src', 'core'))
+sys.path.insert(0, os.path.join(_root, 'src', 'admin'))
+sys.path.insert(0, os.path.join(_root, 'src', 'utils'))
 
 st.set_page_config(
     page_title="华英兽医宝（专家版）",
@@ -500,7 +508,7 @@ def show_recommend():
 
     @st.cache_resource
     def get_recommender_cache():
-        json_path = "huaying_products_full.json"
+        json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
         recommender = create_recommender(json_path)
         return recommender
 
@@ -943,7 +951,7 @@ def show_product_catalog():
     import os
     import uuid
 
-    DB_PATH = "huaying_products_full.json"
+    DB_PATH = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
 
     def load_products():
         if os.path.exists(DB_PATH):

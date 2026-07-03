@@ -3,7 +3,10 @@ import pandas as pd
 import sys
 import os
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(_root, 'src'))
+sys.path.insert(0, os.path.join(_root, 'src', 'core'))
+sys.path.insert(0, os.path.join(_root, 'src', 'utils'))
 
 from drug_recommendation_system_full import create_recommender, quick_recommend, DrugDatabase
 from disease_knowledge import get_disease_knowledge_base
@@ -20,7 +23,7 @@ st.set_page_config(
 
 @st.cache_resource
 def get_recommender():
-    json_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'huaying_products_full.json')
+    json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
     recommender = create_recommender(json_path)
     return recommender
 
@@ -212,7 +215,7 @@ with st.sidebar:
     st.header("🚫 耐药性药物排除")
     
     all_drugs = []
-    json_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'huaying_products_full.json')
+    json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
     if os.path.exists(json_path):
         db = DrugDatabase(json_path)
         all_drugs = db.get_all_drugs()

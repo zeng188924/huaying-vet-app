@@ -10,8 +10,11 @@ venv/
 *.swo
 .DS_Store
 
+# 运行时生成的敏感密钥
+data/config/encryption_key.key
+
 # 上传的多媒体文件
-uploaded_media/
+data/uploaded_media/
 *.mp4
 *.mov
 *.avi
