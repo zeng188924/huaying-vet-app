@@ -485,7 +485,7 @@ class SymptomDiseaseMapper:
             # 全身症状
             "精神沉郁": {"diseases": ["新城疫", "禽霍乱", "大肠杆菌病", "沙门氏菌病"], "type": "MIXED"},
             "羽毛松乱": {"diseases": ["新城疫", "禽霍乱", "球虫病"], "type": "MIXED"},
-            "掉毛很厉害": {"diseases": ["蛔虫病", "绦虫病", "滑液囊支原体", "营养代谢病"], "type": "PARASITIC"},
+            "掉毛厉害": {"diseases": ["蛔虫病", "绦虫病", "滑液囊支原体", "营养代谢病"], "type": "PARASITIC"},
             "掉毛": {"diseases": ["蛔虫病", "绦虫病", "滑液囊支原体", "营养代谢病"], "type": "PARASITIC"},
             "脱毛": {"diseases": ["蛔虫病", "绦虫病", "滑液囊支原体", "营养代谢病"], "type": "PARASITIC"},
             "缩颈闭眼": {"diseases": ["新城疫", "禽霍乱", "大肠杆菌病"], "type": "MIXED"},

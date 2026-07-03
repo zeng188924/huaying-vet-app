@@ -82,7 +82,7 @@ class SymptomBasedDiagnosisEngine:
         # 外观症状
         appearance_symptoms = [
             ("feather_ruffled", "羽毛松乱", "外观", 2.0, "羽毛蓬松、杂乱无光泽"),
-            ("feather_loss_severe", "掉毛很厉害", "外观", 2.5, "羽毛严重脱落、掉毛明显增多，常见于寄生虫感染、营养缺乏或皮肤病变"),
+            ("feather_loss_severe", "掉毛厉害", "外观", 2.5, "羽毛严重脱落、掉毛明显增多，常见于寄生虫感染、营养缺乏或皮肤病变"),
             ("comb_pale", "冠髯苍白", "外观", 3.0, "鸡冠和肉髯颜色变浅、发白"),
             ("comb_cyanosis", "冠髯发绀", "外观", 3.0, "鸡冠和肉髯呈青紫色"),
             ("eyes_closed", "闭眼缩颈", "外观", 2.5, "闭眼、颈部收缩、不愿活动"),
