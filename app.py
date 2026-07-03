@@ -9,6 +9,27 @@ sys.path.insert(0, os.path.join(_root, 'src', 'core'))
 sys.path.insert(0, os.path.join(_root, 'src', 'admin'))
 sys.path.insert(0, os.path.join(_root, 'src', 'utils'))
 
+from collections import OrderedDict
+
+try:
+    from product_utils import (
+        group_products,
+        get_base_display_name,
+        normalize_group_key,
+        render_variant_table_html,
+        collect_variant_images,
+        format_indications,
+    )
+    _PU_OK = True
+except Exception:
+    group_products = None
+    get_base_display_name = None
+    normalize_group_key = None
+    render_variant_table_html = None
+    collect_variant_images = None
+    format_indications = None
+    _PU_OK = False
+
 st.set_page_config(
     page_title="华英兽医宝（专家版）",
     page_icon="💊",
@@ -1025,61 +1046,76 @@ def show_product_catalog():
         if source_filter != "全部":
             filtered_products = [p for p in products if p.get('source', '') == source_filter]
         
-        st.write(f"**共 {len(filtered_products)} 个产品**")
-        
-        for product in filtered_products:
-            name = product.get('name', '')
-            if not name or name == '/':
+        groups = group_products(filtered_products) if _PU_OK and group_products else OrderedDict(
+            (p.get('id'), [p]) for p in filtered_products
+        )
+        st.write(f"**共 {len(groups)} 个产品（{sum(len(v) for v in groups.values())} 条规格）**")
+
+        for gid, variants in groups.items():
+            primary = variants[0]
+            base_name = get_base_display_name(variants) if _PU_OK and get_base_display_name else primary.get('name', '')
+            if not base_name or base_name == '/':
                 continue
-            
-            content = product.get('content', '')
-            spec = product.get('spec', '')
-            water = product.get('water', '')
-            price = product.get('price', 0)
-            category = product.get('category', '')
-            source = product.get('source', '')
-            brand_name = product.get('brand_name', '')
-            efficacy = product.get('indications', [])
-            usage = product.get('usage_info', '')
-            remark = product.get('remark', '')
-            retail_price = product.get('retail_price', '')
-            egg_period_safe = product.get('egg_period_safe', True)
-            
-            if isinstance(efficacy, list):
-                efficacy = ', '.join(efficacy)
-            
+            is_multi = len(variants) > 1
+            content = primary.get('content', '')
+            category = primary.get('category', '')
+            source = primary.get('source', '')
+            brand_name = primary.get('brand_name', '')
+            efficacy = format_indications(primary.get('indications', [])) if _PU_OK and format_indications else ""
+            usage = primary.get('usage_info', '')
+            remark = primary.get('remark', '')
+            retail_price = primary.get('retail_price', '')
+            egg_period_safe = primary.get('egg_period_safe', True)
+
             with st.container():
+                badge = f"<span style='color:#1976d2; font-weight:bold;'>📦 {len(variants)} 个规格</span>" if is_multi else ""
                 st.markdown(f"""
                 <div class="catalog-card">
-                    <h3>{name}</h3>
+                    <h3>{base_name} {badge}</h3>
                     <div class="catalog-row">
-                        <span class="catalog-item">💰 价格: ¥{price}</span>
                         <span class="catalog-item">📦 成分: {content}</span>
-                        <span class="catalog-item">📐 规格: {spec}</span>
-                        <span class="catalog-item">💧 兑水量: {water}</span>
                         <span class="catalog-item">🏷️ 类别: {category}</span>
                         <span class="catalog-item">📦 来源: {source}</span>
                     </div>
                     {f'<div class="catalog-row"><span class="catalog-item">🏷️ 商品名: {brand_name}</span></div>' if brand_name and brand_name != '/' else ''}
                     {f'<div class="catalog-row"><span class="catalog-item">💰 建议零售价: ¥{retail_price}</span></div>' if retail_price and retail_price != '/' else ''}
-                    {f'<div style="margin-top: 10px;"><strong>功效:</strong> {efficacy}</div>' if efficacy else ''}
+                    {f'<div style="margin-top: 10px;"><strong>适应症:</strong> {efficacy}</div>' if efficacy else ''}
                     {f'<div style="margin-top: 5px;"><strong>用法用量:</strong> {usage}</div>' if usage else ''}
                     {f'<div style="margin-top: 5px;"><strong>备注:</strong> {remark}</div>' if remark else ''}
                     {f'<div style="margin-top: 5px;">{"✅ 产蛋期可用" if egg_period_safe else "❌ 产蛋期禁用"}</div>'}
                 </div>
                 """, unsafe_allow_html=True)
-                
-                col_edit, col_delete = st.columns([1, 5])
-                with col_edit:
-                    if st.button(f"编辑", key=f"edit_prod_{product.get('id', '')}", use_container_width=True):
-                        st.session_state.editing_product = product
-                        st.rerun()
-                with col_delete:
-                    if st.button(f"删除", key=f"delete_prod_{product.get('id', '')}", use_container_width=True, type="secondary"):
-                        products = [p for p in products if p.get('id') != product.get('id')]
-                        save_products(products)
-                        st.success(f"已删除产品: {name}")
-                        st.rerun()
+
+                with st.expander("📋 查看规格详情 / 包装图片"):
+                    if _PU_OK and render_variant_table_html:
+                        st.markdown(render_variant_table_html(variants), unsafe_allow_html=True)
+                    else:
+                        for v in variants:
+                            st.write(f"- {v.get('spec')} | ¥{v.get('price')} | 库存 {v.get('stock', 0)}")
+
+                    images = collect_variant_images(variants) if _PU_OK and collect_variant_images else []
+                    if images:
+                        st.markdown("**包装图片：**")
+                        img_cols = st.columns(min(len(images), 4))
+                        for idx, img in enumerate(images):
+                            p = img.get("path", "")
+                            if p and os.path.exists(p):
+                                with img_cols[idx % 4]:
+                                    st.image(p, caption=img.get("filename", ""))
+
+                    st.markdown("**操作：**")
+                    for v in variants:
+                        c1, c2 = st.columns([1, 5])
+                        with c1:
+                            if st.button("编辑", key=f"edit_prod_{v.get('id', '')}", use_container_width=True):
+                                st.session_state.editing_product = v
+                                st.rerun()
+                        with c2:
+                            if st.button(f"删除 {v.get('spec', v.get('name', ''))}", key=f"delete_prod_{v.get('id', '')}", use_container_width=True, type="secondary"):
+                                products = [p for p in products if p.get('id') != v.get('id')]
+                                save_products(products)
+                                st.success(f"已删除产品: {v.get('name', '')}")
+                                st.rerun()
 
     with tab_add:
         st.markdown("### ➕ 新增产品")
@@ -1124,11 +1160,25 @@ def show_product_catalog():
                                      placeholder="如：100g/袋*100袋/箱", key="prod_spec")
                 water = st.text_input("兑水量", value=product.get('water', '') if product else "", 
                                       placeholder="如：400斤", key="prod_water")
+                
+                group_default = product.get('product_group_id', '') if product else ''
+                if not group_default and _PU_OK and normalize_group_key and product:
+                    group_default = normalize_group_key(product.get('name', ''), product.get('main_component', ''))
+                product_group_id = st.text_input(
+                    "产品分组 ID（同产品不同规格保持一致）",
+                    value=group_default,
+                    placeholder="如：硫酸黏菌素预混剂",
+                    key="prod_group_id",
+                )
             
             with col2:
                 price = st.number_input("价格 *", min_value=0.0, max_value=100000.0, 
                                         value=float(product.get('price', 0)) if product else 0.0,
                                         step=0.01, key="prod_price")
+                
+                stock = st.number_input("库存数量", min_value=0, max_value=99999999,
+                                        value=int(product.get('stock', 0)) if product else 0,
+                                        step=1, key="prod_stock")
                 
                 cat = product.get('category', CATEGORY_OPTIONS[0]) if product else CATEGORY_OPTIONS[0]
                 category = st.selectbox("类别", CATEGORY_OPTIONS,
@@ -1192,6 +1242,7 @@ def show_product_catalog():
                             "spec": spec.strip(),
                             "water": water.strip(),
                             "price": price,
+                            "stock": int(stock),
                             "category": category,
                             "source": source,
                             "disease_types": disease_types,
@@ -1201,7 +1252,10 @@ def show_product_catalog():
                             "indications": efficacy_list,
                             "remark": remark.strip(),
                             "retail_price": retail_price.strip(),
-                            "product_name": name.strip()
+                            "product_name": name.strip(),
+                            "product_group_id": product_group_id.strip() if product_group_id.strip() else normalize_group_key(name.strip(), main_component.strip()) if _PU_OK and normalize_group_key else product_id.strip(),
+                            "media": product.get("media", []) if product else [],
+                            "spec_media": product.get("spec_media", []) if product else [],
                         }
                         
                         if is_edit:
@@ -1235,36 +1289,60 @@ def show_product_catalog():
                 or ql in str(p.get("content", "")).lower()
             ]
             
-            st.write(f"**搜索结果：共 {len(results)} 个产品**")
+            groups = group_products(results) if _PU_OK and group_products else OrderedDict(
+                (p.get('id'), [p]) for p in results
+            )
+            st.write(f"**搜索结果：共 {len(groups)} 个产品（{sum(len(v) for v in groups.values())} 条规格）**")
             
-            for product in results:
-                name = product.get('name', '')
-                price = product.get('price', 0)
-                category = product.get('category', '')
-                source = product.get('source', '')
+            for gid, variants in groups.items():
+                primary = variants[0]
+                base_name = get_base_display_name(variants) if _PU_OK and get_base_display_name else primary.get('name', '')
+                is_multi = len(variants) > 1
+                category = primary.get('category', '')
+                source = primary.get('source', '')
+                efficacy = format_indications(primary.get('indications', [])) if _PU_OK and format_indications else ""
                 
+                badge = f"<span style='color:#1976d2; font-weight:bold;'>📦 {len(variants)} 个规格</span>" if is_multi else ""
                 st.markdown(f"""
                 <div class="catalog-card">
-                    <h3>{name}</h3>
+                    <h3>{base_name} {badge}</h3>
                     <div class="catalog-row">
-                        <span class="catalog-item">💰 价格: ¥{price}</span>
                         <span class="catalog-item">🏷️ 类别: {category}</span>
                         <span class="catalog-item">📦 来源: {source}</span>
                     </div>
+                    {f'<div style="margin-top: 10px;"><strong>适应症:</strong> {efficacy}</div>' if efficacy else ''}
                 </div>
                 """, unsafe_allow_html=True)
                 
-                col_edit, col_delete = st.columns([1, 5])
-                with col_edit:
-                    if st.button(f"编辑", key=f"search_edit_{product.get('id', '')}", use_container_width=True):
-                        st.session_state.editing_product = product
-                        st.rerun()
-                with col_delete:
-                    if st.button(f"删除", key=f"search_delete_{product.get('id', '')}", use_container_width=True, type="secondary"):
-                        products = [p for p in products if p.get('id') != product.get('id')]
-                        save_products(products)
-                        st.success(f"已删除产品: {name}")
-                        st.rerun()
+                with st.expander("📋 查看规格详情 / 包装图片"):
+                    if _PU_OK and render_variant_table_html:
+                        st.markdown(render_variant_table_html(variants), unsafe_allow_html=True)
+                    else:
+                        for v in variants:
+                            st.write(f"- {v.get('spec')} | ¥{v.get('price')} | 库存 {v.get('stock', 0)}")
+                    
+                    images = collect_variant_images(variants) if _PU_OK and collect_variant_images else []
+                    if images:
+                        st.markdown("**包装图片：**")
+                        img_cols = st.columns(min(len(images), 4))
+                        for idx, img in enumerate(images):
+                            p = img.get("path", "")
+                            if p and os.path.exists(p):
+                                with img_cols[idx % 4]:
+                                    st.image(p, caption=img.get("filename", ""))
+                    
+                    for v in variants:
+                        c1, c2 = st.columns([1, 5])
+                        with c1:
+                            if st.button("编辑", key=f"search_edit_{v.get('id', '')}", use_container_width=True):
+                                st.session_state.editing_product = v
+                                st.rerun()
+                        with c2:
+                            if st.button(f"删除 {v.get('spec', v.get('name', ''))}", key=f"search_delete_{v.get('id', '')}", use_container_width=True, type="secondary"):
+                                products = [p for p in products if p.get('id') != v.get('id')]
+                                save_products(products)
+                                st.success(f"已删除产品: {v.get('name', '')}")
+                                st.rerun()
             
             if not results:
                 st.info("未找到匹配的产品")

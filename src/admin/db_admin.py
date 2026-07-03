@@ -14,6 +14,7 @@ import uuid
 import shutil
 from datetime import datetime
 from typing import List, Dict, Optional
+from collections import OrderedDict
 
 import pandas as pd
 import streamlit as st
@@ -43,6 +44,27 @@ except Exception:
     is_format_supported = None
     is_extraction_available = None
     _EXTRACTOR_OK = False
+
+try:
+    from product_utils import (
+        group_products,
+        get_base_display_name,
+        normalize_group_key,
+        render_variant_table_html,
+        collect_variant_images,
+        format_indications,
+        ensure_stock_field,
+    )
+    _PU_OK = True
+except Exception:
+    group_products = None
+    get_base_display_name = None
+    normalize_group_key = None
+    render_variant_table_html = None
+    collect_variant_images = None
+    format_indications = None
+    ensure_stock_field = None
+    _PU_OK = False
 
 
 # ===================== 常量配置 =====================
@@ -352,11 +374,13 @@ def _field_name_mapping() -> Dict[str, str]:
         "main_component": "主要成分",
         "spec": "包装规格",
         "price": "价格",
+        "stock": "库存数量",
         "category": "类别",
         "usage_info": "用法用量",
         "water": "兑水量",
         "indications": "适应症",
         "timing": "时机",
+        "product_group_id": "产品分组ID",
     }
 
 
@@ -399,15 +423,24 @@ def _render_manual_text_input(key_prefix: str, extract_key: str):
                 st.warning("请先粘贴识别文本。")
 
 
-def _drug_form(prefix: str, initial: Optional[Dict] = None, extracted: Optional[Dict] = None) -> Dict:
+def _drug_form(prefix: str, initial: Optional[Dict] = None, extracted: Optional[Dict] = None,
+               all_products: Optional[List[Dict]] = None) -> Dict:
     initial = initial or {}
     extracted = extracted or {}
-    
+    all_products = all_products or []
+
     def get_val(field: str, default=""):
         if field in extracted and extracted[field]:
             return extracted[field]
         return initial.get(field, default)
-    
+
+    # 已有分组选项，用于快速选择
+    existing_groups = sorted({
+        str(p.get("product_group_id", "")).strip()
+        for p in all_products
+        if str(p.get("product_group_id", "")).strip()
+    })
+
     c1, c2 = st.columns(2)
     with c1:
         drug_id = st.text_input("ID *", value=initial.get("id", ""), key=f"{prefix}_id")
@@ -422,6 +455,12 @@ def _drug_form(prefix: str, initial: Optional[Dict] = None, extracted: Optional[
             "价格 *", min_value=0.0, max_value=100000.0,
             value=float(price_val) if isinstance(price_val, (int, float)) else 0.0,
             step=0.1, key=f"{prefix}_price",
+        )
+        stock_val = get_val("stock", 0)
+        stock = st.number_input(
+            "库存数量", min_value=0, max_value=99999999,
+            value=int(stock_val) if isinstance(stock_val, (int, float)) else 0,
+            step=1, key=f"{prefix}_stock",
         )
         cat = get_val("category", CATEGORY_OPTIONS[0])
         category = st.selectbox(
@@ -447,6 +486,26 @@ def _drug_form(prefix: str, initial: Optional[Dict] = None, extracted: Optional[
         timing = st.text_input("时机", value=get_val("timing"), key=f"{prefix}_timing")
         usage_info = st.text_area("用法用量", value=get_val("usage_info"), key=f"{prefix}_usage")
 
+    # 产品分组：既支持手工输入，也支持下拉选择已有分组
+    group_default = str(initial.get("product_group_id", "")).strip()
+    if not group_default and normalize_group_key:
+        group_default = normalize_group_key(get_val("name"), get_val("main_component"))
+    c_g1, c_g2 = st.columns([2, 1])
+    with c_g1:
+        group_id = st.text_input(
+            "产品分组 ID（同产品不同规格请保持一致）",
+            value=group_default,
+            key=f"{prefix}_group_id",
+        )
+    with c_g2:
+        selected_existing = st.selectbox(
+            "或选择已有分组",
+            ["-- 不选择 --"] + existing_groups,
+            key=f"{prefix}_group_select",
+        )
+    if selected_existing and selected_existing != "-- 不选择 --":
+        group_id = selected_existing
+
     indications_default = get_val("indications", [])
     if isinstance(indications_default, list):
         indications_default = "、".join(indications_default)
@@ -470,6 +529,7 @@ def _drug_form(prefix: str, initial: Optional[Dict] = None, extracted: Optional[
         "spec": spec.strip(),
         "water": water.strip(),
         "price": price,
+        "stock": int(stock),
         "category": category,
         "source": source,
         "disease_types": disease_types,
@@ -477,6 +537,7 @@ def _drug_form(prefix: str, initial: Optional[Dict] = None, extracted: Optional[
         "timing": timing.strip(),
         "usage_info": usage_info.strip(),
         "indications": indications_str,
+        "product_group_id": group_id.strip(),
     }
 
 
@@ -487,29 +548,111 @@ def _normalize(rec: Dict) -> Dict:
     rec["content"] = rec.get("main_component", "")
     rec["product_name"] = rec.get("product_name") or rec.get("name", "")
     rec["egg_period_safe"] = _to_bool(rec.get("egg_period_safe", True))
+    # 规格相关字段
+    if "stock" not in rec or rec["stock"] is None:
+        rec["stock"] = 0
+    else:
+        try:
+            rec["stock"] = int(rec["stock"])
+        except (TypeError, ValueError):
+            rec["stock"] = 0
+    if "spec_media" not in rec:
+        rec["spec_media"] = []
+    if not rec.get("product_group_id") and normalize_group_key:
+        rec["product_group_id"] = normalize_group_key(
+            rec.get("name", ""), rec.get("main_component", "")
+        )
     return rec
 
 
-def _render_list(products: List[Dict]):
+def _render_list(products: List[Dict], json_path: str = DB_PATH):
     st.markdown("#### 📋 产品列表")
     q = st.text_input("🔍 搜索（名称/成分/类别/ID）", "")
+
+    groups = group_products(products) if _PU_OK and group_products else OrderedDict(
+        (p.get("id"), [p]) for p in products
+    )
+
     if q:
         ql = q.lower()
-        products = [
-            p for p in products
-            if ql in str(p.get("name", "")).lower()
-            or ql in str(p.get("main_component", "")).lower()
-            or ql in str(p.get("category", "")).lower()
-            or ql in str(p.get("id", "")).lower()
-        ]
-    st.caption(f"显示 {len(products)} 条")
-    if not products:
+        filtered_groups = OrderedDict()
+        for gid, variants in groups.items():
+            if any(
+                ql in str(v.get("name", "")).lower()
+                or ql in str(v.get("main_component", "")).lower()
+                or ql in str(v.get("category", "")).lower()
+                or ql in str(v.get("id", "")).lower()
+                for v in variants
+            ):
+                filtered_groups[gid] = variants
+        groups = filtered_groups
+
+    st.caption(f"显示 {len(groups)} 个产品（共 {sum(len(v) for v in groups.values())} 条规格）")
+    if not groups:
         st.info("无数据")
         return
-    df = pd.DataFrame(products)
-    show_cols = [c for c in ["id", "name", "main_component", "category", "spec",
-                              "price", "source", "egg_period_safe"] if c in df.columns]
-    st.dataframe(df[show_cols], use_container_width=True, height=420)
+
+    for gid, variants in groups.items():
+        primary = variants[0]
+        is_multi = len(variants) > 1
+        base_name = get_base_display_name(variants) if _PU_OK and get_base_display_name else primary.get("name", "")
+        category = primary.get("category", "")
+        source = primary.get("source", "")
+        egg_safe = primary.get("egg_period_safe", True)
+        usage = primary.get("usage_info", "")
+        indications = format_indications(primary.get("indications", [])) if _PU_OK and format_indications else ""
+
+        with st.container(border=True):
+            cols = st.columns([4, 1])
+            with cols[0]:
+                st.markdown(f"**{base_name}**")
+            with cols[1]:
+                if is_multi:
+                    st.markdown(f"<span style='color:#1976d2'>📦 {len(variants)} 个规格</span>", unsafe_allow_html=True)
+
+            info_items = [
+                f"🏷️ 类别: {category}",
+                f"📦 来源: {source}",
+                "✅ 产蛋期可用" if egg_safe else "❌ 产蛋期禁用",
+            ]
+            st.caption(" · ".join(info_items))
+
+            if indications:
+                st.markdown(f"**适应症：** {indications}")
+            if usage:
+                st.markdown(f"**用法用量：** {usage}")
+
+            with st.expander("📋 查看规格详情 / 包装图片"):
+                if _PU_OK and render_variant_table_html:
+                    st.markdown(render_variant_table_html(variants), unsafe_allow_html=True)
+                else:
+                    for v in variants:
+                        st.write(f"- {v.get('spec')} | ¥{v.get('price')} | 库存 {v.get('stock', 0)}")
+
+                images = collect_variant_images(variants) if _PU_OK and collect_variant_images else []
+                if images:
+                    st.markdown("**包装图片：**")
+                    img_cols = st.columns(min(len(images), 4))
+                    for idx, img in enumerate(images):
+                        p = img.get("path", "")
+                        if p and os.path.exists(p):
+                            with img_cols[idx % 4]:
+                                st.image(p, caption=img.get("filename", ""))
+
+                st.markdown("**操作：**")
+                for v in variants:
+                    c1, c2 = st.columns([1, 5])
+                    with c1:
+                        if st.button("编辑", key=f"list_edit_{v.get('id', '')}", use_container_width=True):
+                            st.session_state["admin_op"] = "edit"
+                            st.session_state["edit_target_id"] = v.get("id", "")
+                            st.rerun()
+                    with c2:
+                        if st.button(f"删除 {v.get('spec', v.get('name', ''))}", key=f"list_del_{v.get('id', '')}", use_container_width=True, type="secondary"):
+                            products[:] = [p for p in products if p.get("id") != v.get("id")]
+                            save_db(products, json_path)
+                            st.success(f"已删除 {v.get('name', '')}")
+                            st.rerun()
 
 
 def _render_add(products: List[Dict], json_path: str):
@@ -541,7 +684,7 @@ def _render_add(products: List[Dict], json_path: str):
 
     # ========== 第二步：渲染表单（使用已识别的字段作为默认值） ==========
     with st.form("add_drug_form", clear_on_submit=False):
-        rec = _drug_form("add", extracted=st.session_state.get(extract_key, {}))
+        rec = _drug_form("add", extracted=st.session_state.get(extract_key, {}), all_products=products)
         submit = st.form_submit_button("✅ 保存", use_container_width=True)
         if submit:
             existing = {p.get("id", "") for p in products}
@@ -583,10 +726,22 @@ def _render_edit(products: List[Dict], json_path: str):
         st.info("暂无药物可编辑")
         return
 
-    options = {f"{p.get('id','')} - {p.get('name','')}": i for i, p in enumerate(products)}
-    sel = st.selectbox("选择要编辑的药物", list(options.keys()))
-    idx = options[sel]
-    target = products[idx]
+    target_id = st.session_state.get("edit_target_id")
+    if target_id:
+        try:
+            idx = next(i for i, p in enumerate(products) if p.get("id") == target_id)
+        except StopIteration:
+            st.error("要编辑的药物不存在，已回到列表")
+            st.session_state["admin_op"] = "list"
+            st.session_state["edit_target_id"] = None
+            st.rerun()
+            return
+        target = products[idx]
+    else:
+        options = {f"{p.get('id','')} - {p.get('name','')}": i for i, p in enumerate(products)}
+        sel = st.selectbox("选择要编辑的药物", list(options.keys()))
+        idx = options[sel]
+        target = products[idx]
 
     extract_key = f"extracted_edit_{target.get('id', idx)}"
     if extract_key not in st.session_state:
@@ -595,6 +750,15 @@ def _render_edit(products: List[Dict], json_path: str):
     if st.button("🔄 重置提取内容", key=f"reset_extract_edit_{target.get('id', idx)}"):
         st.session_state[extract_key] = {}
         st.rerun()
+
+    # 显示同组其它规格
+    if _PU_OK and group_products:
+        groups = group_products(products)
+        gid = target.get("product_group_id", target.get("id"))
+        siblings = [v for v in groups.get(gid, []) if v.get("id") != target.get("id")]
+        if siblings:
+            with st.expander("📦 同产品其它规格"):
+                st.markdown(render_variant_table_html(siblings), unsafe_allow_html=True)
 
     # ========== 第一步：资料识别（必须在表单渲染之前完成，否则无法回填） ==========
     st.markdown("##### 📎 上传补充资料")
@@ -613,7 +777,7 @@ def _render_edit(products: List[Dict], json_path: str):
 
     # ========== 第二步：渲染表单（使用已识别的字段覆盖原有字段） ==========
     with st.form(f"edit_form_{target.get('id', idx)}"):
-        rec = _drug_form(f"edit_{target.get('id', idx)}", target, extracted=st.session_state.get(extract_key, {}))
+        rec = _drug_form(f"edit_{target.get('id', idx)}", target, extracted=st.session_state.get(extract_key, {}), all_products=products)
         rec["id"] = target.get("id", "")
         c1, c2 = st.columns(2)
         with c1:
@@ -622,6 +786,7 @@ def _render_edit(products: List[Dict], json_path: str):
             cancel = st.form_submit_button("❌ 取消", use_container_width=True)
         if cancel:
             st.session_state["admin_op"] = "list"
+            st.session_state["edit_target_id"] = None
             st.session_state[extract_key] = {}
             st.rerun()
         if save_btn:
@@ -634,11 +799,13 @@ def _render_edit(products: List[Dict], json_path: str):
                 rec = _normalize(rec)
                 rec["id"] = target.get("id", "")
                 rec["media"] = target.get("media", [])
+                rec["spec_media"] = target.get("spec_media", [])
                 products[idx] = rec
                 save_db(products, json_path)
                 st.success(f"✅ 已更新 {rec['name']}")
                 st.cache_resource.clear()
                 st.session_state["admin_op"] = "list"
+                st.session_state["edit_target_id"] = None
                 st.session_state[extract_key] = {}
                 st.rerun()
 
@@ -774,7 +941,7 @@ def render_admin_tab(json_path: str = DB_PATH):
     c1.metric("产品总数", len(products))
     sources = {p.get("source", "未知") for p in products}
     c2.metric("数据来源数", len(sources))
-    media_count = sum(len(p.get("media") or []) for p in products)
+    media_count = sum(len(p.get("media") or []) + len(p.get("spec_media") or []) for p in products)
     c3.metric("已关联资料", media_count)
 
     st.divider()
@@ -800,7 +967,7 @@ def render_admin_tab(json_path: str = DB_PATH):
     elif op == "combo":
         _render_combo(products)
     else:
-        _render_list(products)
+        _render_list(products, json_path)
 
 
 # ===================== 实时调取辅助接口 =====================
