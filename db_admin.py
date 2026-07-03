@@ -29,6 +29,15 @@ except Exception:
     CompatibilityLevel = None
     _COMPAT_OK = False
 
+try:
+    from content_extractor import extract_product_info, is_format_supported, is_extraction_available
+    _EXTRACTOR_OK = True
+except Exception:
+    extract_product_info = None
+    is_format_supported = None
+    is_extraction_available = None
+    _EXTRACTOR_OK = False
+
 
 # ===================== 常量配置 =====================
 
@@ -266,27 +275,49 @@ def validate_combination(products: List[Dict]) -> Dict:
 
 # ===================== Streamlit 渲染 =====================
 
-def _media_uploader(key_prefix: str) -> List[Dict]:
+def _media_uploader(key_prefix: str, enable_extraction: bool = False) -> Dict:
+    extract_note = ""
+    if enable_extraction and _EXTRACTOR_OK:
+        extract_note = "（支持图片OCR识别和语音转文字）"
+    
     files = st.file_uploader(
-        "📎 上传图片 / 视频 / 文档（可多选）",
+        f"📎 上传图片 / 视频 / 文档（可多选）{extract_note}",
         type=sorted(ALLOWED_IMAGE | ALLOWED_VIDEO | ALLOWED_DOC),
         accept_multiple_files=True,
         key=f"{key_prefix}_uploader",
         help=f"单文件最大 {MAX_FILE_SIZE_MB}MB。图片：{', '.join(sorted(ALLOWED_IMAGE))}；"
              f"视频：{', '.join(sorted(ALLOWED_VIDEO))}；"
-             f"文档：{', '.join(sorted(ALLOWED_DOC))}",
+             f"文档：{', '.join(sorted(ALLOWED_DOC))}"
+             f"{extract_note}",
     )
-    saved: List[Dict] = []
+    
+    result = {
+        "saved_files": [],
+        "extracted_fields": {},
+    }
+    
     if files:
         for f in files:
             try:
                 meta = save_uploaded_file(f, sub_dir=key_prefix)
-                saved.append(meta)
+                result["saved_files"].append(meta)
+                
+                if enable_extraction and _EXTRACTOR_OK:
+                    ext = f.name.rsplit(".", 1)[-1].lower() if "." in f.name else ""
+                    if is_format_supported(ext):
+                        with st.spinner(f"🔍 正在识别 {f.name}..."):
+                            ext_result = extract_product_info(meta["path"], ext)
+                            if ext_result["success"]:
+                                for k, v in ext_result["parsed_fields"].items():
+                                    if k not in result["extracted_fields"] or not result["extracted_fields"][k]:
+                                        result["extracted_fields"][k] = v
+                                st.success(f"✅ 已从 {f.name} 提取信息")
             except Exception as e:
                 st.error(f"❌ {f.name}: {e}")
-        if saved:
-            st.success(f"✅ 已成功上传 {len(saved)} 个文件")
-            for m in saved:
+        
+        if result["saved_files"]:
+            st.success(f"✅ 已成功上传 {len(result['saved_files'])} 个文件")
+            for m in result["saved_files"]:
                 with st.expander(f"📎 {m['filename']}  ({m['size_kb']} KB, {m['media_type']})"):
                     if m["media_type"] == "image" and os.path.exists(m["path"]):
                         st.image(m["path"])
@@ -303,26 +334,35 @@ def _media_uploader(key_prefix: str) -> List[Dict]:
                                 )
                         except Exception:
                             pass
-    return saved
+    
+    return result
 
 
-def _drug_form(prefix: str, initial: Optional[Dict] = None) -> Dict:
+def _drug_form(prefix: str, initial: Optional[Dict] = None, extracted: Optional[Dict] = None) -> Dict:
     initial = initial or {}
+    extracted = extracted or {}
+    
+    def get_val(field: str, default=""):
+        if field in extracted and extracted[field]:
+            return extracted[field]
+        return initial.get(field, default)
+    
     c1, c2 = st.columns(2)
     with c1:
         drug_id = st.text_input("ID *", value=initial.get("id", ""), key=f"{prefix}_id")
-        name = st.text_input("产品名称 *", value=initial.get("name", ""), key=f"{prefix}_name")
-        brand_name = st.text_input("商品名", value=initial.get("brand_name", ""), key=f"{prefix}_brand")
-        main_component = st.text_input("主要成分 *", value=initial.get("main_component", ""), key=f"{prefix}_comp")
-        spec = st.text_input("包装规格 *", value=initial.get("spec", ""), key=f"{prefix}_spec")
-        water = st.text_input("兑水量", value=initial.get("water", ""), key=f"{prefix}_water")
+        name = st.text_input("产品名称 *", value=get_val("name"), key=f"{prefix}_name")
+        brand_name = st.text_input("商品名", value=get_val("brand_name"), key=f"{prefix}_brand")
+        main_component = st.text_input("主要成分 *", value=get_val("main_component"), key=f"{prefix}_comp")
+        spec = st.text_input("包装规格 *", value=get_val("spec"), key=f"{prefix}_spec")
+        water = st.text_input("兑水量", value=get_val("water"), key=f"{prefix}_water")
     with c2:
+        price_val = get_val("price", 0)
         price = st.number_input(
             "价格 *", min_value=0.0, max_value=100000.0,
-            value=float(initial.get("price", 0) or 0),
+            value=float(price_val) if isinstance(price_val, (int, float)) else 0.0,
             step=0.1, key=f"{prefix}_price",
         )
-        cat = initial.get("category", CATEGORY_OPTIONS[0])
+        cat = get_val("category", CATEGORY_OPTIONS[0])
         category = st.selectbox(
             "类别", CATEGORY_OPTIONS,
             index=CATEGORY_OPTIONS.index(cat) if cat in CATEGORY_OPTIONS else 0,
@@ -343,12 +383,18 @@ def _drug_form(prefix: str, initial: Optional[Dict] = None) -> Dict:
             "产蛋期可用", value=bool(initial.get("egg_period_safe", True)),
             key=f"{prefix}_egg",
         )
-        timing = st.text_input("时机", value=initial.get("timing", ""), key=f"{prefix}_timing")
-        usage_info = st.text_area("用法用量", value=initial.get("usage_info", ""), key=f"{prefix}_usage")
+        timing = st.text_input("时机", value=get_val("timing"), key=f"{prefix}_timing")
+        usage_info = st.text_area("用法用量", value=get_val("usage_info"), key=f"{prefix}_usage")
 
-    indications_default = initial.get("indications") or []
+    indications_default = get_val("indications", [])
     if isinstance(indications_default, list):
         indications_default = "、".join(indications_default)
+    elif initial.get("indications") and not indications_default:
+        init_ind = initial.get("indications")
+        if isinstance(init_ind, list):
+            indications_default = "、".join(init_ind)
+        else:
+            indications_default = str(init_ind)
     indications_str = st.text_input(
         "适应症（用 、,;； 分隔）",
         value=indications_default,
@@ -407,8 +453,17 @@ def _render_list(products: List[Dict]):
 
 def _render_add(products: List[Dict], json_path: str):
     st.markdown("#### ➕ 新增药物")
+    
+    extract_key = "extracted_add"
+    if extract_key not in st.session_state:
+        st.session_state[extract_key] = {}
+    
+    if st.button("🔄 重置提取内容", key="reset_extract_add"):
+        st.session_state[extract_key] = {}
+        st.rerun()
+    
     with st.form("add_drug_form", clear_on_submit=False):
-        rec = _drug_form("add")
+        rec = _drug_form("add", extracted=st.session_state.get(extract_key, {}))
         submit = st.form_submit_button("✅ 保存", use_container_width=True)
         if submit:
             existing = {p.get("id", "") for p in products}
@@ -436,14 +491,32 @@ def _render_add(products: List[Dict], json_path: str):
                     for c in warning_pairs:
                         st.write(f"  - {c['drug_a']} + {c['drug_b']}（{c['level']}）")
                 st.cache_resource.clear()
+                st.session_state[extract_key] = {}
 
     st.markdown("##### 📎 附加资料（图片/视频/文档）")
-    st.caption("提示：新增模式下附件会暂存到 `uploaded_media/add_media/`，"
-                "保存药物时如需关联附件，请先保存药物后到'编辑'中再次上传。")
-    _media_uploader("add_media")
+    st.caption("提示：上传图片或语音文件时，系统会自动识别并提取产品信息，填充到表单中。")
+    
+    if not _EXTRACTOR_OK:
+        st.info("💡 内容提取模块未加载，如需OCR识别功能请安装 pytesseract、speech_recognition 等依赖")
+    
+    upload_result = _media_uploader("add_media", enable_extraction=True)
+    
+    if upload_result.get("extracted_fields"):
+        st.session_state[extract_key] = upload_result["extracted_fields"]
+        st.info("📝 已提取的产品信息：")
+        field_names = {
+            "name": "产品名称", "main_component": "主要成分", "spec": "包装规格",
+            "price": "价格", "category": "类别", "usage_info": "用法用量",
+            "water": "兑水量", "indications": "适应症", "timing": "时机",
+        }
+        for k, v in upload_result["extracted_fields"].items():
+            st.write(f"  - **{field_names.get(k, k)}:** {v}")
+        if st.button("🔄 刷新表单", key="refresh_add_form"):
+            st.rerun()
 
     if st.button("↩️ 返回列表"):
         st.session_state["admin_op"] = "list"
+        st.session_state[extract_key] = {}
         st.rerun()
 
 
@@ -458,8 +531,16 @@ def _render_edit(products: List[Dict], json_path: str):
     idx = options[sel]
     target = products[idx]
 
+    extract_key = f"extracted_edit_{target.get('id', idx)}"
+    if extract_key not in st.session_state:
+        st.session_state[extract_key] = {}
+    
+    if st.button("🔄 重置提取内容", key=f"reset_extract_edit_{target.get('id', idx)}"):
+        st.session_state[extract_key] = {}
+        st.rerun()
+
     with st.form(f"edit_form_{target.get('id', idx)}"):
-        rec = _drug_form(f"edit_{target.get('id', idx)}", target)
+        rec = _drug_form(f"edit_{target.get('id', idx)}", target, extracted=st.session_state.get(extract_key, {}))
         rec["id"] = target.get("id", "")
         c1, c2 = st.columns(2)
         with c1:
@@ -468,6 +549,7 @@ def _render_edit(products: List[Dict], json_path: str):
             cancel = st.form_submit_button("❌ 取消", use_container_width=True)
         if cancel:
             st.session_state["admin_op"] = "list"
+            st.session_state[extract_key] = {}
             st.rerun()
         if save_btn:
             errs = validate_drug_record(rec, check_unique=False)
@@ -484,14 +566,34 @@ def _render_edit(products: List[Dict], json_path: str):
                 st.success(f"✅ 已更新 {rec['name']}")
                 st.cache_resource.clear()
                 st.session_state["admin_op"] = "list"
+                st.session_state[extract_key] = {}
                 st.rerun()
 
     st.markdown("##### 📎 上传补充资料")
-    uploaded = _media_uploader(f"edit_{target.get('id', idx)}_media")
-    if uploaded:
-        if st.button(f"💾 将 {len(uploaded)} 个文件关联到该药物", type="primary"):
+    
+    if not _EXTRACTOR_OK:
+        st.info("💡 内容提取模块未加载，如需OCR识别功能请安装 pytesseract、speech_recognition 等依赖")
+    
+    upload_result = _media_uploader(f"edit_{target.get('id', idx)}_media", enable_extraction=True)
+    
+    if upload_result.get("extracted_fields"):
+        st.session_state[extract_key] = upload_result["extracted_fields"]
+        st.info("📝 已提取的产品信息：")
+        field_names = {
+            "name": "产品名称", "main_component": "主要成分", "spec": "包装规格",
+            "price": "价格", "category": "类别", "usage_info": "用法用量",
+            "water": "兑水量", "indications": "适应症", "timing": "时机",
+        }
+        for k, v in upload_result["extracted_fields"].items():
+            st.write(f"  - **{field_names.get(k, k)}:** {v}")
+        if st.button("🔄 刷新表单", key=f"refresh_edit_form_{target.get('id', idx)}"):
+            st.rerun()
+    
+    uploaded_files = upload_result.get("saved_files", [])
+    if uploaded_files:
+        if st.button(f"💾 将 {len(uploaded_files)} 个文件关联到该药物", type="primary"):
             media = list(target.get("media") or [])
-            media.extend(uploaded)
+            media.extend(uploaded_files)
             target["media"] = media
             products[idx] = target
             save_db(products, json_path)
@@ -525,6 +627,7 @@ def _render_edit(products: List[Dict], json_path: str):
 
     if st.button("↩️ 返回列表"):
         st.session_state["admin_op"] = "list"
+        st.session_state[extract_key] = {}
         st.rerun()
 
 
