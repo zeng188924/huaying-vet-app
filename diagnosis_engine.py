@@ -82,6 +82,7 @@ class SymptomBasedDiagnosisEngine:
         # 外观症状
         appearance_symptoms = [
             ("feather_ruffled", "羽毛松乱", "外观", 2.0, "羽毛蓬松、杂乱无光泽"),
+            ("feather_loss_severe", "掉毛很厉害", "外观", 2.5, "羽毛严重脱落、掉毛明显增多，常见于寄生虫感染、营养缺乏或皮肤病变"),
             ("comb_pale", "冠髯苍白", "外观", 3.0, "鸡冠和肉髯颜色变浅、发白"),
             ("comb_cyanosis", "冠髯发绀", "外观", 3.0, "鸡冠和肉髯呈青紫色"),
             ("eyes_closed", "闭眼缩颈", "外观", 2.5, "闭眼、颈部收缩、不愿活动"),
@@ -245,7 +246,7 @@ class SymptomBasedDiagnosisEngine:
             "滑液囊支原体": {
                 "key_symptoms": ["other_joint_swelling"],
                 "important_symptoms": ["sys_weight_loss", "feather_ruffled"],
-                "supporting_symptoms": ["sys_depression"],
+                "supporting_symptoms": ["sys_depression", "feather_loss_severe"],
                 "exclude_symptoms": ["feces_blood_red", "resp_dyspnea"],
                 "differentiation": {},
                 "treatment_principle": "大环内酯类或四环素类，疗程要长",
@@ -281,7 +282,7 @@ class SymptomBasedDiagnosisEngine:
             "蛔虫病": {
                 "key_symptoms": ["sys_weight_loss"],
                 "important_symptoms": ["sys_depression", "feces_unformed"],
-                "supporting_symptoms": ["feather_ruffled"],
+                "supporting_symptoms": ["feather_ruffled", "feather_loss_severe"],
                 "exclude_symptoms": ["feces_blood_red", "resp_dyspnea"],
                 "differentiation": {},
                 "treatment_principle": "驱虫药定期使用",
@@ -290,7 +291,7 @@ class SymptomBasedDiagnosisEngine:
             "绦虫病": {
                 "key_symptoms": ["sys_weight_loss"],
                 "important_symptoms": ["sys_depression", "feces_unformed"],
-                "supporting_symptoms": ["feather_ruffled", "other_paralysis"],
+                "supporting_symptoms": ["feather_ruffled", "feather_loss_severe", "other_paralysis"],
                 "exclude_symptoms": ["feces_blood_red"],
                 "differentiation": {},
                 "treatment_principle": "驱虫药治疗",
@@ -523,7 +524,7 @@ class SymptomQuestionnaire:
                 title="第一步：外观观察",
                 category="外观",
                 description="请仔细观察家禽的外观表现，选择符合的症状：",
-                symptoms=[symptoms[s] for s in ["feather_ruffled", "comb_pale", "comb_cyanosis", "eyes_closed", "body_weak", "wings_drooped", "head_shaking", "neck_twisting"]]
+                symptoms=[symptoms[s] for s in ["feather_ruffled", "feather_loss_severe", "comb_pale", "comb_cyanosis", "eyes_closed", "body_weak", "wings_drooped", "head_shaking", "neck_twisting"]]
             ),
             QuestionnaireStep(
                 step_id="step2",
