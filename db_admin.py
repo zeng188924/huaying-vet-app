@@ -30,10 +30,16 @@ except Exception:
     _COMPAT_OK = False
 
 try:
-    from content_extractor import extract_product_info, is_format_supported, is_extraction_available
+    from content_extractor import (
+        extract_product_info,
+        parse_product_text,
+        is_format_supported,
+        is_extraction_available,
+    )
     _EXTRACTOR_OK = True
 except Exception:
     extract_product_info = None
+    parse_product_text = None
     is_format_supported = None
     is_extraction_available = None
     _EXTRACTOR_OK = False
@@ -338,6 +344,60 @@ def _media_uploader(key_prefix: str, enable_extraction: bool = False) -> Dict:
     return result
 
 
+def _field_name_mapping() -> Dict[str, str]:
+    return {
+        "name": "产品名称",
+        "brand_name": "商品名",
+        "main_component": "主要成分",
+        "spec": "包装规格",
+        "price": "价格",
+        "category": "类别",
+        "usage_info": "用法用量",
+        "water": "兑水量",
+        "indications": "适应症",
+        "timing": "时机",
+    }
+
+
+def _render_extracted_fields(fields: Dict, action_label: str = "已提取"):
+    if not fields:
+        return
+    st.info(f"📝 {action_label}的产品信息：")
+    field_names = _field_name_mapping()
+    for k, v in fields.items():
+        if isinstance(v, list):
+            v = "、".join(str(x) for x in v)
+        st.write(f"  - **{field_names.get(k, k)}:** {v}")
+
+
+def _render_manual_text_input(key_prefix: str, extract_key: str):
+    st.markdown("##### ⌨️ 手动粘贴识别文本（兜底方案）")
+    st.caption("如果图片自动识别不可用，可先用微信/QQ/其他 OCR 工具识别图片文字，粘贴到下方后点击“解析并填充”。")
+    with st.form(key=f"{key_prefix}_manual_form", clear_on_submit=False):
+        manual_text = st.text_area(
+            "粘贴识别到的产品说明文字",
+            height=200,
+            key=f"{key_prefix}_manual_text",
+        )
+        submitted = st.form_submit_button("🔍 解析并填充")
+        if submitted:
+            text_value = (manual_text or "").strip()
+            # 兼容部分场景下 widget 返回值未同步的情况，额外尝试 session_state
+            if not text_value:
+                text_value = str(st.session_state.get(f"{key_prefix}_manual_text", "")).strip()
+            if parse_product_text and text_value:
+                parse_result = parse_product_text(text_value)
+                if parse_result["success"] and parse_result.get("parsed_fields"):
+                    st.session_state[extract_key] = parse_result["parsed_fields"]
+                    st.success("✅ 已解析并填充到表单，请核对后保存。")
+                    _render_extracted_fields(parse_result["parsed_fields"], "已解析")
+                    st.rerun()
+                else:
+                    st.warning("未能从粘贴文本中解析出有效字段，请检查文本内容或手动填写。")
+            else:
+                st.warning("请先粘贴识别文本。")
+
+
 def _drug_form(prefix: str, initial: Optional[Dict] = None, extracted: Optional[Dict] = None) -> Dict:
     initial = initial or {}
     extracted = extracted or {}
@@ -453,15 +513,32 @@ def _render_list(products: List[Dict]):
 
 def _render_add(products: List[Dict], json_path: str):
     st.markdown("#### ➕ 新增药物")
-    
+
     extract_key = "extracted_add"
     if extract_key not in st.session_state:
         st.session_state[extract_key] = {}
-    
+
     if st.button("🔄 重置提取内容", key="reset_extract_add"):
         st.session_state[extract_key] = {}
         st.rerun()
-    
+
+    # ========== 第一步：资料识别（必须在表单渲染之前完成，否则无法回填） ==========
+    st.markdown("##### 📎 附加资料（图片/视频/文档）")
+    st.caption("提示：上传图片或语音文件时，系统会自动识别并提取产品信息，填充到表单中。")
+
+    if not _EXTRACTOR_OK:
+        st.warning("⚠️ 图片自动识别当前不可用：未安装 OCR 依赖。建议方案：1）安装 Tesseract OCR（推荐）；2）使用下方的“手动粘贴识别文本”功能。")
+    elif not is_extraction_available or not is_extraction_available():
+        st.warning("⚠️ 图片自动识别当前不可用：OCR 引擎未能正常加载。请检查 Tesseract 是否已安装并配置到系统 PATH，或使用下方手动粘贴方案。")
+
+    upload_result = _media_uploader("add_media", enable_extraction=True)
+    if upload_result.get("extracted_fields"):
+        st.session_state[extract_key] = upload_result["extracted_fields"]
+        _render_extracted_fields(upload_result["extracted_fields"])
+
+    _render_manual_text_input("add", extract_key)
+
+    # ========== 第二步：渲染表单（使用已识别的字段作为默认值） ==========
     with st.form("add_drug_form", clear_on_submit=False):
         rec = _drug_form("add", extracted=st.session_state.get(extract_key, {}))
         submit = st.form_submit_button("✅ 保存", use_container_width=True)
@@ -493,27 +570,6 @@ def _render_add(products: List[Dict], json_path: str):
                 st.cache_resource.clear()
                 st.session_state[extract_key] = {}
 
-    st.markdown("##### 📎 附加资料（图片/视频/文档）")
-    st.caption("提示：上传图片或语音文件时，系统会自动识别并提取产品信息，填充到表单中。")
-    
-    if not _EXTRACTOR_OK:
-        st.info("💡 内容提取模块未加载，如需OCR识别功能请安装 pytesseract、speech_recognition 等依赖")
-    
-    upload_result = _media_uploader("add_media", enable_extraction=True)
-    
-    if upload_result.get("extracted_fields"):
-        st.session_state[extract_key] = upload_result["extracted_fields"]
-        st.info("📝 已提取的产品信息：")
-        field_names = {
-            "name": "产品名称", "main_component": "主要成分", "spec": "包装规格",
-            "price": "价格", "category": "类别", "usage_info": "用法用量",
-            "water": "兑水量", "indications": "适应症", "timing": "时机",
-        }
-        for k, v in upload_result["extracted_fields"].items():
-            st.write(f"  - **{field_names.get(k, k)}:** {v}")
-        if st.button("🔄 刷新表单", key="refresh_add_form"):
-            st.rerun()
-
     if st.button("↩️ 返回列表"):
         st.session_state["admin_op"] = "list"
         st.session_state[extract_key] = {}
@@ -534,11 +590,27 @@ def _render_edit(products: List[Dict], json_path: str):
     extract_key = f"extracted_edit_{target.get('id', idx)}"
     if extract_key not in st.session_state:
         st.session_state[extract_key] = {}
-    
+
     if st.button("🔄 重置提取内容", key=f"reset_extract_edit_{target.get('id', idx)}"):
         st.session_state[extract_key] = {}
         st.rerun()
 
+    # ========== 第一步：资料识别（必须在表单渲染之前完成，否则无法回填） ==========
+    st.markdown("##### 📎 上传补充资料")
+
+    if not _EXTRACTOR_OK:
+        st.warning("⚠️ 图片自动识别当前不可用：未安装 OCR 依赖。建议方案：1）安装 Tesseract OCR（推荐）；2）使用下方的“手动粘贴识别文本”功能。")
+    elif not is_extraction_available or not is_extraction_available():
+        st.warning("⚠️ 图片自动识别当前不可用：OCR 引擎未能正常加载。请检查 Tesseract 是否已安装并配置到系统 PATH，或使用下方手动粘贴方案。")
+
+    upload_result = _media_uploader(f"edit_{target.get('id', idx)}_media", enable_extraction=True)
+    if upload_result.get("extracted_fields"):
+        st.session_state[extract_key] = upload_result["extracted_fields"]
+        _render_extracted_fields(upload_result["extracted_fields"])
+
+    _render_manual_text_input(f"edit_{target.get('id', idx)}", extract_key)
+
+    # ========== 第二步：渲染表单（使用已识别的字段覆盖原有字段） ==========
     with st.form(f"edit_form_{target.get('id', idx)}"):
         rec = _drug_form(f"edit_{target.get('id', idx)}", target, extracted=st.session_state.get(extract_key, {}))
         rec["id"] = target.get("id", "")
@@ -569,26 +641,6 @@ def _render_edit(products: List[Dict], json_path: str):
                 st.session_state[extract_key] = {}
                 st.rerun()
 
-    st.markdown("##### 📎 上传补充资料")
-    
-    if not _EXTRACTOR_OK:
-        st.info("💡 内容提取模块未加载，如需OCR识别功能请安装 pytesseract、speech_recognition 等依赖")
-    
-    upload_result = _media_uploader(f"edit_{target.get('id', idx)}_media", enable_extraction=True)
-    
-    if upload_result.get("extracted_fields"):
-        st.session_state[extract_key] = upload_result["extracted_fields"]
-        st.info("📝 已提取的产品信息：")
-        field_names = {
-            "name": "产品名称", "main_component": "主要成分", "spec": "包装规格",
-            "price": "价格", "category": "类别", "usage_info": "用法用量",
-            "water": "兑水量", "indications": "适应症", "timing": "时机",
-        }
-        for k, v in upload_result["extracted_fields"].items():
-            st.write(f"  - **{field_names.get(k, k)}:** {v}")
-        if st.button("🔄 刷新表单", key=f"refresh_edit_form_{target.get('id', idx)}"):
-            st.rerun()
-    
     uploaded_files = upload_result.get("saved_files", [])
     if uploaded_files:
         if st.button(f"💾 将 {len(uploaded_files)} 个文件关联到该药物", type="primary"):
