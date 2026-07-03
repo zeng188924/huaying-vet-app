@@ -90,8 +90,9 @@ class SymptomBasedDiagnosisEngine:
             ("wings_drooped", "翅膀下垂", "外观", 2.0, "翅膀下垂、不愿拍打"),
             ("head_shaking", "摇头", "外观", 1.5, "频繁摇头"),
             ("neck_twisting", "扭颈", "外观", 4.0, "颈部扭曲、呈S形或反向弯曲"),
+            ("appearance_normal", "外观无异常（未发现不良情况）", "外观", 0.0, "外观表现正常，羽毛、冠髯、眼睛、姿势等均无异常"),
         ]
-        
+
         # 粪便症状
         feces_symptoms = [
             ("feces_blood_red", "血便(鲜红)", "粪便", 4.0, "排出鲜红色血液粪便，常见于盲肠球虫"),
@@ -102,8 +103,9 @@ class SymptomBasedDiagnosisEngine:
             ("feces_watery", "水样腹泻", "粪便", 2.5, "大量水样粪便，严重脱水"),
             ("feces_unformed", "粪便不成形", "粪便", 1.5, "粪便稀薄、不成形"),
             ("feces_bloody_mucus", "黏液血便", "粪便", 3.5, "粪便中带有黏液和血液"),
+            ("feces_normal", "粪便正常（未发现不良情况）", "粪便", 0.0, "粪便形态、颜色正常，无血便、稀粪等异常"),
         ]
-        
+
         # 呼吸道症状
         respiratory_symptoms = [
             ("resp_cough", "咳嗽", "呼吸道", 2.5, "发出咳嗽声"),
@@ -113,8 +115,9 @@ class SymptomBasedDiagnosisEngine:
             ("resp_open_mouth", "张口呼吸", "呼吸道", 3.5, "张口呼吸、伸颈喘"),
             ("resp_dyspnea", "呼吸困难", "呼吸道", 4.0, "呼吸急促、困难"),
             ("resp_gasping", "喘鸣", "呼吸道", 3.0, "呼吸时有喘息声"),
+            ("respiratory_normal", "呼吸正常（未发现不良情况）", "呼吸道", 0.0, "呼吸平稳，无咳嗽、打喷嚏、啰音、张口呼吸等异常"),
         ]
-        
+
         # 全身症状
         systemic_symptoms = [
             ("sys_depression", "精神沉郁", "全身", 3.0, "精神不振、反应迟钝"),
@@ -125,8 +128,9 @@ class SymptomBasedDiagnosisEngine:
             ("sys_tremor", "抽搐", "全身", 4.0, "身体抽搐、痉挛"),
             ("sys_paralysis", "瘫痪", "全身", 4.0, "肢体瘫痪、无法站立"),
             ("sys_drowsy", "嗜睡", "全身", 2.0, "昏睡、不愿活动"),
+            ("systemic_normal", "全身状况正常（未发现不良情况）", "全身", 0.0, "精神状态、食欲、体温、体重等均正常"),
         ]
-        
+
         # 其他症状
         other_symptoms = [
             ("other_diarrhea", "拉稀", "其他", 2.0, "腹泻、拉稀"),
@@ -137,6 +141,7 @@ class SymptomBasedDiagnosisEngine:
             ("other_joint_swelling", "关节肿胀", "其他", 3.0, "关节肿大、跛行"),
             ("other_skin_lesion", "皮肤病变", "其他", 2.0, "皮肤出现病变"),
             ("other_abdominal_distension", "腹部膨大", "其他", 2.0, "腹部膨胀"),
+            ("other_normal", "其他情况正常（未发现不良情况）", "其他", 0.0, "产蛋、关节、皮肤、腹部等其他方面无异常"),
         ]
         
         for sym_id, name, category, weight, desc in (
@@ -523,36 +528,36 @@ class SymptomQuestionnaire:
                 step_id="step1",
                 title="第一步：外观观察",
                 category="外观",
-                description="请仔细观察家禽的外观表现，选择符合的症状：",
-                symptoms=[symptoms[s] for s in ["feather_ruffled", "feather_loss_severe", "comb_pale", "comb_cyanosis", "eyes_closed", "body_weak", "wings_drooped", "head_shaking", "neck_twisting"]]
+                description="请仔细观察家禽的外观表现，选择符合的症状；如外观无异常，请选择“外观无异常（未发现不良情况）”：",
+                symptoms=[symptoms[s] for s in ["feather_ruffled", "feather_loss_severe", "comb_pale", "comb_cyanosis", "eyes_closed", "body_weak", "wings_drooped", "head_shaking", "neck_twisting", "appearance_normal"]]
             ),
             QuestionnaireStep(
                 step_id="step2",
                 title="第二步：粪便检查",
                 category="粪便",
-                description="请观察家禽的粪便状态，选择符合的症状：",
-                symptoms=[symptoms[s] for s in ["feces_blood_red", "feces_blood_dark", "feces_white", "feces_green", "feces_yellow", "feces_watery", "feces_unformed", "feces_bloody_mucus"]]
+                description="请观察家禽的粪便状态，选择符合的症状；如粪便正常，请选择“粪便正常（未发现不良情况）”：",
+                symptoms=[symptoms[s] for s in ["feces_blood_red", "feces_blood_dark", "feces_white", "feces_green", "feces_yellow", "feces_watery", "feces_unformed", "feces_bloody_mucus", "feces_normal"]]
             ),
             QuestionnaireStep(
                 step_id="step3",
                 title="第三步：呼吸表现",
                 category="呼吸道",
-                description="请观察家禽的呼吸情况，选择符合的症状：",
-                symptoms=[symptoms[s] for s in ["resp_cough", "resp_sneeze", "resp_nasal_discharge", "resp_rhonchus", "resp_open_mouth", "resp_dyspnea", "resp_gasping"]]
+                description="请观察家禽的呼吸情况，选择符合的症状；如呼吸正常，请选择“呼吸正常（未发现不良情况）”：",
+                symptoms=[symptoms[s] for s in ["resp_cough", "resp_sneeze", "resp_nasal_discharge", "resp_rhonchus", "resp_open_mouth", "resp_dyspnea", "resp_gasping", "respiratory_normal"]]
             ),
             QuestionnaireStep(
                 step_id="step4",
                 title="第四步：全身状况",
                 category="全身",
-                description="请观察家禽的整体状态，选择符合的症状：",
-                symptoms=[symptoms[s] for s in ["sys_depression", "sys_anorexia", "sys_fever", "sys_weight_loss", "sys_death", "sys_tremor", "sys_paralysis", "sys_drowsy"]]
+                description="请观察家禽的整体状态，选择符合的症状；如全身状况正常，请选择“全身状况正常（未发现不良情况）”：",
+                symptoms=[symptoms[s] for s in ["sys_depression", "sys_anorexia", "sys_fever", "sys_weight_loss", "sys_death", "sys_tremor", "sys_paralysis", "sys_drowsy", "systemic_normal"]]
             ),
             QuestionnaireStep(
                 step_id="step5",
                 title="第五步：其他症状",
                 category="其他",
-                description="请选择其他可能存在的症状：",
-                symptoms=[symptoms[s] for s in ["other_diarrhea", "other_egg_drop", "other_deformed_egg", "other_sand_egg", "other_blood_spot", "other_joint_swelling", "other_skin_lesion", "other_abdominal_distension"]]
+                description="请选择其他可能存在的症状；如其他情况均正常，请选择“其他情况正常（未发现不良情况）”：",
+                symptoms=[symptoms[s] for s in ["other_diarrhea", "other_egg_drop", "other_deformed_egg", "other_sand_egg", "other_blood_spot", "other_joint_swelling", "other_skin_lesion", "other_abdominal_distension", "other_normal"]]
             )
         ]
         

@@ -419,21 +419,30 @@ elif page == 'recommend':
         st.session_state.selected_symptoms = []
     if 'diagnosis_result' not in st.session_state:
         st.session_state.diagnosis_result = None
-    
+    if 'show_diagnosis' not in st.session_state:
+        st.session_state.show_diagnosis = False
+
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("🎯 我知道症状", use_container_width=True, 
+        if st.button("🎯 我知道症状", use_container_width=True,
                     type="primary" if st.session_state.diagnosis_mode == 'direct' else "secondary"):
             st.session_state.diagnosis_mode = 'direct'
             st.session_state.questionnaire_step = 0
             st.session_state.selected_symptoms = []
+            st.session_state.diagnosis_result = None
+            st.session_state.show_diagnosis = False
             st.rerun()
     with col2:
         if st.button("❓ 我不确定", use_container_width=True,
                     type="primary" if st.session_state.diagnosis_mode == 'questionnaire' else "secondary"):
+            # 重新进入问诊流程：清空诊断结果但保留各步骤已选记录，便于用户调整
             st.session_state.diagnosis_mode = 'questionnaire'
             st.session_state.questionnaire_step = 0
             st.session_state.selected_symptoms = []
+            st.session_state.diagnosis_result = None
+            st.session_state.show_diagnosis = False
+            st.session_state.auto_symptom = ''
+            st.session_state.auto_disease_type = ''
             st.rerun()
     
     if st.session_state.diagnosis_mode == 'questionnaire':
