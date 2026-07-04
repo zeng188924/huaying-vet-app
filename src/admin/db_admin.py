@@ -54,6 +54,7 @@ try:
         collect_variant_images,
         format_indications,
         ensure_stock_field,
+        format_bottom_price_usage,
     )
     _PU_OK = True
 except Exception:
@@ -64,6 +65,7 @@ except Exception:
     collect_variant_images = None
     format_indications = None
     ensure_stock_field = None
+    format_bottom_price_usage = None
     _PU_OK = False
 
 
@@ -619,7 +621,14 @@ def _render_list(products: List[Dict], json_path: str = DB_PATH):
 
             if indications:
                 st.markdown(f"**适应症：** {indications}")
-            if usage:
+            if source == "底价目录" and _PU_OK and format_bottom_price_usage:
+                bottom_usage = format_bottom_price_usage(variants)
+                if bottom_usage:
+                    st.markdown(
+                        f"**用法用量：**<br>{bottom_usage.replace(chr(10), '<br>')}",
+                        unsafe_allow_html=True,
+                    )
+            elif usage:
                 st.markdown(f"**用法用量：** {usage}")
 
             with st.expander("📋 查看规格详情 / 包装图片"):

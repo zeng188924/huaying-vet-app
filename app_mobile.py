@@ -24,6 +24,7 @@ try:
         render_variant_table_html,
         collect_variant_images,
         format_indications,
+        format_bottom_price_usage,
     )
     _PU_OK = True
 except Exception:
@@ -33,6 +34,7 @@ except Exception:
     render_variant_table_html = None
     collect_variant_images = None
     format_indications = None
+    format_bottom_price_usage = None
     _PU_OK = False
 
 # 设置页面配置 - 移动端优化
@@ -1224,6 +1226,15 @@ elif page == 'catalog':
             usage = primary.get('usage_info', '')
             egg_period_safe = primary.get('egg_period_safe', True)
 
+            if source == "底价目录" and _PU_OK and format_bottom_price_usage:
+                bottom_usage = format_bottom_price_usage(variants)
+                if bottom_usage:
+                    usage_display = f'<p style="color: #666; font-size: 0.85em; margin: 8px 0;"><b>用法用量:</b><br>{bottom_usage.replace(chr(10), "<br>")}</p>'
+                else:
+                    usage_display = f'<p style="color: #666; font-size: 0.85em; margin: 8px 0;"><b>用法用量:</b> {usage}</p>' if usage else ''
+            else:
+                usage_display = f'<p style="color: #666; font-size: 0.85em; margin: 8px 0;"><b>用法用量:</b> {usage}</p>' if usage else ''
+
             with st.container():
                 badge = f"<span style='color:#1976d2; font-weight:bold;'>📦 {len(variants)} 个规格</span>" if is_multi else ""
                 st.markdown(f"""
@@ -1238,7 +1249,7 @@ elif page == 'catalog':
                         <b>商品名:</b> {brand_name}
                     </p>
                     {f'<p style="color: #666; font-size: 0.85em; margin: 8px 0;"><b>适应症:</b> {efficacy}</p>' if efficacy else ''}
-                    {f'<p style="color: #666; font-size: 0.85em; margin: 8px 0;"><b>用法用量:</b> {usage}</p>' if usage else ''}
+                    {usage_display}
                     {f'<p style="color: #666; font-size: 0.85em; margin: 8px 0;">{"✅ 产蛋期可用" if egg_period_safe else "❌ 产蛋期禁用"}</p>'}
                 </div>
                 """, unsafe_allow_html=True)

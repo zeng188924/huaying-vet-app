@@ -117,16 +117,73 @@ def format_indications(value) -> str:
     return str(value or "").strip()
 
 
+def format_bottom_price_usage(variants: List[Dict]) -> str:
+    """
+    为底价产品按规格生成用法用量说明。
+    根据每条规格的兑水量以及原始用法用量中的疗程/给药方式信息生成。
+    """
+    if not variants:
+        return ""
+
+    primary_usage = str(variants[0].get("usage_info", "") or "").strip()
+
+    # 从原始用法用量中提取疗程信息
+    duration = ""
+    duration_patterns = [
+        r"连用\s*\d+[-~～]?\d*\s*日?",
+        r"饮用\s*\d+[-~～]?\d*\s*小时",
+        r"连?用\s*\d+[-~～]?\d*\s*天",
+        r"用\s*\d+[-~～]?\d*\s*日?",
+    ]
+    for pat in duration_patterns:
+        m = re.search(pat, primary_usage)
+        if m:
+            duration = m.group(0)
+            break
+
+    # 根据原始说明推断给药方式，默认混饮
+    admin_route = "混饮"
+    if "混饲" in primary_usage:
+        admin_route = "混饲"
+    elif "内服" in primary_usage:
+        admin_route = "内服"
+    elif "饮水" in primary_usage:
+        admin_route = "饮水"
+    elif "灌服" in primary_usage:
+        admin_route = "灌服"
+
+    parts = []
+    for v in variants:
+        spec = str(v.get("spec", "") or "").strip()
+        water = str(v.get("water", "") or "").strip()
+        if not spec or not water:
+            continue
+        line = f"{admin_route}：每袋兑水{water}"
+        if duration:
+            line += f"，{duration}"
+        parts.append(f"{spec}：{line}")
+
+    if not parts:
+        return primary_usage
+
+    return "\n".join(parts)
+
+
 def render_variant_table_html(variants: List[Dict]) -> str:
     """
     生成规格对比表格 HTML。不包含交互按钮，仅用于静态展示。
     """
     rows = []
     for v in variants:
+        price = v.get("price", 0)
+        try:
+            price_str = f"¥{float(price):.2f}"
+        except (TypeError, ValueError):
+            price_str = f"¥{price}"
         rows.append(
             "<tr>"
             f"<td>{v.get('spec', '') or '-'}</td>"
-            f"<td>¥{v.get('price', 0)}</td>"
+            f"<td>{price_str}</td>"
             f"<td>{v.get('stock', 0)}</td>"
             f"<td>{v.get('water', '') or '-'}</td>"
             f"<td>{format_indications(v.get('indications', [])) or '-'}</td>"

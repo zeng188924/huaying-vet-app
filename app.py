@@ -19,6 +19,7 @@ try:
         render_variant_table_html,
         collect_variant_images,
         format_indications,
+        format_bottom_price_usage,
     )
     _PU_OK = True
 except Exception:
@@ -28,6 +29,7 @@ except Exception:
     render_variant_table_html = None
     collect_variant_images = None
     format_indications = None
+    format_bottom_price_usage = None
     _PU_OK = False
 
 st.set_page_config(
@@ -1067,6 +1069,15 @@ def show_product_catalog():
             retail_price = primary.get('retail_price', '')
             egg_period_safe = primary.get('egg_period_safe', True)
 
+            if source == "底价目录" and _PU_OK and format_bottom_price_usage:
+                bottom_usage = format_bottom_price_usage(variants)
+                if bottom_usage:
+                    usage_display = f'<div style="margin-top: 5px;"><strong>用法用量:</strong><br>{bottom_usage.replace(chr(10), "<br>")}</div>'
+                else:
+                    usage_display = f'<div style="margin-top: 5px;"><strong>用法用量:</strong> {usage}</div>' if usage else ''
+            else:
+                usage_display = f'<div style="margin-top: 5px;"><strong>用法用量:</strong> {usage}</div>' if usage else ''
+
             with st.container():
                 badge = f"<span style='color:#1976d2; font-weight:bold;'>📦 {len(variants)} 个规格</span>" if is_multi else ""
                 st.markdown(f"""
@@ -1080,7 +1091,7 @@ def show_product_catalog():
                     {f'<div class="catalog-row"><span class="catalog-item">🏷️ 商品名: {brand_name}</span></div>' if brand_name and brand_name != '/' else ''}
                     {f'<div class="catalog-row"><span class="catalog-item">💰 建议零售价: ¥{retail_price}</span></div>' if retail_price and retail_price != '/' else ''}
                     {f'<div style="margin-top: 10px;"><strong>适应症:</strong> {efficacy}</div>' if efficacy else ''}
-                    {f'<div style="margin-top: 5px;"><strong>用法用量:</strong> {usage}</div>' if usage else ''}
+                    {usage_display}
                     {f'<div style="margin-top: 5px;"><strong>备注:</strong> {remark}</div>' if remark else ''}
                     {f'<div style="margin-top: 5px;">{"✅ 产蛋期可用" if egg_period_safe else "❌ 产蛋期禁用"}</div>'}
                 </div>
