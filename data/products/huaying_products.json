@@ -1,6 +1,90 @@
 [
   {
-    "id": "B2",
+    "name": "氟苯尼考粉",
+    "content": "氟苯尼考",
+    "spec": "500g/袋*20袋/箱",
+    "water": "2000斤",
+    "price": 26.25,
+    "indications": [
+      "用于鸡敏感细菌所致的细菌性疾病",
+      "鸡沙门氏菌病（鸡白痢、伤寒、副伤寒）",
+      "鸡巴氏杆菌病（禽霍乱）",
+      "鸡大肠埃希菌病（大肠杆菌病）",
+      "鸭传染性浆膜炎",
+      "慢性呼吸道病继发细菌感染"
+    ],
+    "main_component": "氟苯尼考",
+    "category": "化药",
+    "egg_period_safe": false,
+    "disease_types": [
+      "BACTERIAL",
+      "RESPIRATORY"
+    ],
+    "usage_info": "混饮：每袋兑水2000斤，连用3-5日",
+    "source": "底价目录",
+    "timing": "发病期间治疗使用",
+    "brand_name": "氟苯尼考粉",
+    "product_name": "氟苯尼考粉",
+    "product_group_id": "氟苯尼考::氟苯尼考粉",
+    "id": "B01"
+  },
+  {
+    "name": "氟苯尼考粉",
+    "content": "氟苯尼考",
+    "spec": "100g/袋*100袋/箱",
+    "water": "400斤",
+    "price": 6.02272727272727,
+    "indications": [
+      "用于鸡敏感细菌所致的细菌性疾病",
+      "鸡沙门氏菌病（鸡白痢、伤寒、副伤寒）",
+      "鸡巴氏杆菌病（禽霍乱）",
+      "鸡大肠埃希菌病（大肠杆菌病）",
+      "鸭传染性浆膜炎",
+      "慢性呼吸道病继发细菌感染"
+    ],
+    "main_component": "氟苯尼考",
+    "category": "化药",
+    "egg_period_safe": false,
+    "disease_types": [
+      "BACTERIAL",
+      "RESPIRATORY"
+    ],
+    "usage_info": "混饮：每袋兑水400斤，连用3-5日",
+    "source": "底价目录",
+    "timing": "发病期间治疗使用",
+    "brand_name": "氟苯尼考粉",
+    "product_name": "氟苯尼考粉",
+    "product_group_id": "氟苯尼考::氟苯尼考粉",
+    "id": "B02"
+  },
+  {
+    "name": "盐酸多西环素可溶性粉",
+    "content": "盐酸多西环素可溶性粉",
+    "spec": "500g/袋*20袋/箱",
+    "water": "4000斤",
+    "price": 126.25,
+    "indications": [
+      "鸡慢性呼吸道病",
+      "大肠杆菌病",
+      "巴氏杆菌病",
+      "沙门氏菌病"
+    ],
+    "main_component": "盐酸多西环素",
+    "category": "化药",
+    "egg_period_safe": false,
+    "disease_types": [
+      "BACTERIAL",
+      "RESPIRATORY"
+    ],
+    "usage_info": "混饮：每袋兑水1500斤，连用3-5日",
+    "source": "底价目录",
+    "timing": "发病期间治疗使用",
+    "brand_name": "盐酸多西环素可溶性粉",
+    "product_name": "盐酸多西环素可溶性粉",
+    "product_group_id": "盐酸多西环素::盐酸多西环素可溶性粉",
+    "id": "B03"
+  },
+  {
     "name": "盐酸多西环素可溶性粉",
     "content": "盐酸多西环素可溶性粉",
     "spec": "100g/袋*100袋/箱",
@@ -23,10 +107,37 @@
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "盐酸多西环素可溶性粉",
-    "product_name": "盐酸多西环素可溶性粉"
+    "product_name": "盐酸多西环素可溶性粉",
+    "product_group_id": "盐酸多西环素::盐酸多西环素可溶性粉",
+    "id": "B04"
   },
   {
-    "id": "B3",
+    "name": "卡巴匹林钙粉",
+    "content": "卡巴匹林钙粉",
+    "spec": "500g/袋*20袋/箱",
+    "water": "2000斤",
+    "price": 15.1136363636364,
+    "indications": [
+      "解热",
+      "镇痛",
+      "消炎",
+      "退热"
+    ],
+    "main_component": "卡巴匹林钙",
+    "category": "化药",
+    "egg_period_safe": false,
+    "disease_types": [
+      "MIXED"
+    ],
+    "usage_info": "混饮：每袋兑水2000斤，连用3日",
+    "source": "底价目录",
+    "timing": "发病期间治疗使用",
+    "brand_name": "卡巴匹林钙粉",
+    "product_name": "卡巴匹林钙粉",
+    "product_group_id": "卡巴匹林钙::卡巴匹林钙粉",
+    "id": "B05"
+  },
+  {
     "name": "卡巴匹林钙粉",
     "content": "卡巴匹林钙粉",
     "spec": "100g/袋*100袋/箱",
@@ -48,10 +159,38 @@
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "卡巴匹林钙粉",
-    "product_name": "卡巴匹林钙粉"
+    "product_name": "卡巴匹林钙粉",
+    "product_group_id": "卡巴匹林钙::卡巴匹林钙粉",
+    "id": "B06"
   },
   {
-    "id": "B4",
+    "name": "阿莫西林可溶性粉",
+    "content": "阿莫西林可溶性粉",
+    "spec": "500g/袋*20袋/箱",
+    "water": "4500斤",
+    "price": 43.5227272727273,
+    "indications": [
+      "大肠杆菌病",
+      "沙门氏菌病",
+      "葡萄球菌病",
+      "链球菌病"
+    ],
+    "main_component": "阿莫西林",
+    "category": "化药",
+    "egg_period_safe": false,
+    "disease_types": [
+      "BACTERIAL",
+      "DIGESTIVE"
+    ],
+    "usage_info": "混饮：每袋兑水900斤，连用3-5日",
+    "source": "底价目录",
+    "timing": "发病期间治疗使用",
+    "brand_name": "阿莫西林可溶性粉",
+    "product_name": "阿莫西林可溶性粉",
+    "product_group_id": "阿莫西林::阿莫西林可溶性粉",
+    "id": "B07"
+  },
+  {
     "name": "阿莫西林可溶性粉",
     "content": "阿莫西林可溶性粉",
     "spec": "100g/袋*100袋/箱",
@@ -74,10 +213,37 @@
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "阿莫西林可溶性粉",
-    "product_name": "阿莫西林可溶性粉"
+    "product_name": "阿莫西林可溶性粉",
+    "product_group_id": "阿莫西林::阿莫西林可溶性粉",
+    "id": "B08"
   },
   {
-    "id": "B5",
+    "name": "硫酸黏菌素预混剂1000g",
+    "content": "硫酸黏菌素预混剂1000g",
+    "spec": "1000g/袋*10袋/箱",
+    "water": "8000斤",
+    "price": 44.2045454545455,
+    "indications": [
+      "革兰氏阴性菌引起的肠道感染",
+      "大肠杆菌病",
+      "沙门氏菌病"
+    ],
+    "main_component": "硫酸黏菌素",
+    "category": "化药",
+    "egg_period_safe": false,
+    "disease_types": [
+      "BACTERIAL",
+      "DIGESTIVE"
+    ],
+    "usage_info": "混饲：每袋拌料1000斤，连用3-5日",
+    "source": "底价目录",
+    "timing": "发病期间治疗使用",
+    "brand_name": "硫酸黏菌素预混剂1000g",
+    "product_name": "硫酸黏菌素预混剂1000g",
+    "product_group_id": "硫酸黏菌素::硫酸黏菌素预混剂",
+    "id": "B09"
+  },
+  {
     "name": "硫酸黏菌素预混剂1000g",
     "content": "硫酸黏菌素预混剂1000g",
     "spec": "100g/袋*100袋/箱",
@@ -99,10 +265,37 @@
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "硫酸黏菌素预混剂1000g",
-    "product_name": "硫酸黏菌素预混剂1000g"
+    "product_name": "硫酸黏菌素预混剂1000g",
+    "product_group_id": "硫酸黏菌素::硫酸黏菌素预混剂",
+    "id": "B10"
   },
   {
-    "id": "B5_500g",
+    "name": "硫酸黏菌素预混剂500g",
+    "content": "硫酸黏菌素预混剂500g",
+    "spec": "500g/袋*20袋/箱",
+    "water": "4000斤",
+    "price": 22.7272727272727,
+    "indications": [
+      "革兰氏阴性菌引起的肠道感染",
+      "大肠杆菌病",
+      "沙门氏菌病"
+    ],
+    "main_component": "硫酸黏菌素",
+    "category": "化药",
+    "egg_period_safe": false,
+    "disease_types": [
+      "BACTERIAL",
+      "DIGESTIVE"
+    ],
+    "usage_info": "混饲：每袋拌料500斤，连用3-5日",
+    "source": "底价目录",
+    "timing": "发病期间治疗使用",
+    "brand_name": "硫酸黏菌素预混剂500g",
+    "product_name": "硫酸黏菌素预混剂500g",
+    "product_group_id": "硫酸黏菌素::硫酸黏菌素预混剂",
+    "id": "B11"
+  },
+  {
     "name": "硫酸黏菌素预混剂500g",
     "content": "硫酸黏菌素预混剂500g",
     "spec": "100g/袋*100袋/箱",
@@ -124,10 +317,38 @@
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "硫酸黏菌素预混剂500g",
-    "product_name": "硫酸黏菌素预混剂500g"
+    "product_name": "硫酸黏菌素预混剂500g",
+    "product_group_id": "硫酸黏菌素::硫酸黏菌素预混剂",
+    "id": "B12"
   },
   {
-    "id": "B6",
+    "name": "硫酸新霉素可溶性粉",
+    "content": "硫酸新霉素可溶性粉",
+    "spec": "500g/袋*20袋/箱",
+    "water": "4500斤",
+    "price": 34.0909090909091,
+    "indications": [
+      "禽大肠杆菌病",
+      "沙门氏菌病",
+      "禽霍乱",
+      "鸡白痢"
+    ],
+    "main_component": "硫酸新霉素",
+    "category": "化药",
+    "egg_period_safe": false,
+    "disease_types": [
+      "BACTERIAL",
+      "DIGESTIVE"
+    ],
+    "usage_info": "混饮：每袋兑水800斤，连用3-5日",
+    "source": "底价目录",
+    "timing": "发病期间治疗使用",
+    "brand_name": "硫酸新霉素可溶性粉",
+    "product_name": "硫酸新霉素可溶性粉",
+    "product_group_id": "硫酸新霉素::硫酸新霉素可溶性粉",
+    "id": "B13"
+  },
+  {
     "name": "硫酸新霉素可溶性粉",
     "content": "硫酸新霉素可溶性粉",
     "spec": "100g/袋*100袋/箱",
@@ -150,10 +371,11 @@
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "硫酸新霉素可溶性粉",
-    "product_name": "硫酸新霉素可溶性粉"
+    "product_name": "硫酸新霉素可溶性粉",
+    "product_group_id": "硫酸新霉素::硫酸新霉素可溶性粉",
+    "id": "B14"
   },
   {
-    "id": "B7",
     "name": "盐酸恩诺沙星可溶性粉",
     "content": "盐酸恩诺沙星可溶性粉",
     "spec": "500g/袋*20袋/箱",
@@ -177,10 +399,11 @@
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "盐酸恩诺沙星可溶性粉",
-    "product_name": "盐酸恩诺沙星可溶性粉"
+    "product_name": "盐酸恩诺沙星可溶性粉",
+    "product_group_id": "盐酸恩诺沙星::盐酸恩诺沙星可溶性粉",
+    "id": "B15"
   },
   {
-    "id": "B8",
     "name": "硫酸庆大霉素可溶性粉",
     "content": "硫酸庆大霉素可溶性粉",
     "spec": "1000g/袋*10袋/箱",
@@ -202,10 +425,38 @@
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "硫酸庆大霉素可溶性粉",
-    "product_name": "硫酸庆大霉素可溶性粉"
+    "product_name": "硫酸庆大霉素可溶性粉",
+    "product_group_id": "硫酸庆大霉素::硫酸庆大霉素可溶性粉",
+    "id": "B16"
   },
   {
-    "id": "B9",
+    "name": "盐酸林可霉素可溶性粉",
+    "content": "盐酸林可霉素可溶性粉",
+    "spec": "1000g/袋*10袋/箱",
+    "water": "1500斤",
+    "price": 50.4545454545455,
+    "indications": [
+      "革兰氏阳性菌感染",
+      "支原体感染",
+      "坏死性肠炎"
+    ],
+    "main_component": "盐酸林可霉素",
+    "category": "化药",
+    "egg_period_safe": false,
+    "disease_types": [
+      "BACTERIAL",
+      "DIGESTIVE",
+      "RESPIRATORY"
+    ],
+    "usage_info": "混饮：每袋兑水1000斤，连用3-5日",
+    "source": "底价目录",
+    "timing": "发病期间治疗使用",
+    "brand_name": "盐酸林可霉素可溶性粉",
+    "product_name": "盐酸林可霉素可溶性粉",
+    "product_group_id": "盐酸林可霉素::盐酸林可霉素可溶性粉",
+    "id": "B17"
+  },
+  {
     "name": "盐酸林可霉素可溶性粉",
     "content": "盐酸林可霉素可溶性粉",
     "spec": "100g/袋*100袋/箱",
@@ -228,10 +479,38 @@
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "盐酸林可霉素可溶性粉",
-    "product_name": "盐酸林可霉素可溶性粉"
+    "product_name": "盐酸林可霉素可溶性粉",
+    "product_group_id": "盐酸林可霉素::盐酸林可霉素可溶性粉",
+    "id": "B18"
   },
   {
-    "id": "B10",
+    "name": "地美硝唑预混剂",
+    "content": "地美硝唑预混剂",
+    "spec": "1000g/袋*10袋/箱",
+    "water": "4000斤",
+    "price": 36.5909090909091,
+    "indications": [
+      "禽组织滴虫病",
+      "禽毛滴虫病",
+      "坏死性肠炎",
+      "球虫病辅助治疗"
+    ],
+    "main_component": "地美硝唑",
+    "category": "化药",
+    "egg_period_safe": false,
+    "disease_types": [
+      "PARASITIC",
+      "DIGESTIVE"
+    ],
+    "usage_info": "混饲：每袋拌料1000斤，连用3-5日",
+    "source": "底价目录",
+    "timing": "发病期间治疗使用",
+    "brand_name": "地美硝唑预混剂",
+    "product_name": "地美硝唑预混剂",
+    "product_group_id": "地美硝唑::地美硝唑预混剂",
+    "id": "B19"
+  },
+  {
     "name": "地美硝唑预混剂",
     "content": "地美硝唑预混剂",
     "spec": "100g/袋*100袋/箱",
@@ -254,10 +533,38 @@
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "地美硝唑预混剂",
-    "product_name": "地美硝唑预混剂"
+    "product_name": "地美硝唑预混剂",
+    "product_group_id": "地美硝唑::地美硝唑预混剂",
+    "id": "B20"
   },
   {
-    "id": "B11",
+    "name": "单硫酸卡那霉素可溶性粉",
+    "content": "单硫酸卡那霉素可溶性粉",
+    "spec": "500g/袋*20袋/箱",
+    "water": "2000斤",
+    "price": 25.2272727272727,
+    "indications": [
+      "禽大肠杆菌病",
+      "沙门氏菌病",
+      "禽霍乱"
+    ],
+    "main_component": "单硫酸卡那霉素",
+    "category": "化药",
+    "egg_period_safe": false,
+    "disease_types": [
+      "BACTERIAL",
+      "DIGESTIVE",
+      "RESPIRATORY"
+    ],
+    "usage_info": "混饮：每袋兑水800斤，连用3-5日",
+    "source": "底价目录",
+    "timing": "发病期间治疗使用",
+    "brand_name": "单硫酸卡那霉素可溶性粉",
+    "product_name": "单硫酸卡那霉素可溶性粉",
+    "product_group_id": "单硫酸卡那霉素::单硫酸卡那霉素可溶性粉",
+    "id": "B21"
+  },
+  {
     "name": "单硫酸卡那霉素可溶性粉",
     "content": "单硫酸卡那霉素可溶性粉",
     "spec": "100g/袋*100袋/箱",
@@ -280,10 +587,37 @@
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "单硫酸卡那霉素可溶性粉",
-    "product_name": "单硫酸卡那霉素可溶性粉"
+    "product_name": "单硫酸卡那霉素可溶性粉",
+    "product_group_id": "单硫酸卡那霉素::单硫酸卡那霉素可溶性粉",
+    "id": "B22"
   },
   {
-    "id": "B12",
+    "name": "替米考星溶液",
+    "content": "替米考星溶液",
+    "spec": "250ml/瓶*40瓶/箱",
+    "water": "1800斤",
+    "price": 34.0909090909091,
+    "indications": [
+      "鸡慢性呼吸道病",
+      "传染性鼻炎",
+      "禽霍乱"
+    ],
+    "main_component": "替米考星",
+    "category": "化药",
+    "egg_period_safe": false,
+    "disease_types": [
+      "RESPIRATORY",
+      "BACTERIAL"
+    ],
+    "usage_info": "混饮：每瓶兑水1000斤，连用3-5日",
+    "source": "底价目录",
+    "timing": "发病期间治疗使用",
+    "brand_name": "替米考星溶液",
+    "product_name": "替米考星溶液",
+    "product_group_id": "替米考星::替米考星溶液",
+    "id": "B23"
+  },
+  {
     "name": "替米考星溶液",
     "content": "替米考星溶液",
     "spec": "100ml/瓶*40瓶/箱",
@@ -305,10 +639,37 @@
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "替米考星溶液",
-    "product_name": "替米考星溶液"
+    "product_name": "替米考星溶液",
+    "product_group_id": "替米考星::替米考星溶液",
+    "id": "B24"
   },
   {
-    "id": "B13",
+    "name": "硫酸安普霉素可溶性粉",
+    "content": "硫酸安普霉素可溶性粉",
+    "spec": "500g/袋*20袋/箱",
+    "water": "2500斤",
+    "price": 114.886363636364,
+    "indications": [
+      "禽大肠杆菌病",
+      "沙门氏菌病",
+      "禽霍乱"
+    ],
+    "main_component": "硫酸安普霉素",
+    "category": "化药",
+    "egg_period_safe": false,
+    "disease_types": [
+      "BACTERIAL",
+      "DIGESTIVE"
+    ],
+    "usage_info": "混饮：每袋兑水800斤，连用3-5日",
+    "source": "底价目录",
+    "timing": "发病期间治疗使用",
+    "brand_name": "硫酸安普霉素可溶性粉",
+    "product_name": "硫酸安普霉素可溶性粉",
+    "product_group_id": "硫酸安普霉素::硫酸安普霉素可溶性粉",
+    "id": "B25"
+  },
+  {
     "name": "硫酸安普霉素可溶性粉",
     "content": "硫酸安普霉素可溶性粉",
     "spec": "100g/袋*100袋/箱",
@@ -330,10 +691,37 @@
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "硫酸安普霉素可溶性粉",
-    "product_name": "硫酸安普霉素可溶性粉"
+    "product_name": "硫酸安普霉素可溶性粉",
+    "product_group_id": "硫酸安普霉素::硫酸安普霉素可溶性粉",
+    "id": "B26"
   },
   {
-    "id": "B14",
+    "name": "替米考星预混剂",
+    "content": "替米考星预混剂",
+    "spec": "500g/袋*20袋/箱",
+    "water": "2500斤",
+    "price": 54.3181818181818,
+    "indications": [
+      "鸡慢性呼吸道病",
+      "传染性鼻炎",
+      "禽霍乱"
+    ],
+    "main_component": "替米考星",
+    "category": "化药",
+    "egg_period_safe": false,
+    "disease_types": [
+      "RESPIRATORY",
+      "BACTERIAL"
+    ],
+    "usage_info": "混饲：每袋拌料1000斤，连用3-5日",
+    "source": "底价目录",
+    "timing": "发病期间治疗使用",
+    "brand_name": "替米考星预混剂",
+    "product_name": "替米考星预混剂",
+    "product_group_id": "替米考星::替米考星预混剂",
+    "id": "B27"
+  },
+  {
     "name": "替米考星预混剂",
     "content": "替米考星预混剂",
     "spec": "100g/袋*100袋/箱",
@@ -355,10 +743,39 @@
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "替米考星预混剂",
-    "product_name": "替米考星预混剂"
+    "product_name": "替米考星预混剂",
+    "product_group_id": "替米考星::替米考星预混剂",
+    "id": "B28"
   },
   {
-    "id": "B15",
+    "name": "复方磺胺间甲氧嘧啶钠可溶性粉（毒性大不宜过量用）",
+    "content": "复方磺胺间甲氧嘧啶钠可溶性粉（毒性大不宜过量用）",
+    "spec": "500g/袋*20袋/箱",
+    "water": "2000斤",
+    "price": 41.0227272727273,
+    "indications": [
+      "禽大肠杆菌病",
+      "沙门氏菌病",
+      "禽霍乱",
+      "球虫病"
+    ],
+    "main_component": "磺胺间甲氧嘧啶钠+甲氧苄啶",
+    "category": "化药",
+    "egg_period_safe": false,
+    "disease_types": [
+      "BACTERIAL",
+      "DIGESTIVE",
+      "PARASITIC"
+    ],
+    "usage_info": "混饮：每袋兑水800斤，连用3-5日",
+    "source": "底价目录",
+    "timing": "发病期间治疗使用",
+    "brand_name": "复方磺胺间甲氧嘧啶钠可溶性粉（毒性大不宜过量用）",
+    "product_name": "复方磺胺间甲氧嘧啶钠可溶性粉（毒性大不宜过量用）",
+    "product_group_id": "磺胺间甲氧嘧啶钠+甲氧苄啶::复方磺胺间甲氧嘧啶钠可溶性粉（毒性大不宜过量用）",
+    "id": "B29"
+  },
+  {
     "name": "复方磺胺间甲氧嘧啶钠可溶性粉（毒性大不宜过量用）",
     "content": "复方磺胺间甲氧嘧啶钠可溶性粉（毒性大不宜过量用）",
     "spec": "100g/袋*100袋/箱",
@@ -382,10 +799,11 @@
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "复方磺胺间甲氧嘧啶钠可溶性粉（毒性大不宜过量用）",
-    "product_name": "复方磺胺间甲氧嘧啶钠可溶性粉（毒性大不宜过量用）"
+    "product_name": "复方磺胺间甲氧嘧啶钠可溶性粉（毒性大不宜过量用）",
+    "product_group_id": "磺胺间甲氧嘧啶钠+甲氧苄啶::复方磺胺间甲氧嘧啶钠可溶性粉（毒性大不宜过量用）",
+    "id": "B30"
   },
   {
-    "id": "B16",
     "name": "酒石酸泰万菌素预混剂",
     "content": "酒石酸泰万菌素预混剂",
     "spec": "100g/袋*50袋/箱",
@@ -406,10 +824,11 @@
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "酒石酸泰万菌素预混剂",
-    "product_name": "酒石酸泰万菌素预混剂"
+    "product_name": "酒石酸泰万菌素预混剂",
+    "product_group_id": "酒石酸泰万菌素::酒石酸泰万菌素预混剂",
+    "id": "B31"
   },
   {
-    "id": "B17",
     "name": "磺胺喹噁啉钠可溶性粉（去球虫病）",
     "content": "磺胺喹噁啉钠可溶性粉（去球虫病）",
     "spec": "100g/袋*100袋/箱",
@@ -431,10 +850,11 @@
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "磺胺喹噁啉钠可溶性粉（去球虫病）",
-    "product_name": "磺胺喹噁啉钠可溶性粉（去球虫病）"
+    "product_name": "磺胺喹噁啉钠可溶性粉（去球虫病）",
+    "product_group_id": "磺胺喹噁啉钠::磺胺喹噁啉钠可溶性粉（去球虫病）",
+    "id": "B32"
   },
   {
-    "id": "B18",
     "name": "磺胺氯吡嗪钠可溶性粉（去球虫病）",
     "content": "磺胺氯吡嗪钠可溶性粉（去球虫病）",
     "spec": "100g/袋*100袋/箱",
@@ -457,10 +877,11 @@
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "磺胺氯吡嗪钠可溶性粉（去球虫病）",
-    "product_name": "磺胺氯吡嗪钠可溶性粉（去球虫病）"
+    "product_name": "磺胺氯吡嗪钠可溶性粉（去球虫病）",
+    "product_group_id": "磺胺氯吡嗪钠::磺胺氯吡嗪钠可溶性粉（去球虫病）",
+    "id": "B33"
   },
   {
-    "id": "B19",
     "name": "30%氟苯尼考可溶性粉",
     "content": "30%氟苯尼考可溶性粉",
     "spec": "100g/袋*100袋/箱",
@@ -483,10 +904,11 @@
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "30%氟苯尼考可溶性粉",
-    "product_name": "30%氟苯尼考可溶性粉"
+    "product_name": "30%氟苯尼考可溶性粉",
+    "product_group_id": "氟苯尼考::30%氟苯尼考可溶性粉",
+    "id": "B34"
   },
   {
-    "id": "B20",
     "name": "10%盐酸多西环素可溶性粉",
     "content": "10%盐酸多西环素可溶性粉",
     "spec": "500g/袋*20袋/箱",
@@ -509,10 +931,11 @@
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "10%盐酸多西环素可溶性粉",
-    "product_name": "10%盐酸多西环素可溶性粉"
+    "product_name": "10%盐酸多西环素可溶性粉",
+    "product_group_id": "盐酸多西环素::10%盐酸多西环素可溶性粉",
+    "id": "B35"
   },
   {
-    "id": "B21",
     "name": "80%延胡索酸泰妙菌素（呼吸道）",
     "content": "80%延胡索酸泰妙菌素（呼吸道）",
     "spec": "100g/袋*100袋/箱",
@@ -533,7 +956,9 @@
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "80%延胡索酸泰妙菌素（呼吸道）",
-    "product_name": "80%延胡索酸泰妙菌素（呼吸道）"
+    "product_name": "80%延胡索酸泰妙菌素（呼吸道）",
+    "product_group_id": "延胡索酸泰妙菌素::80%延胡索酸泰妙菌素（呼吸道）",
+    "id": "B36"
   },
   {
     "id": "H1",
