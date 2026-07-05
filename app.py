@@ -533,7 +533,7 @@ def show_recommend():
     )
 
     @st.cache_resource
-    def get_recommender_cache():
+    def get_recommender_cache(_version="v20260705"):
         json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
         recommender = create_recommender(json_path)
         return recommender
@@ -806,7 +806,7 @@ def show_recommend():
         else:
             with st.spinner("正在分析病情并推荐最佳用药方案..."):
                 try:
-                    recommender = get_recommender_cache()
+                    recommender = get_recommender_cache("v20260705")
 
                     medication_history = []
                     if selected_shed:

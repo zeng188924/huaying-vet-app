@@ -25,7 +25,7 @@ st.set_page_config(
 )
 
 @st.cache_resource
-def get_recommender():
+def get_recommender(_version="v20260705"):
     json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
     recommender = create_recommender(json_path)
     return recommender
@@ -337,7 +337,7 @@ if recommend_clicked:
     else:
         with st.spinner("正在分析病情并推荐最佳用药方案..."):
             try:
-                recommender = get_recommender()
+                recommender = get_recommender("v20260705")
                 
                 environment_factors = {}
                 if selected_shed:
