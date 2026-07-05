@@ -47,14 +47,15 @@ st.set_page_config(
 
 # 导入推荐系统
 from drug_recommendation_system_full import (
-    create_recommender, quick_recommend
+    create_recommender, quick_recommend, DrugDatabase
 )
 from disease_knowledge import get_disease_knowledge_base, get_online_searcher
 from db_admin import render_admin_tab
 from utils.data_manager import (
     create_farmer_profile, get_all_farmer_profiles,
     get_farmer_profile, update_farmer_profile, delete_farmer_profile,
-    create_shed, get_sheds_by_farmer, get_shed, update_shed, delete_shed
+    create_shed, get_sheds_by_farmer, get_shed, update_shed, delete_shed,
+    get_medication_history, add_medication_history, delete_medication_history
 )
 from utils.encryption import hash_id_card
 from environment_adjustment import get_environment_adjustment_engine, ShedEnvironment
@@ -660,12 +661,63 @@ elif page == 'recommend':
     if selected_shed:
         st.markdown(f"""
         <div class="tip-box">
-            <strong>当前棚舍:</strong> {selected_shed.name} | 
-            <strong>品种:</strong> {selected_shed.breed} | 
+            <strong>当前棚舍:</strong> {selected_shed.name} |
+            <strong>品种:</strong> {selected_shed.breed} |
             <strong>规模:</strong> {selected_shed.scale}
         </div>
         """, unsafe_allow_html=True)
-    
+
+        # 历史用药记录
+        with st.expander("📜 历史用药记录", expanded=False):
+            medication_history = get_medication_history(selected_shed.id)
+
+            if medication_history:
+                st.info(f"已记录 {len(medication_history)} 条历史用药，推荐时将自动排除同类/交叉耐药药物")
+                for idx, entry in enumerate(medication_history):
+                    cols = st.columns([3, 1])
+                    with cols[0]:
+                        st.markdown(f"- **{entry['drug_name']}** ({entry['usage_date'][:10]})")
+                    with cols[1]:
+                        if st.button("🗑️", key=f"mobile_del_hist_{selected_shed.id}_{idx}", help="删除"):
+                            delete_medication_history(selected_shed.id, idx)
+                            st.rerun()
+            else:
+                st.info("暂无历史用药记录。如果是刚开始使用软件，请手动添加之前使用过的药物。")
+
+            json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
+            all_drugs = []
+            if os.path.exists(json_path):
+                db = DrugDatabase(json_path)
+                all_drugs = db.get_all_drugs()
+
+            st.markdown("**添加历史用药**")
+            history_options = sorted([d.name for d in all_drugs], key=lambda x: x.lower())
+            mobile_selected_history = st.multiselect(
+                "选择药品",
+                history_options,
+                key=f"mobile_history_select_{selected_shed.id}",
+                help="选择该棚舍之前使用过的药物"
+            )
+            mobile_custom_history = st.text_input(
+                "或手动输入（多个用逗号分隔）",
+                key=f"mobile_custom_history_{selected_shed.id}",
+                placeholder="例如：多西环素，阿莫西林"
+            )
+            if st.button("➕ 添加", key=f"mobile_add_history_{selected_shed.id}"):
+                added = []
+                for drug_name in mobile_selected_history:
+                    add_medication_history(selected_shed.id, drug_name, source="manual")
+                    added.append(drug_name)
+                if mobile_custom_history:
+                    for drug_name in [x.strip() for x in mobile_custom_history.replace('，', ',').split(',') if x.strip()]:
+                        add_medication_history(selected_shed.id, drug_name, source="manual")
+                        added.append(drug_name)
+                if added:
+                    st.success(f"已添加：{', '.join(added)}")
+                    st.rerun()
+                else:
+                    st.warning("请选择或输入至少一个药物")
+
     # 表单区域
     with st.form("recommend_form"):
         if selected_shed:
@@ -748,6 +800,11 @@ elif page == 'recommend':
             with st.spinner("正在分析病情..."):
                 try:
                     recommender = get_recommender()
+
+                    medication_history = []
+                    if selected_shed:
+                        medication_history = [entry['drug_name'] for entry in get_medication_history(selected_shed.id)]
+
                     result = quick_recommend(
                         recommender,
                         animal_type=animal_type,
@@ -756,14 +813,26 @@ elif page == 'recommend':
                         disease_type=disease_type,
                         usage=usage,
                         egg_period_safe=egg_period_safe,
-                        farm_scale=farm_scale
+                        farm_scale=farm_scale,
+                        medication_history=medication_history
                     )
-                    
+
+                    # 将本次推荐的组合方案用药记录到棚舍历史用药中，便于后续推荐参考
+                    if selected_shed:
+                        for combo in result.get('combination_recommendations', []):
+                            for drug in combo.get('drugs', []):
+                                add_medication_history(
+                                    selected_shed.id,
+                                    drug['name'],
+                                    notes=f"推荐方案：{combo.get('scheme_name', '')}",
+                                    source="recommendation"
+                                )
+
                     st.session_state.recommendation_result = result
                     st.session_state.show_results = True
                     st.session_state.selected_shed = selected_shed
                     st.session_state.selected_farmer = selected_farmer
-                    
+
                 except Exception as e:
                     st.error(f"推荐出错: {str(e)}")
     
@@ -861,7 +930,12 @@ elif page == 'recommend':
         # 单药推荐
         st.markdown("---")
         st.subheader("💊 推荐药品 (TOP 3)")
-        
+
+        if selected_shed:
+            medication_history = [entry['drug_name'] for entry in get_medication_history(selected_shed.id)]
+            if medication_history:
+                st.info(f"📜 已参考历史用药，已排除/规避同类交叉耐药药物：{', '.join(medication_history)}")
+
         if single_recs:
             for i, rec in enumerate(single_recs, 1):
                 drug = rec.get('drug', {})

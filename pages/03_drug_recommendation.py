@@ -13,7 +13,10 @@ from disease_knowledge import get_disease_knowledge_base
 from key_matters import get_key_matters, get_summary_points
 from environment_adjustment import get_environment_adjustment_engine, ShedEnvironment
 from diagnosis_engine import get_diagnosis_engine, get_safety_guardian
-from utils.data_manager import get_all_farmer_profiles, get_sheds_by_farmer
+from utils.data_manager import (
+    get_all_farmer_profiles, get_sheds_by_farmer,
+    get_medication_history, add_medication_history, delete_medication_history
+)
 
 st.set_page_config(
     page_title="智能用药推荐",
@@ -229,6 +232,55 @@ with st.sidebar:
         help="选择您的养殖场中已经产生耐药性或经常使用导致效果下降的药物，系统将在推荐时排除这些药物"
     )
 
+    st.markdown("---")
+    st.header("📜 历史用药记录")
+
+    if selected_shed:
+        medication_history = get_medication_history(selected_shed.id)
+
+        if medication_history:
+            st.info(f"已记录 {len(medication_history)} 条历史用药，系统推荐时将自动排除这些药物及同类易产生交叉耐药的药物")
+            for idx, entry in enumerate(medication_history):
+                cols = st.columns([3, 1])
+                with cols[0]:
+                    st.markdown(f"- **{entry['drug_name']}** ({entry['usage_date'][:10]})")
+                with cols[1]:
+                    if st.button("🗑️", key=f"del_hist_{selected_shed.id}_{idx}", help="删除该条记录"):
+                        delete_medication_history(selected_shed.id, idx)
+                        st.rerun()
+        else:
+            st.info("暂无历史用药记录。如果是刚开始使用软件，请手动添加之前使用过的药物。")
+
+        st.markdown("**手动添加历史用药**")
+        history_options = sorted([d.name for d in all_drugs], key=lambda x: x.lower())
+        selected_history = st.multiselect(
+            "从药品库选择",
+            history_options,
+            key=f"history_select_{selected_shed.id}",
+            help="选择该棚舍之前使用过的药物"
+        )
+        custom_history = st.text_input(
+            "或手动输入其他药物（多个用逗号分隔）",
+            key=f"custom_history_{selected_shed.id}",
+            placeholder="例如：多西环素，阿莫西林"
+        )
+        if st.button("➕ 添加历史用药", key=f"add_history_{selected_shed.id}"):
+            added = []
+            for drug_name in selected_history:
+                add_medication_history(selected_shed.id, drug_name, source="manual")
+                added.append(drug_name)
+            if custom_history:
+                for drug_name in [x.strip() for x in custom_history.replace('，', ',').split(',') if x.strip()]:
+                    add_medication_history(selected_shed.id, drug_name, source="manual")
+                    added.append(drug_name)
+            if added:
+                st.success(f"已添加历史用药：{', '.join(added)}")
+                st.rerun()
+            else:
+                st.warning("请选择或输入至少一个药物名称")
+    else:
+        st.info("请先选择棚舍以查看或添加历史用药记录")
+
 if selected_shed:
     st.subheader("📊 当前棚舍信息")
     with st.container():
@@ -263,7 +315,11 @@ if recommend_clicked:
                     }
                 
                 excluded_drug_names = [d.split(' (')[0] for d in excluded_drugs] if excluded_drugs else []
-                
+
+                medication_history = []
+                if selected_shed:
+                    medication_history = [entry['drug_name'] for entry in get_medication_history(selected_shed.id)]
+
                 result = quick_recommend(
                     recommender,
                     animal_type=animal_type,
@@ -273,12 +329,24 @@ if recommend_clicked:
                     usage=usage,
                     egg_period_safe=egg_period_safe,
                     farm_scale=farm_scale,
-                    excluded_drugs=excluded_drug_names
+                    excluded_drugs=excluded_drug_names,
+                    medication_history=medication_history
                 )
-                
+
+                # 将本次推荐的组合方案用药记录到棚舍历史用药中，便于后续推荐参考
+                if selected_shed:
+                    for combo in result.get('combination_recommendations', []):
+                        for drug in combo.get('drugs', []):
+                            add_medication_history(
+                                selected_shed.id,
+                                drug['name'],
+                                notes=f"推荐方案：{combo.get('scheme_name', '')}",
+                                source="recommendation"
+                            )
+
                 st.session_state['recommendation_result'] = result
                 st.session_state['show_results'] = True
-                
+
             except Exception as e:
                 st.error(f"推荐过程中出现错误: {str(e)}")
 
@@ -347,7 +415,12 @@ if st.session_state.get('show_results', False):
     
     st.markdown("---")
     st.subheader("💊 用药推荐")
-    
+
+    if selected_shed:
+        medication_history = [entry['drug_name'] for entry in get_medication_history(selected_shed.id)]
+        if medication_history:
+            st.info(f"📜 本次推荐已参考该棚舍历史用药记录，已自动排除或规避同类/交叉耐药药物：{', '.join(medication_history)}")
+
     single_recs = result['single_recommendations']
     if single_recs:
         for i, rec in enumerate(single_recs, 1):

@@ -66,6 +66,7 @@ class RecommendationRequest:
     egg_period_safe: bool
     farm_scale: str
     excluded_drugs: List[str] = None
+    medication_history: List[str] = None  # 历史用药记录（药物名称列表）
 
 
 @dataclass
@@ -598,6 +599,85 @@ CHEMICAL_COMPONENT_KEYWORDS = [
     "喹诺酮", "红霉素", "青霉素", "链霉素", "壮观霉素",
 ]
 
+# 交叉耐药性分组（同类化药易产生交叉耐药，历史用药命中某一类后，推荐时应避免同类药物）
+CROSS_RESISTANCE_GROUPS = {
+    "四环素类": ["多西环素", "金霉素", "土霉素", "四环素", "米诺环素"],
+    "大环内酯类": ["替米考星", "泰万菌素", "泰乐菌素", "红霉素", "吉他霉素", "螺旋霉素", "阿奇霉素"],
+    "截短侧耳素/林可胺类": ["泰妙菌素", "沃尼妙林", "林可霉素", "克林霉素"],
+    "氟喹诺酮类": ["恩诺沙星", "沙拉沙星", "环丙沙星", "达氟沙星", "氧氟沙星", "诺氟沙星", "培氟沙星"],
+    "氨基糖苷类": ["庆大霉素", "新霉素", "安普霉素", "卡那霉素", "大观霉素", "阿米卡星", "链霉素", "壮观霉素"],
+    "β-内酰胺类": ["阿莫西林", "青霉素", "氨苄西林", "头孢", "头孢喹肟", "苯唑西林"],
+    "酰胺醇类": ["氟苯尼考", "甲砜霉素", "氯霉素"],
+    "磺胺类": ["磺胺", "磺胺间甲氧嘧啶", "磺胺喹噁啉", "磺胺氯吡嗪", "甲氧苄啶"],
+    "多肽类": ["黏菌素", "多黏菌素", "杆菌肽"],
+    "硝基咪唑类": ["地美硝唑", "甲硝唑", "替硝唑", "奥硝唑"],
+    "解热镇痛类": ["卡巴匹林", "阿司匹林", "扑热息痛", "对乙酰氨基酚", "布洛芬", "氟尼辛"],
+}
+
+
+def _get_resistance_groups(component: str) -> List[str]:
+    """根据药物成分判断其所属的交叉耐药类别"""
+    if not component:
+        return []
+    groups = []
+    for group_name, keywords in CROSS_RESISTANCE_GROUPS.items():
+        for kw in keywords:
+            if kw in component:
+                groups.append(group_name)
+                break
+    return groups
+
+
+def _get_history_excluded_drugs(history: List[str], all_drugs: List[DrugInfo]) -> set:
+    """根据历史用药记录，计算需要避免重复或交叉耐药的药物名称集合
+
+    规则：
+      1. 历史用药本身一定排除；
+      2. 化药若与历史用药属于同一交叉耐药类别，则排除；
+      3. 中兽药/保健类产品仅排除与历史用药名称完全相同的品种。
+    """
+    excluded = set()
+    if not history:
+        return excluded
+
+    history_names = set(h.strip() for h in history if h and str(h).strip())
+    excluded.update(history_names)
+
+    # 收集历史用药涉及的所有耐药类别（仅化药）
+    affected_groups = set()
+    for hist_name in history_names:
+        # 尝试在数据库中匹配完整药物
+        matched = None
+        for d in all_drugs:
+            if d.name == hist_name or (d.brand_name and d.brand_name == hist_name) or (hist_name in d.name) or (d.brand_name and hist_name in d.brand_name):
+                matched = d
+                break
+        if matched:
+            if classify_drug_type(matched) == "化药":
+                affected_groups.update(_get_resistance_groups(matched.main_component))
+                affected_groups.update(_get_resistance_groups(matched.name))
+        else:
+            # 未匹配到产品时，把历史用药名称本身当作自由文本进行类别关键词匹配
+            affected_groups.update(_get_resistance_groups(hist_name))
+
+    if not affected_groups:
+        # 没有命中耐药类别时，仅做精确名称排除
+        return excluded
+
+    # 再次遍历所有药物，排除同类化药
+    for d in all_drugs:
+        if d.name in excluded or (d.brand_name and d.brand_name in excluded):
+            continue
+        if classify_drug_type(d) != "化药":
+            continue
+        drug_groups = set(_get_resistance_groups(d.main_component) + _get_resistance_groups(d.name))
+        if drug_groups & affected_groups:
+            excluded.add(d.name)
+            if d.brand_name:
+                excluded.add(d.brand_name)
+
+    return excluded
+
 
 def classify_drug_type(drug: "DrugInfo") -> str:
     """根据药物的类别与成分判定其类型
@@ -994,6 +1074,11 @@ class DrugRecommender:
         if request.disease_type in self.disease_type_mapping:
             disease_type = self.disease_type_mapping[request.disease_type]
         
+        # 根据历史用药记录计算需要避免的药物集合（含交叉耐药同类药物）
+        request.history_excluded = _get_history_excluded_drugs(
+            request.medication_history, self.db.get_all_drugs()
+        )
+        
         # 获取候选药物
         candidate_drugs = self._get_candidate_drugs(request, diseases, disease_type)
         
@@ -1044,27 +1129,32 @@ class DrugRecommender:
             "compatibility_warnings": compatibility_warnings
         }
     
-    def _get_candidate_drugs(self, request: RecommendationRequest, 
+    def _get_candidate_drugs(self, request: RecommendationRequest,
                              diseases: List[str], disease_type: str) -> List[DrugInfo]:
         """获取候选药物列表"""
         candidates = []
-        
+
         excluded_drugs_set = set(request.excluded_drugs) if request.excluded_drugs else set()
-        
+        history_excluded_set = getattr(request, 'history_excluded', set())
+
         for drug in self.db.get_all_drugs():
-            # 排除耐药性药物
+            # 排除用户指定的耐药性药物
             if drug.name in excluded_drugs_set or drug.brand_name in excluded_drugs_set:
                 continue
-            
+
+            # 排除历史用药及易产生交叉耐药的同类药物
+            if drug.name in history_excluded_set or (drug.brand_name and drug.brand_name in history_excluded_set):
+                continue
+
             # 产蛋期安全检查
             if request.egg_period_safe and not drug.egg_period_safe:
                 continue
-            
+
             # 疾病类型匹配
             if disease_type in drug.disease_types:
                 candidates.append(drug)
                 continue
-            
+
             # 适应症匹配
             for indication in drug.indications:
                 for disease in diseases:
@@ -1072,17 +1162,18 @@ class DrugRecommender:
                         if drug not in candidates:
                             candidates.append(drug)
                         break
-        
+
         return candidates
     
-    def _supplement_drugs(self, candidates: List[DrugInfo], 
-                          request: RecommendationRequest, 
+    def _supplement_drugs(self, candidates: List[DrugInfo],
+                          request: RecommendationRequest,
                           disease_type: str,
                           diseases: List[str]) -> List[DrugInfo]:
         """补充候选药物 - 只补充适应症真正匹配的药物"""
         existing_names = {d.name for d in candidates}
         excluded_drugs_set = set(request.excluded_drugs) if request.excluded_drugs else set()
-        
+        history_excluded_set = getattr(request, 'history_excluded', set())
+
         # 严格类型优先级 - 只有高度相关的类型才会被补充
         type_priority = {
             "PARASITIC": ["BACTERIAL"],
@@ -1103,12 +1194,14 @@ class DrugRecommender:
                 continue
             if drug.name in excluded_drugs_set or drug.brand_name in excluded_drugs_set:
                 continue
+            if drug.name in history_excluded_set or (drug.brand_name and drug.brand_name in history_excluded_set):
+                continue
             if request.egg_period_safe and not drug.egg_period_safe:
                 continue
             if disease_type in drug.disease_types:
                 candidates.append(drug)
                 existing_names.add(drug.name)
-        
+
         # 补充相关类型药物 - 但要求适应症必须匹配
         for related_type in type_priority.get(disease_type, []):
             for drug in self.db.get_all_drugs():
@@ -1117,6 +1210,8 @@ class DrugRecommender:
                 if drug.name in existing_names:
                     continue
                 if drug.name in excluded_drugs_set or drug.brand_name in excluded_drugs_set:
+                    continue
+                if drug.name in history_excluded_set or (drug.brand_name and drug.brand_name in history_excluded_set):
                     continue
                 if request.egg_period_safe and not drug.egg_period_safe:
                     continue
@@ -1137,7 +1232,7 @@ class DrugRecommender:
         
         return candidates
     
-    def _calculate_single_recommendations(self, drugs: List[DrugInfo], 
+    def _calculate_single_recommendations(self, drugs: List[DrugInfo],
                                           request: RecommendationRequest,
                                           diseases: List[str],
                                           disease_type: str = "MIXED") -> List[DrugRecommendation]:
@@ -1147,7 +1242,8 @@ class DrugRecommender:
         推荐结果完全基于匹配分数排序，取前3个不重复产品。
         """
         recommendations = []
-        
+        history_excluded_set = getattr(request, 'history_excluded', set())
+
         for drug in drugs:
             match_score = self._calculate_match_score(drug, diseases, request, disease_type)
             reason = self._generate_reason(drug, diseases, match_score)
@@ -1171,7 +1267,9 @@ class DrugRecommender:
             for drug in self.db.get_all_drugs():
                 if request.egg_period_safe and not drug.egg_period_safe:
                     continue
-                
+                if drug.name in history_excluded_set or (drug.brand_name and drug.brand_name in history_excluded_set):
+                    continue
+
                 fallback_dosage = self._generate_dosage(drug, request)
                 fallback_reason_detail = _generate_single_drug_reason(
                     drug, diseases, 0.1, fallback_dosage
@@ -1213,6 +1311,9 @@ class DrugRecommender:
         seen_ids = set()
         for rec in truly_matched_recommendations:
             if rec.drug.id not in seen_ids:
+                # 额外过滤历史用药及交叉耐药同类药物
+                if rec.drug.name in history_excluded_set or (rec.drug.brand_name and rec.drug.brand_name in history_excluded_set):
+                    continue
                 final_recommendations.append(rec)
                 seen_ids.add(rec.drug.id)
             if len(final_recommendations) >= 3:
@@ -1353,12 +1454,15 @@ class DrugRecommender:
         }
         
         schemes = combination_schemes.get(disease_type, combination_schemes["MIXED"])
-        
+
+        # 历史用药排除集合（包含交叉耐药同类药物）
+        history_excluded_set = getattr(request, 'history_excluded', set())
+
         for scheme in schemes:
             # 产蛋期安全检查 - 如果方案标记为产蛋期不安全且用户要求产蛋期安全，则跳过
             if request.egg_period_safe and scheme.get("egg_safe", True) == False:
                 continue
-            
+
             # 再检查方案中的每个药物
             if request.egg_period_safe:
                 has_unsafe = False
@@ -1369,13 +1473,17 @@ class DrugRecommender:
                         break
                 if has_unsafe:
                     continue
-            
+
             # 排除耐药性药物检查
             excluded_set = set(request.excluded_drugs) if request.excluded_drugs else set()
             has_excluded = False
             for drug_name in scheme["drugs"]:
                 drug = self.db.get_drug_by_name(drug_name)
                 if drug and (drug.name in excluded_set or drug.brand_name in excluded_set):
+                    has_excluded = True
+                    break
+                # 排除历史用药及易产生交叉耐药的同类药物
+                if drug and (drug.name in history_excluded_set or (drug.brand_name and drug.brand_name in history_excluded_set)):
                     has_excluded = True
                     break
             if has_excluded:
@@ -1515,7 +1623,7 @@ class DrugRecommender:
                     # 否则保留双中兽药组合，不再强制添加无依据化药。
                     if _has_effective_chemical_drug(self.db, diseases, request):
                         used_names = {dd.get("name", "") for dd in drug_details}
-                        excluded_drugs = request.excluded_drugs if request.excluded_drugs else []
+                        excluded_drugs = list(set((request.excluded_drugs or []) + list(history_excluded_set)))
 
                         chemical_drug = _find_chemical_drug(
                             self.db, disease_type, diseases, used_names,
@@ -1629,7 +1737,8 @@ class DrugRecommender:
                                    diseases: List[str], disease_type: str = "MIXED") -> List[Dict]:
         """获取默认组合方案（同样执行化药适应症过滤）"""
         default_combos = []
-        
+        history_excluded_set = getattr(request, 'history_excluded', set())
+
         # 根据疾病类型选择不同的默认组合
         if disease_type == "RESPIRATORY":
             safe_combos = [
@@ -1665,6 +1774,10 @@ class DrugRecommender:
                 drug = self.db.get_drug_by_name(drug_name)
                 if drug:
                     if request.egg_period_safe and not drug.egg_period_safe:
+                        all_exist = False
+                        break
+                    # 排除历史用药及交叉耐药同类药物
+                    if drug.name in history_excluded_set or (drug.brand_name and drug.brand_name in history_excluded_set):
                         all_exist = False
                         break
                     total_price += drug.price
@@ -1725,7 +1838,7 @@ def create_recommender(data_path: str) -> DrugRecommender:
     return DrugRecommender(db)
 
 
-def quick_recommend(recommender: DrugRecommender, 
+def quick_recommend(recommender: DrugRecommender,
                    animal_type: str,
                    age_stage: str,
                    symptom: str,
@@ -1733,7 +1846,8 @@ def quick_recommend(recommender: DrugRecommender,
                    usage: str,
                    egg_period_safe: bool,
                    farm_scale: str,
-                   excluded_drugs: List[str] = None) -> Dict:
+                   excluded_drugs: List[str] = None,
+                   medication_history: List[str] = None) -> Dict:
     """快速推荐函数"""
     request = RecommendationRequest(
         animal_type=animal_type,
@@ -1743,6 +1857,7 @@ def quick_recommend(recommender: DrugRecommender,
         usage=usage,
         egg_period_safe=egg_period_safe,
         farm_scale=farm_scale,
-        excluded_drugs=excluded_drugs
+        excluded_drugs=excluded_drugs,
+        medication_history=medication_history
     )
     return recommender.recommend(request)

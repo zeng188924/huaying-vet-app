@@ -38,6 +38,7 @@ class ShedInfo:
     cleanliness_level: Optional[str] = None
     ammonia_level: Optional[str] = None
     lighting_hours: Optional[int] = None
+    medication_history: List[Dict] = None
     create_time: str = ""
     update_time: str = ""
 
@@ -153,6 +154,55 @@ def get_shed(shed_id: str) -> Optional[ShedInfo]:
 def get_sheds_by_farmer(farmer_id: str) -> List[ShedInfo]:
     data = _load_json(SHED_DATA_FILE)
     return [ShedInfo(**item) for item in data if item['farmer_id'] == farmer_id]
+
+
+def get_medication_history(shed_id: str) -> List[Dict]:
+    """获取指定棚舍的历史用药记录"""
+    shed = get_shed(shed_id)
+    if shed and shed.medication_history:
+        return list(shed.medication_history)
+    return []
+
+
+def add_medication_history(shed_id: str, drug_name: str, notes: str = "", source: str = "manual") -> Optional[ShedInfo]:
+    """为指定棚舍添加一条历史用药记录
+
+    Args:
+        shed_id: 棚舍ID
+        drug_name: 药物名称
+        notes: 备注信息
+        source: 记录来源，如 'manual'（手动录入）或 'recommendation'（系统推荐）
+    """
+    data = _load_json(SHED_DATA_FILE)
+    for item in data:
+        if item['id'] == shed_id:
+            if 'medication_history' not in item or item['medication_history'] is None:
+                item['medication_history'] = []
+            entry = {
+                "drug_name": drug_name,
+                "usage_date": datetime.now().isoformat(),
+                "notes": notes,
+                "source": source
+            }
+            item['medication_history'].append(entry)
+            item['update_time'] = datetime.now().isoformat()
+            _save_json(SHED_DATA_FILE, data)
+            return ShedInfo(**item)
+    return None
+
+
+def delete_medication_history(shed_id: str, index: int) -> Optional[ShedInfo]:
+    """删除指定棚舍的某条历史用药记录"""
+    data = _load_json(SHED_DATA_FILE)
+    for item in data:
+        if item['id'] == shed_id:
+            history = item.get('medication_history') or []
+            if 0 <= index < len(history):
+                history.pop(index)
+                item['update_time'] = datetime.now().isoformat()
+                _save_json(SHED_DATA_FILE, data)
+                return ShedInfo(**item)
+    return None
 
 def update_shed(shed_id: str, **kwargs) -> Optional[ShedInfo]:
     data = _load_json(SHED_DATA_FILE)
