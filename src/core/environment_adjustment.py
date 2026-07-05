@@ -36,11 +36,21 @@ class ShedEnvironment:
     """棚舍环境信息"""
     temperature: Optional[float] = None
     humidity: Optional[float] = None
+    temperature_range: Optional[str] = None
     ventilation_status: Optional[str] = None
     stocking_density: Optional[str] = None
     cleanliness_level: Optional[str] = None
     ammonia_level: Optional[str] = None
     lighting_hours: Optional[int] = None
+    water_quality: Optional[str] = None
+    dust_level: Optional[str] = None
+    noise_level: Optional[str] = None
+    feeding_mode: Optional[str] = None
+    litter_condition: Optional[str] = None
+    air_quality: Optional[str] = None
+    dead_birds_daily: Optional[int] = None
+    feed_intake_status: Optional[str] = None
+    water_intake_status: Optional[str] = None
 
 
 class EnvironmentAdjustmentEngine:

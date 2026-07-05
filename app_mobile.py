@@ -47,7 +47,8 @@ st.set_page_config(
 
 # 导入推荐系统
 from drug_recommendation_system_full import (
-    create_recommender, quick_recommend, DrugDatabase
+    create_recommender, quick_recommend, DrugDatabase,
+    DISEASE_TYPE_CATEGORIES
 )
 from disease_knowledge import get_disease_knowledge_base, get_online_searcher
 from db_admin import render_admin_tab
@@ -55,11 +56,13 @@ from src.utils.data_manager import (
     create_farmer_profile, get_all_farmer_profiles,
     get_farmer_profile, update_farmer_profile, delete_farmer_profile,
     create_shed, get_sheds_by_farmer, get_shed, update_shed, delete_shed,
-    get_medication_history, add_medication_history, delete_medication_history
+    get_medication_history, add_medication_history, delete_medication_history,
+    start_new_batch, get_all_batches
 )
 from src.utils.encryption import hash_id_card
 from environment_adjustment import get_environment_adjustment_engine, ShedEnvironment
 from key_matters import get_key_matters, get_summary_points
+from src.admin.content_extractor import extract_product_info
 from diagnosis_engine import (
     get_diagnosis_engine, get_questionnaire, get_safety_guardian,
     SymptomBasedDiagnosisEngine, SymptomQuestionnaire, MedicationSafetyGuardian
@@ -68,7 +71,7 @@ from diagnosis_engine import (
 # 初始化推荐器 - 使用JSON文件加载数据
 # _version 参数用于强制使旧缓存失效，当推荐逻辑更新时请修改版本号
 @st.cache_resource
-def get_recommender(_version="v20260705"):
+def get_recommender(_version="v20260706_2"):
     # 优先使用JSON文件，数据更新更可靠
     json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
     if os.path.exists(json_path):
@@ -670,10 +673,88 @@ elif page == 'recommend':
 
         # 历史用药记录
         with st.expander("📜 历史用药记录", expanded=False):
+            # 当前批次管理
+            current_batch = selected_shed.batch_id or "default"
+            batch_display = selected_shed.batch_name or current_batch
+            st.markdown(f"**当前养殖批次：** `{batch_display}`")
+            if selected_shed.placement_date:
+                st.caption(f"入舍日期：{selected_shed.placement_date[:10]}")
+            if selected_shed.current_age_days is not None:
+                st.caption(f"当前日龄：{selected_shed.current_age_days} 天")
+            st.caption("历史用药按批次隔离，换一批新禽时请新建批次，避免旧记录导致无药可用。")
+
+            # 根据预计出栏日期提示是否该换禽
+            if selected_shed.expected_slaughter_date:
+                from datetime import date
+                try:
+                    expected = date.fromisoformat(selected_shed.expected_slaughter_date[:10])
+                    if date.today() > expected:
+                        st.warning(
+                            f"⚠️ 当前批次预计出栏/换羽日期（{expected.isoformat()}）已过，"
+                            "若已进新禽，请立即新建批次以隔离历史用药记录。"
+                        )
+                except Exception:
+                    pass
+
+            with st.expander("🆕 新建养殖批次（换禽确认）", expanded=False):
+                st.info(
+                    "**换禽确认**：请确认该棚舍已经进了一批新禽，并填写以下信息。"
+                    "新建批次后，上一批的历史用药记录将自动隔离，不再影响本次推荐。"
+                )
+                new_batch_name = st.text_input(
+                    "批次名称 *",
+                    placeholder="例如：2026年7月第2批",
+                    key=f"mobile_new_batch_{selected_shed.id}"
+                )
+                bcol1, bcol2 = st.columns(2)
+                with bcol1:
+                    new_placement_date = st.date_input(
+                        "入舍日期 *",
+                        value=None,
+                        help="新一批禽的入舍日期，是判断是否换禽的核心依据",
+                        key=f"mobile_new_placement_{selected_shed.id}"
+                    )
+                    new_current_age = st.number_input(
+                        "当前日龄 *",
+                        min_value=0, max_value=999, value=0,
+                        help="新一批禽当前的实际日龄",
+                        key=f"mobile_new_age_{selected_shed.id}"
+                    )
+                with bcol2:
+                    new_expected_slaughter = st.date_input(
+                        "预计出栏/换羽日期",
+                        value=None,
+                        help="预计这批禽出栏或换羽的日期",
+                        key=f"mobile_new_slaughter_{selected_shed.id}"
+                    )
+                confirm_new_batch = st.checkbox(
+                    "✅ 我确认该棚舍已经更换为新一批禽，上一批历史用药可隔离",
+                    key=f"mobile_confirm_batch_{selected_shed.id}"
+                )
+                if st.button("🆕 确认新建批次", key=f"mobile_start_batch_{selected_shed.id}"):
+                    if not new_batch_name.strip():
+                        st.warning("请输入批次名称")
+                    elif new_placement_date is None:
+                        st.warning("请填写入舍日期，这是判断是否换禽的核心依据")
+                    elif new_current_age <= 0:
+                        st.warning("请填写当前日龄")
+                    elif not confirm_new_batch:
+                        st.warning("请勾选确认已换禽，才能新建批次")
+                    else:
+                        start_new_batch(
+                            selected_shed.id,
+                            batch_name=new_batch_name.strip(),
+                            placement_date=new_placement_date.isoformat(),
+                            expected_slaughter_date=new_expected_slaughter.isoformat() if new_expected_slaughter else "",
+                            current_age_days=int(new_current_age)
+                        )
+                        st.success(f"已新建批次：{new_batch_name.strip()}，历史用药已按新批次隔离")
+                        st.rerun()
+
             medication_history = get_medication_history(selected_shed.id)
 
             if medication_history:
-                st.info(f"已记录 {len(medication_history)} 条历史用药，推荐时将自动排除同类/交叉耐药药物")
+                st.info(f"当前批次已记录 {len(medication_history)} 条历史用药，推荐时将自动排除同类/交叉耐药药物")
                 for idx, entry in enumerate(medication_history):
                     cols = st.columns([3, 1])
                     with cols[0]:
@@ -751,6 +832,56 @@ elif page == 'recommend':
                 else:
                     st.warning("请选择或输入至少一个药物")
 
+    # 实验室检测报告识别（放在表单外部，避免识别按钮触发表单提交）
+    st.markdown("---")
+    st.subheader("🔬 实验室检测报告识别")
+    mobile_lab_file = st.file_uploader(
+        "上传检测报告（图片/PDF）",
+        type=["jpg", "jpeg", "png", "pdf"],
+        key="mobile_lab_file",
+        help="系统会自动识别报告中的疾病和症状关键词，回填到下方表单"
+    )
+    mobile_lab_text = st.text_area(
+        "或粘贴检测报告文本",
+        placeholder="可直接粘贴检测报告的结论或全文...",
+        key="mobile_lab_text",
+        height=80
+    )
+
+    if st.button("🧪 识别报告内容", key="mobile_parse_lab"):
+        parsed = None
+        if mobile_lab_file is not None:
+            import tempfile
+            ext = mobile_lab_file.name.rsplit(".", 1)[-1].lower()
+            try:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=f".{ext}") as tmp:
+                    tmp.write(mobile_lab_file.getvalue())
+                    tmp_path = tmp.name
+                extract_result = extract_product_info(tmp_path, ext)
+                if extract_result.get("success"):
+                    parsed = parse_lab_report(extract_result.get("raw_text", ""))
+                else:
+                    st.warning(f"报告识别失败：{extract_result.get('error', '未知错误')}，可尝试粘贴文本")
+            except Exception as e:
+                st.warning(f"报告处理出错：{e}")
+            finally:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+        if parsed is None and mobile_lab_text.strip():
+            parsed = parse_lab_report(mobile_lab_text)
+
+        if parsed:
+            st.success(
+                f"识别结果：{parsed['disease_category']} - {parsed['disease_name']}（置信度：{parsed['confidence']}）"
+            )
+            if parsed.get("symptom_summary"):
+                st.caption(f"识别到的症状：{parsed['symptom_summary']}")
+            st.session_state['auto_symptom'] = parsed['symptom_summary'] or f"实验室检测提示：{parsed['disease_name']}"
+            st.session_state['auto_disease_type'] = parsed['disease_name']
+            st.rerun()
+        else:
+            st.info("未能从报告中识别到明确疾病，请手动填写")
+
     # 表单区域
     with st.form("recommend_form"):
         if selected_shed:
@@ -780,21 +911,58 @@ elif page == 'recommend':
         )
         
         # 病症
+        st.info(
+            "💡 **症状填写提示**：请尽量详细描述，至少包括：\n\n"
+            "1. **呼吸道**：咳嗽/呼噜/甩鼻/流涕/流泪/张口呼吸/伸颈喘/怪叫；\n"
+            "2. **消化道**：采食量/饮水量变化、粪便颜色形状（绿便/血便/水便/过料）；\n"
+            "3. **精神状态**：沉郁、扎堆、羽毛松乱、运动障碍、神经症状；\n"
+            "4. **死淘情况**：日死淘数、死亡率趋势、发病日龄；\n"
+            "5. **其他**：体温、产蛋变化、皮肤/冠髯异常等。"
+        )
         auto_symptom = st.session_state.get('auto_symptom', '')
-        symptom = st.text_input(
-            "🤒 主要症状",
+        symptom = st.text_area(
+            "🤒 主要症状（请详细描述）",
             value=auto_symptom,
-            placeholder="例如：咳嗽、拉稀、精神沉郁..."
+            placeholder="请尽量详细：咳嗽/呼噜/甩鼻/流涕/流泪/张口呼吸/减料/发热/粪便异常/死淘情况等",
+            help="描述动物的主要症状，越详细推荐越准确。建议不少于20字。",
+            height=100
+        )
+        if symptom:
+            symptom_len = len(symptom.strip())
+            if symptom_len < 10:
+                st.warning("⚠️ 症状描述较简略，建议补充咳嗽频率、呼吸方式、精神状态、采食量、粪便等细节，推荐会更准确。")
+            elif symptom_len < 20:
+                st.info("ℹ️ 症状描述尚可，如能补充发病日龄、死淘数、粪便/产蛋细节，推荐会更精准。")
+        
+        # 发病类型：二级分类，先选大类，再选具体疾病
+        auto_disease_type = st.session_state.get('auto_disease_type', '')
+        disease_categories = list(DISEASE_TYPE_CATEGORIES.keys())
+        
+        # 根据自动识别或旧数据尝试反推大类
+        auto_category = None
+        if auto_disease_type:
+            for cat, diseases in DISEASE_TYPE_CATEGORIES.items():
+                if auto_disease_type == cat or auto_disease_type in diseases:
+                    auto_category = cat
+                    break
+        
+        category_index = disease_categories.index(auto_category) if auto_category in disease_categories else 0
+        disease_category = st.selectbox(
+            "🏥 发病大类",
+            disease_categories,
+            index=category_index,
+            key="disease_category_mobile"
         )
         
-        # 发病类型
-        auto_disease_type = st.session_state.get('auto_disease_type', '')
-        disease_type_options = ["呼吸道疾病", "消化道疾病", "寄生虫病", "细菌性疾病", "病毒性疾病", "营养代谢病", "混合感染"]
-        disease_type_index = disease_type_options.index(auto_disease_type) if auto_disease_type in disease_type_options else 0
+        specific_diseases = DISEASE_TYPE_CATEGORIES.get(disease_category, [])
+        specific_index = 0
+        if auto_disease_type in specific_diseases:
+            specific_index = specific_diseases.index(auto_disease_type)
         disease_type = st.selectbox(
-            "🏥 发病类型",
-            disease_type_options,
-            index=disease_type_index
+            "🔍 具体疾病",
+            specific_diseases,
+            index=specific_index,
+            key="disease_type_mobile"
         )
         
         # 用途
@@ -817,6 +985,73 @@ elif page == 'recommend':
             index=["小规模(1000只以下)", "中规模(1000-10000只)", "大规模(10000只以上)"].index(scale_default)
         )
         
+        # 耐药性药物排除
+        drug_options = sorted(
+            [f"{_display_name(d)} ({d.brand_name or '—'})" for d in valid_drugs],
+            key=lambda x: x.lower()
+        )
+        excluded_drugs = st.multiselect(
+            "🚫 耐药性药物排除（推荐时将排除这些药物）",
+            drug_options,
+            default=[],
+            help="选择养殖场中已经产生耐药性或效果下降的药物，系统将在推荐时排除这些药物",
+            key="mobile_excluded_drugs"
+        )
+        
+        # 棚舍环境信息补充
+        with st.expander("🌡️ 补充棚舍环境信息（让推荐更准确）", expanded=False):
+            env_col1, env_col2 = st.columns(2)
+            with env_col1:
+                env_temperature = st.number_input(
+                    "🌡️ 当前温度(℃)",
+                    value=float(selected_shed.temperature) if selected_shed and selected_shed.temperature is not None else 0.0,
+                    step=0.5,
+                    key="mobile_env_temp"
+                )
+                env_humidity = st.number_input(
+                    "💧 当前湿度(%)",
+                    value=float(selected_shed.humidity) if selected_shed and selected_shed.humidity is not None else 0.0,
+                    step=1.0,
+                    key="mobile_env_humidity"
+                )
+                env_ammonia = st.selectbox(
+                    "💨 氨气浓度",
+                    ["请选择", "正常", "轻微超标", "明显超标", "严重超标"],
+                    index=0,
+                    key="mobile_env_ammonia"
+                )
+                env_dead_birds = st.number_input(
+                    "☠️ 日死淘数",
+                    value=int(selected_shed.dead_birds_daily) if selected_shed and selected_shed.dead_birds_daily is not None else 0,
+                    step=1,
+                    key="mobile_env_dead"
+                )
+            with env_col2:
+                env_ventilation = st.selectbox(
+                    "🌬️ 通风状况",
+                    ["请选择", "良好", "一般", "较差", "很差"],
+                    index=0,
+                    key="mobile_env_ventilation"
+                )
+                env_density = st.selectbox(
+                    "🏠 饲养密度",
+                    ["请选择", "适宜", "略高", "过高"],
+                    index=0,
+                    key="mobile_env_density"
+                )
+                env_feed_intake = st.selectbox(
+                    "🌾 采食情况",
+                    ["请选择", "正常", "轻微下降", "明显下降", "几乎不吃"],
+                    index=0,
+                    key="mobile_env_feed"
+                )
+                env_water_intake = st.selectbox(
+                    "💧 饮水情况",
+                    ["请选择", "正常", "轻微下降", "明显下降", "几乎不喝"],
+                    index=0,
+                    key="mobile_env_water"
+                )
+        
         # 提交按钮
         submitted = st.form_submit_button("🔍 获取用药推荐", use_container_width=True)
     
@@ -832,11 +1067,31 @@ elif page == 'recommend':
         else:
             with st.spinner("正在分析病情..."):
                 try:
-                    recommender = get_recommender("v20260705")
+                    # 保存用户补充的棚舍环境信息
+                    if selected_shed:
+                        env_updates = {
+                            "temperature": env_temperature if env_temperature != 0 else None,
+                            "humidity": env_humidity if env_humidity != 0 else None,
+                            "ammonia_level": None if env_ammonia == "请选择" else env_ammonia,
+                            "ventilation_status": None if env_ventilation == "请选择" else env_ventilation,
+                            "stocking_density": None if env_density == "请选择" else env_density,
+                            "dead_birds_daily": env_dead_birds if env_dead_birds != 0 else None,
+                            "feed_intake_status": None if env_feed_intake == "请选择" else env_feed_intake,
+                            "water_intake_status": None if env_water_intake == "请选择" else env_water_intake,
+                        }
+                        # 只更新非空值
+                        env_updates = {k: v for k, v in env_updates.items() if v is not None}
+                        if env_updates:
+                            update_shed(selected_shed.id, **env_updates)
+                            selected_shed = get_shed(selected_shed.id)
+
+                    recommender = get_recommender("v20260706_2")
 
                     medication_history = []
                     if selected_shed:
                         medication_history = [entry['drug_name'] for entry in get_medication_history(selected_shed.id)]
+
+                    excluded_drug_names = [d.split(' (')[0] for d in excluded_drugs] if excluded_drugs else []
 
                     result = quick_recommend(
                         recommender,
@@ -847,6 +1102,7 @@ elif page == 'recommend':
                         usage=usage,
                         egg_period_safe=egg_period_safe,
                         farm_scale=farm_scale,
+                        excluded_drugs=excluded_drug_names,
                         medication_history=medication_history
                     )
 
@@ -1236,11 +1492,21 @@ elif page == 'recommend':
                 shed_env = ShedEnvironment(
                     temperature=selected_shed.temperature,
                     humidity=selected_shed.humidity,
+                    temperature_range=selected_shed.temperature_range,
                     ventilation_status=selected_shed.ventilation_status,
                     stocking_density=selected_shed.stocking_density,
                     cleanliness_level=selected_shed.cleanliness_level,
                     ammonia_level=selected_shed.ammonia_level,
-                    lighting_hours=selected_shed.lighting_hours
+                    lighting_hours=selected_shed.lighting_hours,
+                    water_quality=selected_shed.water_quality,
+                    dust_level=selected_shed.dust_level,
+                    noise_level=selected_shed.noise_level,
+                    feeding_mode=selected_shed.feeding_mode,
+                    litter_condition=selected_shed.litter_condition,
+                    air_quality=selected_shed.air_quality,
+                    dead_birds_daily=selected_shed.dead_birds_daily,
+                    feed_intake_status=selected_shed.feed_intake_status,
+                    water_intake_status=selected_shed.water_intake_status
                 )
             
             diseases = analysis['possible_diseases']
@@ -1829,6 +2095,21 @@ elif page == 'shed':
         "自动加湿/除湿", "CO2监测", "负压控制系统"
     ]
 
+    def _parse_date(date_str):
+        from datetime import date
+        if not date_str:
+            return None
+        try:
+            return date.fromisoformat(date_str[:10])
+        except Exception:
+            return None
+
+    def _fmt_date(d):
+        return d.isoformat() if d else ""
+
+    def _none_if_default(value, default="请选择"):
+        return None if value == default else value
+
     st.markdown("""
     <div class="mobile-header">
         <h1>🏠 棚舍信息管理</h1>
@@ -1865,6 +2146,16 @@ elif page == 'shed':
 
                 for shed in sheds:
                     with st.container():
+                        batch_info = f"批次: {shed.batch_name or shed.batch_id}"
+                        if shed.placement_date:
+                            batch_info += f" | 入舍: {shed.placement_date[:10]}"
+                        env_summary = []
+                        if shed.temperature is not None:
+                            env_summary.append(f"温度 {shed.temperature}℃")
+                        if shed.humidity is not None:
+                            env_summary.append(f"湿度 {shed.humidity}%")
+                        if shed.ammonia_level:
+                            env_summary.append(f"氨气 {shed.ammonia_level}")
                         st.markdown(f"""
                         <div class="mobile-card" style="border-left-color: #f57c00;">
                             <h3 style="color: #f57c00;">🏠 {shed.name}</h3>
@@ -1874,6 +2165,8 @@ elif page == 'shed':
                                 <span class="info-tag">📐 {shed.area}㎡</span>
                                 <span class="info-tag">📍 {shed.location}</span>
                             </div>
+                            <p style="color:#1565c0; font-size:0.85em; margin-top:8px;">{batch_info}</p>
+                            <p style="color:#666; font-size:0.85em;">{' | '.join(env_summary) if env_summary else '环境信息待补充'}</p>
                         </div>
                         """, unsafe_allow_html=True)
 
@@ -1901,7 +2194,7 @@ elif page == 'shed':
 
             with st.form("shed_form", clear_on_submit=True):
                 name = st.text_input("棚舍名称 *", value=shed.name if shed else "", placeholder="如：一号鸡舍")
-                
+
                 col1, col2 = st.columns(2)
                 with col1:
                     shed_type = st.selectbox("棚舍类型", SHED_TYPES,
@@ -1927,12 +2220,160 @@ elif page == 'shed':
                     default=shed.environment_control if shed else []
                 )
 
+                st.markdown("#### 🐣 当前养殖批次（换禽时请新建批次）")
+                batch_name = st.text_input(
+                    "批次名称",
+                    value=shed.batch_name if shed else "",
+                    placeholder="如：2026年7月第1批"
+                )
+                bcol1, bcol2 = st.columns(2)
+                with bcol1:
+                    placement_date = st.date_input(
+                        "入舍日期",
+                        value=_parse_date(shed.placement_date) if shed else None,
+                        help="当前这批禽的入舍日期，用于判断养殖周期和历史用药隔离"
+                    )
+                with bcol2:
+                    expected_slaughter_date = st.date_input(
+                        "预计出栏/换羽日期",
+                        value=_parse_date(shed.expected_slaughter_date) if shed else None,
+                        help="预计出栏或换羽日期，便于系统提示换禽"
+                    )
+                current_age_days = st.number_input(
+                    "当前日龄",
+                    min_value=0, max_value=999,
+                    value=int(shed.current_age_days) if shed and shed.current_age_days is not None else 0,
+                    help="当前禽群的实际日龄"
+                )
+
+                st.markdown("#### 🌡️ 棚舍环境信息（越精确推荐越准）")
+                ecol1, ecol2 = st.columns(2)
+                with ecol1:
+                    temperature = st.number_input(
+                        "当前温度(℃)",
+                        value=float(shed.temperature) if shed and shed.temperature is not None else 0.0,
+                        step=0.5
+                    )
+                    humidity = st.number_input(
+                        "当前湿度(%)",
+                        value=float(shed.humidity) if shed and shed.humidity is not None else 0.0,
+                        step=1.0
+                    )
+                    temperature_range = st.selectbox(
+                        "温度区间",
+                        ["请选择", "偏低", "适宜", "偏高", "过高"],
+                        index=["请选择", "偏低", "适宜", "偏高", "过高"].index(shed.temperature_range) if shed and shed.temperature_range in ["请选择", "偏低", "适宜", "偏高", "过高"] else 0
+                    )
+                    lighting_hours = st.number_input(
+                        "光照时长(小时/天)",
+                        min_value=0, max_value=24,
+                        value=int(shed.lighting_hours) if shed and shed.lighting_hours is not None else 0
+                    )
+                with ecol2:
+                    ventilation_status = st.selectbox(
+                        "通风状况",
+                        ["请选择", "良好", "一般", "较差", "很差"],
+                        index=["请选择", "良好", "一般", "较差", "很差"].index(shed.ventilation_status) if shed and shed.ventilation_status in ["请选择", "良好", "一般", "较差", "很差"] else 0
+                    )
+                    stocking_density = st.selectbox(
+                        "饲养密度",
+                        ["请选择", "适宜", "略高", "过高"],
+                        index=["请选择", "适宜", "略高", "过高"].index(shed.stocking_density) if shed and shed.stocking_density in ["请选择", "适宜", "略高", "过高"] else 0
+                    )
+                    cleanliness_level = st.selectbox(
+                        "清洁程度",
+                        ["请选择", "优秀", "良好", "一般", "较差", "很差"],
+                        index=["请选择", "优秀", "良好", "一般", "较差", "很差"].index(shed.cleanliness_level) if shed and shed.cleanliness_level in ["请选择", "优秀", "良好", "一般", "较差", "很差"] else 0
+                    )
+                    ammonia_level = st.selectbox(
+                        "氨气浓度",
+                        ["请选择", "正常", "轻微超标", "明显超标", "严重超标"],
+                        index=["请选择", "正常", "轻微超标", "明显超标", "严重超标"].index(shed.ammonia_level) if shed and shed.ammonia_level in ["请选择", "正常", "轻微超标", "明显超标", "严重超标"] else 0
+                    )
+
+                ecol3, ecol4 = st.columns(2)
+                with ecol3:
+                    water_quality = st.selectbox(
+                        "水质",
+                        ["请选择", "良好", "一般", "较差"],
+                        index=["请选择", "良好", "一般", "较差"].index(shed.water_quality) if shed and shed.water_quality in ["请选择", "良好", "一般", "较差"] else 0
+                    )
+                    dust_level = st.selectbox(
+                        "粉尘浓度",
+                        ["请选择", "正常", "轻微超标", "明显超标", "严重超标"],
+                        index=["请选择", "正常", "轻微超标", "明显超标", "严重超标"].index(shed.dust_level) if shed and shed.dust_level in ["请选择", "正常", "轻微超标", "明显超标", "严重超标"] else 0
+                    )
+                    noise_level = st.selectbox(
+                        "噪音水平",
+                        ["请选择", "安静", "一般", "嘈杂", "严重嘈杂"],
+                        index=["请选择", "安静", "一般", "嘈杂", "严重嘈杂"].index(shed.noise_level) if shed and shed.noise_level in ["请选择", "安静", "一般", "嘈杂", "严重嘈杂"] else 0
+                    )
+                    feeding_mode = st.selectbox(
+                        "饲喂方式",
+                        ["请选择", "自由采食", "定时限量", "人工投喂", "其他"],
+                        index=["请选择", "自由采食", "定时限量", "人工投喂", "其他"].index(shed.feeding_mode) if shed and shed.feeding_mode in ["请选择", "自由采食", "定时限量", "人工投喂", "其他"] else 0
+                    )
+                with ecol4:
+                    litter_condition = st.selectbox(
+                        "垫料状况",
+                        ["请选择", "干燥松散", "轻微潮湿", "潮湿结块", "严重潮湿/霉变"],
+                        index=["请选择", "干燥松散", "轻微潮湿", "潮湿结块", "严重潮湿/霉变"].index(shed.litter_condition) if shed and shed.litter_condition in ["请选择", "干燥松散", "轻微潮湿", "潮湿结块", "严重潮湿/霉变"] else 0
+                    )
+                    air_quality = st.selectbox(
+                        "空气质量",
+                        ["请选择", "良好", "一般", "较差", "很差"],
+                        index=["请选择", "良好", "一般", "较差", "很差"].index(shed.air_quality) if shed and shed.air_quality in ["请选择", "良好", "一般", "较差", "很差"] else 0
+                    )
+                    dead_birds_daily = st.number_input(
+                        "日死淘数",
+                        min_value=0,
+                        value=int(shed.dead_birds_daily) if shed and shed.dead_birds_daily is not None else 0
+                    )
+
+                st.markdown("#### 🍽️ 采食饮水情况")
+                icol1, icol2 = st.columns(2)
+                with icol1:
+                    feed_intake_status = st.selectbox(
+                        "采食情况",
+                        ["请选择", "正常", "轻微下降", "明显下降", "几乎不吃"],
+                        index=["请选择", "正常", "轻微下降", "明显下降", "几乎不吃"].index(shed.feed_intake_status) if shed and shed.feed_intake_status in ["请选择", "正常", "轻微下降", "明显下降", "几乎不吃"] else 0
+                    )
+                with icol2:
+                    water_intake_status = st.selectbox(
+                        "饮水情况",
+                        ["请选择", "正常", "轻微下降", "明显下降", "几乎不喝"],
+                        index=["请选择", "正常", "轻微下降", "明显下降", "几乎不喝"].index(shed.water_intake_status) if shed and shed.water_intake_status in ["请选择", "正常", "轻微下降", "明显下降", "几乎不喝"] else 0
+                    )
+
                 submitted = st.form_submit_button("保存棚舍" if is_edit else "创建棚舍", use_container_width=True)
 
                 if submitted:
                     if not name or not area:
                         st.warning("请填写必填项（棚舍名称和面积）")
                     else:
+                        env_payload = {
+                            "batch_name": batch_name,
+                            "placement_date": _fmt_date(placement_date),
+                            "expected_slaughter_date": _fmt_date(expected_slaughter_date),
+                            "current_age_days": current_age_days if current_age_days > 0 else None,
+                            "temperature": temperature if temperature != 0 else None,
+                            "humidity": humidity if humidity != 0 else None,
+                            "temperature_range": _none_if_default(temperature_range),
+                            "ventilation_status": _none_if_default(ventilation_status),
+                            "stocking_density": _none_if_default(stocking_density),
+                            "cleanliness_level": _none_if_default(cleanliness_level),
+                            "ammonia_level": _none_if_default(ammonia_level),
+                            "lighting_hours": lighting_hours if lighting_hours > 0 else None,
+                            "water_quality": _none_if_default(water_quality),
+                            "dust_level": _none_if_default(dust_level),
+                            "noise_level": _none_if_default(noise_level),
+                            "feeding_mode": _none_if_default(feeding_mode),
+                            "litter_condition": _none_if_default(litter_condition),
+                            "air_quality": _none_if_default(air_quality),
+                            "dead_birds_daily": dead_birds_daily if dead_birds_daily > 0 else None,
+                            "feed_intake_status": _none_if_default(feed_intake_status),
+                            "water_intake_status": _none_if_default(water_intake_status),
+                        }
                         if is_edit:
                             result = update_shed(
                                 shed.id,
@@ -1943,7 +2384,8 @@ elif page == 'shed':
                                 scale=scale,
                                 facilities=facilities,
                                 location=location,
-                                environment_control=environment_control
+                                environment_control=environment_control,
+                                **env_payload
                             )
                             if result:
                                 st.success(f"棚舍更新成功: {name}")
@@ -1958,7 +2400,12 @@ elif page == 'shed':
                                 scale=scale,
                                 facilities=facilities,
                                 location=location,
-                                environment_control=environment_control
+                                environment_control=environment_control,
+                                batch_name=batch_name,
+                                placement_date=_fmt_date(placement_date),
+                                expected_slaughter_date=_fmt_date(expected_slaughter_date),
+                                current_age_days=current_age_days if current_age_days > 0 else None,
+                                **{k: v for k, v in env_payload.items() if k not in ("batch_name", "placement_date", "expected_slaughter_date", "current_age_days")}
                             )
                             if result:
                                 st.success(f"棚舍创建成功: {name}")
