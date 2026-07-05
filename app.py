@@ -865,7 +865,8 @@ def show_recommend():
 
                     rationale = combo.get('rationale', {})
                     if rationale:
-                        with st.expander("📖 查看组合方案依据", expanded=False):
+                        st.info(f"**📖 推荐理由：** {rationale.get('combination_basis', '')}")
+                        with st.expander("📖 查看完整推荐理由", expanded=False):
                             st.markdown(f"**🎯 组合依据：** {rationale.get('combination_basis', '')}")
                             st.markdown("**💊 各产品作用：**")
                             for role in rationale.get('drug_roles', []):

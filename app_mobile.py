@@ -961,6 +961,11 @@ elif page == 'recommend':
                     </div>
                     """, unsafe_allow_html=True)
 
+                    # 默认展示推荐理由摘要
+                    rationale = combo.get('rationale', {})
+                    if rationale:
+                        st.info(f"**📖 推荐理由：** {rationale.get('combination_basis', '')}")
+
                     # 类型构成详细展示
                     if type_labels:
                         st.markdown("**🧪 组合类型构成：**")
@@ -995,9 +1000,8 @@ elif page == 'recommend':
                     if type_reason:
                         st.caption(f"📌 {type_reason}")
 
-                    rationale = combo.get('rationale', {})
                     if rationale:
-                        with st.expander("📖 查看组合方案依据", expanded=False):
+                        with st.expander("📖 查看完整推荐理由", expanded=False):
                             st.markdown(f"**🎯 组合依据：** {rationale.get('combination_basis', '')}")
                             st.markdown("**💊 各产品作用：**")
                             for role in rationale.get('drug_roles', []):
