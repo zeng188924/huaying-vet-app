@@ -60,6 +60,7 @@ from src.utils.data_manager import (
     start_new_batch, get_all_batches
 )
 from src.utils.encryption import hash_id_card
+from src.utils.lab_report_parser import parse_lab_report
 from environment_adjustment import get_environment_adjustment_engine, ShedEnvironment
 from key_matters import get_key_matters, get_summary_points
 from src.admin.content_extractor import extract_product_info
