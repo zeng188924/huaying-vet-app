@@ -1003,16 +1003,54 @@ elif page == 'recommend':
                     if type_reason:
                         st.caption(f"📌 {type_reason}")
 
-                    if rationale:
-                        with st.expander("📖 查看完整推荐理由", expanded=False):
-                            st.markdown(f"**🎯 组合依据：** {rationale.get('combination_basis', '')}")
-                            st.markdown("**💊 各产品作用：**")
-                            for role in rationale.get('drug_roles', []):
+                    # 查看完整推荐理由（始终展示，字段缺失时自动生成兜底内容）
+                    with st.expander("📖 查看完整推荐理由", expanded=False):
+                        # 组合依据
+                        basis = rationale.get('combination_basis', '') if rationale else ''
+                        if not basis:
+                            basis = combo.get('description', '')
+                        st.markdown(f"**🎯 组合依据：** {basis}")
+
+                        # 各产品作用
+                        st.markdown("**💊 各产品作用：**")
+                        drug_roles = rationale.get('drug_roles', []) if rationale else []
+                        if drug_roles:
+                            for role in drug_roles:
                                 st.markdown(f"- **{role.get('name', '')}**：{role.get('role', '')}")
-                            st.markdown(f"**🤝 协同效应：** {rationale.get('synergy_effect', '')}")
-                            st.markdown(f"**📊 临床有效性：** {rationale.get('clinical_effectiveness', '')}")
-                            st.markdown(f"**🎯 预期效果：** {rationale.get('expected_outcome', '')}")
-                            st.markdown(f"**⚙️ 作用机制：** {rationale.get('mechanism', '')}")
+                        else:
+                            for drug in combo.get('drugs', []):
+                                name = drug.get('name', '未知')
+                                drug_type = drug.get('drug_type', '未知')
+                                indications = drug.get('indications', [])
+                                indications_text = ', '.join(indications[:3]) if isinstance(indications, list) and indications else '当前病症'
+                                if drug_type == '化药':
+                                    st.markdown(f"- **{name}**：属于化药，直接抑制或杀灭病原微生物，针对{indications_text}等病症起到快速控制感染的作用。")
+                                else:
+                                    st.markdown(f"- **{name}**：属于中兽药/保健类，帮助调理机体、缓解症状、增强免疫力，对{indications_text}相关表现起到辅助改善作用。")
+
+                        # 协同效应
+                        synergy = rationale.get('synergy_effect', '') if rationale else ''
+                        if not synergy:
+                            drugs = combo.get('drugs', [])
+                            names = [d.get('name', '') for d in drugs if d.get('name')]
+                            has_chem = any(d.get('drug_type') == '化药' for d in drugs)
+                            has_tcm = any(d.get('drug_type') == '中兽药' for d in drugs)
+                            if has_chem and has_tcm:
+                                synergy = f"{'、'.join(names)}联合使用，可以发挥协同作用：化药类产品快速控制病原，中兽药类产品帮助机体恢复、减少不良反应，从而提高整体治疗效果，缩短病程。"
+                            elif len(names) >= 2:
+                                synergy = f"{'、'.join(names)}联合使用，可从多个角度同时改善相关症状，相互配合增强整体疗效。"
+                            else:
+                                synergy = "单一药物按推荐方案使用，针对当前病症进行治疗。"
+                        st.markdown(f"**🤝 协同效应：** {synergy}")
+
+                        # 其他详细字段（有则显示）
+                        if rationale:
+                            if rationale.get('clinical_effectiveness'):
+                                st.markdown(f"**📊 临床有效性：** {rationale.get('clinical_effectiveness', '')}")
+                            if rationale.get('expected_outcome'):
+                                st.markdown(f"**🎯 预期效果：** {rationale.get('expected_outcome', '')}")
+                            if rationale.get('mechanism'):
+                                st.markdown(f"**⚙️ 作用机制：** {rationale.get('mechanism', '')}")
 
                     with st.expander("💊 查看组合药品详情", expanded=True):
                         for j, drug in enumerate(combo.get('drugs', []), 1):
