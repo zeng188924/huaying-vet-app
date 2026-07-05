@@ -794,8 +794,19 @@ def show_recommend():
                     else:
                         st.write("**适应症:** 详见说明书")
 
-                    st.info(f"**推荐理由:** {rec_reason}")
-                    st.write(f"**用法用量:** {rec_dosage}")
+                    reason_detail = rec.get('reason_detail', {})
+                    if reason_detail:
+                        with st.expander("📖 查看详细推荐理由", expanded=False):
+                            st.markdown(f"**🎯 核心功效：** {reason_detail.get('core_efficacy', '')}")
+                            st.markdown(f"**✅ 适用症状：** {reason_detail.get('applicable_symptoms', '')}")
+                            st.markdown(f"**🔬 成分优势：** {reason_detail.get('component_advantage', '')}")
+                            st.markdown(f"**📊 临床依据：** {reason_detail.get('clinical_support', '')}")
+                            st.markdown(f"**💬 用户反馈：** {reason_detail.get('user_feedback', '')}")
+                            st.markdown(f"**⚠️ 安全提示：** {reason_detail.get('safety_notes', '')}")
+                    else:
+                        st.info(f"**推荐理由:** {rec_reason}")
+
+                    st.write(f"**用法用量：** {rec_dosage}")
 
                     st.divider()
         else:
@@ -851,6 +862,18 @@ def show_recommend():
                             st.warning("⚠️ 慎用")
 
                     st.write(f"**方案说明:** {combo_desc}")
+
+                    rationale = combo.get('rationale', {})
+                    if rationale:
+                        with st.expander("📖 查看组合方案依据", expanded=False):
+                            st.markdown(f"**🎯 组合依据：** {rationale.get('combination_basis', '')}")
+                            st.markdown("**💊 各产品作用：**")
+                            for role in rationale.get('drug_roles', []):
+                                st.markdown(f"- **{role.get('name', '')}**：{role.get('role', '')}")
+                            st.markdown(f"**🤝 协同效应：** {rationale.get('synergy_effect', '')}")
+                            st.markdown(f"**📊 临床有效性：** {rationale.get('clinical_effectiveness', '')}")
+                            st.markdown(f"**🎯 预期效果：** {rationale.get('expected_outcome', '')}")
+                            st.markdown(f"**⚙️ 作用机制：** {rationale.get('mechanism', '')}")
 
                     if not is_safe:
                         conflicts = compatibility_check.get('conflicts', [])

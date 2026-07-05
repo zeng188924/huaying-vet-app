@@ -903,7 +903,18 @@ elif page == 'recommend':
                         egg_status = "✅ 产蛋期可用" if drug.get('egg_period_safe', True) else "❌ 产蛋期禁用"
                         st.write(f"**产蛋期:** {egg_status}")
                         st.write(f"**推荐理由:** {rec.get('reason', '')}")
-        
+
+                        reason_detail = rec.get('reason_detail', {})
+                        if reason_detail:
+                            st.markdown("---")
+                            st.markdown("**📖 详细推荐理由**")
+                            st.markdown(f"- **核心功效：** {reason_detail.get('core_efficacy', '')}")
+                            st.markdown(f"- **适用症状：** {reason_detail.get('applicable_symptoms', '')}")
+                            st.markdown(f"- **成分优势：** {reason_detail.get('component_advantage', '')}")
+                            st.markdown(f"- **临床依据：** {reason_detail.get('clinical_support', '')}")
+                            st.markdown(f"- **用户反馈：** {reason_detail.get('user_feedback', '')}")
+                            st.markdown(f"- **安全提示：** {reason_detail.get('safety_notes', '')}")
+
         # 组合方案推荐
         st.markdown("---")
         st.subheader("🎯 推荐组合方案")
@@ -984,6 +995,17 @@ elif page == 'recommend':
                     if type_reason:
                         st.caption(f"📌 {type_reason}")
 
+                    rationale = combo.get('rationale', {})
+                    if rationale:
+                        with st.expander("📖 查看组合方案依据", expanded=False):
+                            st.markdown(f"**🎯 组合依据：** {rationale.get('combination_basis', '')}")
+                            st.markdown("**💊 各产品作用：**")
+                            for role in rationale.get('drug_roles', []):
+                                st.markdown(f"- **{role.get('name', '')}**：{role.get('role', '')}")
+                            st.markdown(f"**🤝 协同效应：** {rationale.get('synergy_effect', '')}")
+                            st.markdown(f"**📊 临床有效性：** {rationale.get('clinical_effectiveness', '')}")
+                            st.markdown(f"**🎯 预期效果：** {rationale.get('expected_outcome', '')}")
+                            st.markdown(f"**⚙️ 作用机制：** {rationale.get('mechanism', '')}")
 
                     with st.expander("💊 查看组合药品详情", expanded=True):
                         for j, drug in enumerate(combo.get('drugs', []), 1):

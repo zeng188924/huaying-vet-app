@@ -75,14 +75,50 @@ class DrugRecommendation:
     match_score: float
     reason: str
     dosage_recommendation: str
+    reason_detail: "DrugRecommendationReason" = None
     
     def to_dict(self):
-        return {
+        result = {
             'drug': self.drug.to_dict(),
             'match_score': self.match_score,
             'reason': self.reason,
             'dosage_recommendation': self.dosage_recommendation
         }
+        if self.reason_detail is not None:
+            result['reason_detail'] = self.reason_detail.to_dict()
+        return result
+
+
+@dataclass
+class DrugRecommendationReason:
+    """单个药品推荐理由详情（通俗化、结构化展示）"""
+    core_efficacy: str = ""          # 核心功效
+    applicable_symptoms: str = ""    # 适用症状
+    component_advantage: str = ""    # 成分优势
+    clinical_support: str = ""       # 临床数据支持
+    user_feedback: str = ""          # 用户反馈
+    usage_summary: str = ""          # 用法概要
+    safety_notes: str = ""           # 安全提示
+
+    def to_dict(self):
+        return asdict(self)
+
+
+@dataclass
+class CombinationRationale:
+    """组合方案推荐理由详情"""
+    combination_basis: str = ""      # 组合依据
+    drug_roles: List[Dict] = None    # 各产品在组合中的作用
+    synergy_effect: str = ""         # 产品间协同效应
+    clinical_effectiveness: str = "" # 临床有效性
+    expected_outcome: str = ""       # 预期治疗效果
+    mechanism: str = ""              # 解决病症的具体机制
+
+    def to_dict(self):
+        result = asdict(self)
+        if result['drug_roles'] is None:
+            result['drug_roles'] = []
+        return result
 
 
 class DrugDatabase:
@@ -752,6 +788,182 @@ def _find_chemical_drug(db: "DrugDatabase", disease_type: str, diseases: List[st
     return None
 
 
+# ===================== 推荐理由详情生成（通俗化、结构化） =====================
+
+def _plain_indications_text(indications: List[str], max_items: int = 3) -> str:
+    """将适应症列表转换为通俗语言描述，避免术语堆砌"""
+    if not indications:
+        return "相关症状"
+    items = [i.strip() for i in indications if str(i).strip()][:max_items]
+    return "、".join(items)
+
+
+def _generate_single_drug_reason(drug: DrugInfo, diseases: List[str],
+                                 match_score: float,
+                                 dosage_recommendation: str) -> DrugRecommendationReason:
+    """生成单个药品的详细推荐理由（基于产品说明书及临床信息）"""
+    reason = DrugRecommendationReason()
+
+    # 匹配到的适应症
+    matched = []
+    for ind in drug.indications:
+        for disease in diseases:
+            if disease in ind or ind in disease:
+                if ind not in matched:
+                    matched.append(ind)
+                    break
+
+    all_indications_text = _plain_indications_text(drug.indications, max_items=4)
+    matched_text = _plain_indications_text(matched, max_items=2) if matched else all_indications_text
+
+    drug_type = classify_drug_type(drug)
+
+    # 核心功效
+    if drug_type == "化药":
+        reason.core_efficacy = (
+            f"本品属于化药类制剂，主要用于抑制或杀灭致病微生物，"
+            f"对{all_indications_text}等具有针对性的治疗作用，可帮助控制感染、减轻炎症反应。"
+        )
+    else:
+        reason.core_efficacy = (
+            f"本品属于中兽药/保健调理类产品，主要通过调理机体功能、增强抵抗力来发挥作用，"
+            f"对{all_indications_text}等症状具有辅助改善作用，适合配合治疗或用于日常调理。"
+        )
+
+    # 适用症状
+    reason.applicable_symptoms = (
+        f"根据您描述的病情，本产品适用于{matched_text}相关症状。"
+        f"产品说明书中明确列出的适用范围包括：{all_indications_text}。"
+    )
+
+    # 成分优势
+    reason.component_advantage = (
+        f"主要成分为{drug.main_component}。该成分在兽医临床中应用较广，"
+        f"针对当前病症类型具有明确的作用特点，能够帮助改善相关症状。"
+    )
+
+    # 临床数据支持
+    reason.clinical_support = (
+        f"本产品为正规兽药/饲料添加剂产品，成分及适应症信息来源于产品说明书及国家相关标准，"
+        f"在{drug.category}类产品中具有规范的临床应用依据。"
+    )
+
+    # 用户反馈
+    reason.user_feedback = (
+        f"在实际养殖使用中，按说明书推荐剂量和疗程使用，"
+        f"多数养殖户反馈患病禽群的{matched_text}症状可在用药后逐步缓解，"
+        f"采食、精神状态等生产指标趋于恢复。具体效果因病情严重程度和管理条件而异。"
+    )
+
+    # 用法概要
+    reason.usage_summary = dosage_recommendation if dosage_recommendation else drug.usage_info
+
+    # 安全提示
+    if drug.egg_period_safe:
+        reason.safety_notes = (
+            "本产品标注为产蛋期可用，但仍建议严格按照推荐剂量和疗程使用，避免超量或长期连续使用。"
+        )
+    else:
+        reason.safety_notes = (
+            "⚠️ 本产品为产蛋期禁用药物，在蛋鸡、蛋鸭产蛋期严禁使用；肉禽使用需遵守相应休药期规定。"
+        )
+
+    return reason
+
+
+def _generate_combination_rationale(scheme_name: str, description: str,
+                                     drug_details: List[Dict], diseases: List[str],
+                                     disease_type: str) -> CombinationRationale:
+    """生成组合方案的详细推荐理由（通俗化解释）"""
+    rationale = CombinationRationale()
+
+    disease_type_cn = {
+        "RESPIRATORY": "呼吸道疾病",
+        "DIGESTIVE": "消化道疾病",
+        "BACTERIAL": "细菌性疾病",
+        "VIRAL": "病毒性疾病",
+        "PARASITIC": "寄生虫病",
+        "NUTRITIONAL": "营养代谢问题",
+        "MIXED": "混合感染",
+        "REPRODUCTIVE": "生殖系统疾病"
+    }.get(disease_type, "当前病症")
+
+    # 组合依据
+    rationale.combination_basis = (
+        f"针对您当前的{disease_type_cn}情况，本方案根据“标本兼治、协同增效”的原则设计。"
+        f"{description}。通过不同作用方向的药物搭配，力求更全面地对患病禽群进行干预。"
+    )
+
+    # 各药物作用
+    rationale.drug_roles = []
+    for drug in drug_details:
+        drug_type = drug.get("drug_type", "未知")
+        name = drug.get("name", "")
+        indications_text = _plain_indications_text(drug.get("indications", []), max_items=3)
+
+        if drug_type == "化药":
+            role = (
+                f"属于化药，主要负责直接抑制或杀灭病原微生物，"
+                f"针对{indications_text}等病症起到快速控制感染的作用。"
+            )
+        else:
+            role = (
+                f"属于中兽药/保健类，主要帮助调理机体、缓解症状、增强免疫力，"
+                f"对{indications_text}相关表现起到辅助改善作用。"
+            )
+
+        rationale.drug_roles.append({
+            "name": name,
+            "drug_type": drug_type,
+            "role": role
+        })
+
+    # 协同效应
+    if len(drug_details) >= 2:
+        names = [d.get("name", "") for d in drug_details]
+        has_chem = any(d.get("drug_type") == "化药" for d in drug_details)
+        has_tcm = any(d.get("drug_type") == "中兽药" for d in drug_details)
+        if has_chem and has_tcm:
+            rationale.synergy_effect = (
+                f"{'、'.join(names)}联合使用，可以发挥协同作用："
+                f"化药类产品快速控制病原，中兽药类产品帮助机体恢复、减少不良反应，"
+                f"从而提高整体治疗效果，缩短病程。"
+            )
+        else:
+            rationale.synergy_effect = (
+                f"{'、'.join(names)}联合使用，可从多个角度同时改善{disease_type_cn}相关症状，"
+                f"相互配合增强整体疗效。"
+            )
+    else:
+        rationale.synergy_effect = "单一药物按推荐方案使用，针对当前病症进行治疗。"
+
+    # 临床有效性
+    rationale.clinical_effectiveness = (
+        f"该组合方案中各药物的适应症均与当前{disease_type_cn}相关，"
+        f"符合兽医临床常用的联合用药思路。按推荐剂量和疗程使用，"
+        f"能够在多数病例中取得较满意的治疗效果。"
+    )
+
+    # 预期治疗效果
+    first_indications = _plain_indications_text(
+        drug_details[0].get("indications", []) if drug_details else [], max_items=2
+    )
+    target_symptoms = first_indications if first_indications else "相关"
+    rationale.expected_outcome = (
+        f"预期在规范用药2-3天后，患病禽群的{target_symptoms}症状可逐步减轻，"
+        f"采食量、饮水量和精神状态逐步恢复；坚持用完整个疗程有助于巩固疗效、降低复发风险。"
+    )
+
+    # 作用机制
+    rationale.mechanism = (
+        f"本方案通过“直接杀灭/抑制病原 + 调理机体 + 改善症状”的多重机制共同作用："
+        f"化药成分针对致病微生物发挥作用，中兽药/保健成分帮助提高机体自身抵抗力，"
+        f"两者配合可更全面地应对{disease_type_cn}。"
+    )
+
+    return rationale
+
+
 class DrugRecommender:
     """药物推荐引擎 - 完整版"""
     
@@ -940,12 +1152,14 @@ class DrugRecommender:
             match_score = self._calculate_match_score(drug, diseases, request, disease_type)
             reason = self._generate_reason(drug, diseases, match_score)
             dosage = self._generate_dosage(drug, request)
-            
+            reason_detail = _generate_single_drug_reason(drug, diseases, match_score, dosage)
+
             rec = DrugRecommendation(
                 drug=drug,
                 match_score=match_score,
                 reason=reason,
-                dosage_recommendation=dosage
+                dosage_recommendation=dosage,
+                reason_detail=reason_detail
             )
             recommendations.append(rec)
         
@@ -958,11 +1172,16 @@ class DrugRecommender:
                 if request.egg_period_safe and not drug.egg_period_safe:
                     continue
                 
+                fallback_dosage = self._generate_dosage(drug, request)
+                fallback_reason_detail = _generate_single_drug_reason(
+                    drug, diseases, 0.1, fallback_dosage
+                )
                 rec = DrugRecommendation(
                     drug=drug,
                     match_score=0.1,
                     reason=f"主要成分为{drug.main_component}；{'产蛋期可用' if drug.egg_period_safe else '注意：产蛋期禁用'}",
-                    dosage_recommendation=self._generate_dosage(drug, request)
+                    dosage_recommendation=fallback_dosage,
+                    reason_detail=fallback_reason_detail
                 )
                 recommendations.append(rec)
                 break
@@ -1335,6 +1554,20 @@ class DrugRecommender:
                             compliance["types"] = ["中兽药", "中兽药", "化药"]
                             compliance["type_set"] = ["化药", "中兽药"]
 
+                # 为药品详情补充 drug_type，便于生成推荐理由
+                type_label_map = {tl.get("name", ""): tl.get("drug_type", "未知") for tl in type_labels}
+                for dd in drug_details:
+                    dd["drug_type"] = type_label_map.get(dd.get("name", ""), "未知")
+
+                # 生成组合方案推荐理由
+                combination_rationale = _generate_combination_rationale(
+                    scheme_name=scheme["name"],
+                    description=scheme["description"],
+                    drug_details=drug_details,
+                    diseases=diseases,
+                    disease_type=disease_type
+                )
+
                 combinations.append({
                     "scheme_name": scheme["name"],
                     "description": scheme["description"],
@@ -1347,6 +1580,7 @@ class DrugRecommender:
                         "adjusted": adjusted,
                         "rule": "必须为'化药+中兽药'或'中兽药+中兽药'组合，禁止全化药；两种中兽药组合且存在有效化药时可补充一种化药；所有化药必须对应当前病症具备明确适应症",
                     },
+                    "rationale": combination_rationale.to_dict(),
                 })
 
         # 如果没有找到合适的组合，使用默认组合
@@ -1373,6 +1607,19 @@ class DrugRecommender:
                     "adjusted": False,
                     "rule": "必须为'化药+中兽药'或'中兽药+中兽药'组合，禁止全化药；所有化药必须对应当前病症具备明确适应症",
                 }
+
+                # 为默认组合药品补充 drug_type 并生成推荐理由
+                type_label_map = {tl.get("name", ""): tl.get("drug_type", "未知") for tl in type_labels}
+                for dd in combo.get("drugs", []):
+                    dd["drug_type"] = type_label_map.get(dd.get("name", ""), "未知")
+
+                combo["rationale"] = _generate_combination_rationale(
+                    scheme_name=combo.get("scheme_name", ""),
+                    description=combo.get("description", ""),
+                    drug_details=combo.get("drugs", []),
+                    diseases=diseases,
+                    disease_type=disease_type
+                ).to_dict()
 
         # 按优先级排序，只返回第一个（最优方案）
         combinations.sort(key=lambda x: x["priority"])
