@@ -1258,8 +1258,6 @@ elif page == 'recommend':
                         for i, step in enumerate(adj.adjustment_steps, 1):
                             st.markdown(f"{i}. {step}")
                         
-                        st.markdown(f"**预期效果:** {adj.expected_effect}")
-                        
                         if adj.precautions:
                             st.markdown("**注意事项:**")
                             for precaution in adj.precautions:

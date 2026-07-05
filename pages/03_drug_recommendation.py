@@ -806,12 +806,6 @@ if st.session_state.get('show_results', False):
                         </div>
                         """, unsafe_allow_html=True)
                     
-                    st.markdown(f"""
-                    <div class="adjustment-effect">
-                        <strong>🎯 预期效果:</strong> {adj.expected_effect}
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
                     if adj.precautions:
                         st.markdown("**⚠️ 注意事项:**")
                         for precaution in adj.precautions:
