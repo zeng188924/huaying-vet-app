@@ -961,10 +961,13 @@ elif page == 'recommend':
                     </div>
                     """, unsafe_allow_html=True)
 
-                    # 默认展示推荐理由摘要
+                    # 默认展示推荐理由摘要（优先使用 rationale，没有则兜底显示方案描述）
                     rationale = combo.get('rationale', {})
-                    if rationale:
-                        st.info(f"**📖 推荐理由：** {rationale.get('combination_basis', '')}")
+                    combination_basis = rationale.get('combination_basis', '') if rationale else ''
+                    if not combination_basis:
+                        combination_basis = combo.get('description', '')
+                    if combination_basis:
+                        st.info(f"**📖 推荐理由：** {combination_basis}")
 
                     # 类型构成详细展示
                     if type_labels:
