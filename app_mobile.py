@@ -67,13 +67,14 @@ from key_matters import get_key_matters, get_summary_points
 from src.admin.content_extractor import extract_product_info
 from diagnosis_engine import (
     get_diagnosis_engine, get_questionnaire, get_safety_guardian,
-    SymptomBasedDiagnosisEngine, SymptomQuestionnaire, MedicationSafetyGuardian
+    SymptomBasedDiagnosisEngine, SymptomQuestionnaire, MedicationSafetyGuardian,
+    get_symptoms_by_disease_category
 )
 
 # 初始化推荐器 - 使用JSON文件加载数据
 # _version 参数用于强制使旧缓存失效，当推荐逻辑更新时请修改版本号
 @st.cache_resource
-def get_recommender(_version="v20260706_2"):
+def get_recommender(_version="v20260706_3"):
     # 优先使用JSON文件，数据更新更可靠
     json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
     if os.path.exists(json_path):
@@ -884,112 +885,153 @@ elif page == 'recommend':
         else:
             st.info("未能从报告中识别到明确疾病，请手动填写")
 
-    # 表单区域
+    # 养殖户默认值
+    if selected_shed:
+        breed_mapping = {
+            "白羽肉鸡": "肉鸡", "黄羽肉鸡": "肉鸡", "蛋鸡": "蛋鸡",
+            "种鸡": "种鸡", "樱桃谷鸭": "肉鸭", "麻鸭": "蛋鸭",
+            "鹅": "鹅", "火鸡": "火鸡", "鸽子": "鸽子", "鹌鹑": "鹌鹑"
+        }
+        animal_type_default = breed_mapping.get(selected_shed.breed, selected_shed.breed)
+        scale_default = selected_shed.scale
+    else:
+        animal_type_default = "肉鸡"
+        scale_default = "中规模(1000-10000只)"
+
+    # 动物种类
+    animal_type = st.selectbox(
+        "🐔 动物种类",
+        ["肉鸡", "蛋鸡", "种鸡", "肉鸭", "蛋鸭", "鹅", "火鸡", "鸽子", "鹌鹑"],
+        index=["肉鸡", "蛋鸡", "种鸡", "肉鸭", "蛋鸭", "鹅", "火鸡", "鸽子", "鹌鹑"].index(animal_type_default),
+        key="animal_type_mobile"
+    )
+
+    # 日龄/养殖阶段
+    age_stage = st.selectbox(
+        "📅 养殖阶段",
+        ["育雏期(0-14日龄)", "育成期(15-35日龄)", "育肥期(36日龄-出栏)",
+         "产蛋前期", "产蛋高峰期", "产蛋后期"],
+        key="age_stage_mobile"
+    )
+
+    # 主要症状
+    st.info(
+        "💡 **症状填写提示**：请尽量详细描述，至少包括：\n\n"
+        "1. **呼吸道**：咳嗽/呼噜/甩鼻/流涕/流泪/张口呼吸/伸颈喘/怪叫；\n"
+        "2. **消化道**：采食量/饮水量变化、粪便颜色形状（绿便/血便/水便/过料）；\n"
+        "3. **精神状态**：沉郁、扎堆、羽毛松乱、运动障碍、神经症状；\n"
+        "4. **死淘情况**：日死淘数、死亡率趋势、发病日龄；\n"
+        "5. **其他**：体温、产蛋变化、皮肤/冠髯异常等。"
+    )
+    symptom = st.text_area(
+        "🤒 主要症状（请详细描述）",
+        value=st.session_state.get('auto_symptom', ''),
+        placeholder="请尽量详细：咳嗽/呼噜/甩鼻/流涕/流泪/张口呼吸/减料/发热/粪便异常/死淘情况等",
+        help="描述动物的主要症状，越详细推荐越准确。建议不少于20字。",
+        key='auto_symptom',
+        height=100
+    )
+    if symptom:
+        symptom_len = len(symptom.strip())
+        if symptom_len < 10:
+            st.warning("⚠️ 症状描述较简略，建议补充咳嗽频率、呼吸方式、精神状态、采食量、粪便等细节，推荐会更准确。")
+        elif symptom_len < 20:
+            st.info("ℹ️ 症状描述尚可，如能补充发病日龄、死淘数、粪便/产蛋细节，推荐会更精准。")
+
+    # 发病类型：二级分类，先选大类，再选具体疾病（放在 form 外部，保证切换时实时联动）
+    auto_disease_type = st.session_state.get('auto_disease_type', '')
+    disease_categories = list(DISEASE_TYPE_CATEGORIES.keys())
+    category_display_options = [DISEASE_CATEGORY_DISPLAY.get(cat, cat) for cat in disease_categories]
+
+    # 根据自动识别或旧数据尝试反推大类
+    auto_category = None
+    if auto_disease_type:
+        for cat, diseases in DISEASE_TYPE_CATEGORIES.items():
+            if auto_disease_type == cat or auto_disease_type in diseases:
+                auto_category = cat
+                break
+
+    category_index = disease_categories.index(auto_category) if auto_category in disease_categories else 0
+    disease_category_display = st.selectbox(
+        "🏥 发病大类",
+        category_display_options,
+        index=category_index,
+        help="先选择疾病大类，具体疾病会随大类自动调整",
+        key="disease_category_mobile"
+    )
+    disease_category = DISEASE_CATEGORY_DISPLAY_REVERSE.get(disease_category_display, disease_category_display)
+
+    specific_diseases = DISEASE_TYPE_CATEGORIES.get(disease_category, [])
+    specific_index = 0
+    if auto_disease_type in specific_diseases:
+        specific_index = specific_diseases.index(auto_disease_type)
+    disease_type = st.selectbox(
+        "🔍 具体疾病",
+        specific_diseases,
+        index=specific_index,
+        key="disease_type_mobile"
+    )
+
+    # 根据发病大类联动展示典型症状选项，供用户快速填充主要症状
+    category_symptoms = get_symptoms_by_disease_category(disease_category)
+    if category_symptoms:
+        st.markdown("---")
+        st.caption("🩺 选择典型症状（自动追加到上方主要症状）")
+        symptoms_by_cat = {}
+        for s in category_symptoms:
+            symptoms_by_cat.setdefault(s.category, []).append(s)
+
+        option_labels = []
+        label_to_name = {}
+        for cat_name, syms in symptoms_by_cat.items():
+            for s in syms:
+                label = f"{cat_name} - {s.name}（{s.description}）"
+                option_labels.append(label)
+                label_to_name[label] = s.name
+        st.session_state['mobile_symptom_label_map'] = label_to_name
+
+        def _append_mobile_symptoms():
+            selected_labels = st.session_state.get('mobile_symptom_selector', [])
+            label_map = st.session_state.get('mobile_symptom_label_map', {})
+            selected_names = [label_map[label] for label in selected_labels if label in label_map]
+            if selected_names:
+                current = st.session_state.get('auto_symptom', '')
+                to_add = [s for s in selected_names if s not in current]
+                if to_add:
+                    new_text = current + ('，' if current else '') + '、'.join(to_add)
+                    st.session_state['auto_symptom'] = new_text
+                # 清空选择器，已追加内容保留在主要症状中
+                st.session_state['mobile_symptom_selector'] = []
+
+        st.multiselect(
+            "勾选与本群发病相关的典型症状",
+            options=option_labels,
+            on_change=_append_mobile_symptoms,
+            key='mobile_symptom_selector'
+        )
+
+    # 表单区域（用途、规模、环境等）
     with st.form("recommend_form"):
-        if selected_shed:
-            breed_mapping = {
-                "白羽肉鸡": "肉鸡", "黄羽肉鸡": "肉鸡", "蛋鸡": "蛋鸡",
-                "种鸡": "种鸡", "樱桃谷鸭": "肉鸭", "麻鸭": "蛋鸭",
-                "鹅": "鹅", "火鸡": "火鸡", "鸽子": "鸽子", "鹌鹑": "鹌鹑"
-            }
-            animal_type_default = breed_mapping.get(selected_shed.breed, selected_shed.breed)
-            scale_default = selected_shed.scale
-        else:
-            animal_type_default = "肉鸡"
-            scale_default = "中规模(1000-10000只)"
-        
-        # 动物种类
-        animal_type = st.selectbox(
-            "🐔 动物种类",
-            ["肉鸡", "蛋鸡", "种鸡", "肉鸭", "蛋鸭", "鹅", "火鸡", "鸽子", "鹌鹑"],
-            index=["肉鸡", "蛋鸡", "种鸡", "肉鸭", "蛋鸭", "鹅", "火鸡", "鸽子", "鹌鹑"].index(animal_type_default)
-        )
-        
-        # 日龄/养殖阶段
-        age_stage = st.selectbox(
-            "📅 养殖阶段",
-            ["育雏期(0-14日龄)", "育成期(15-35日龄)", "育肥期(36日龄-出栏)", 
-             "产蛋前期", "产蛋高峰期", "产蛋后期"]
-        )
-        
-        # 病症
-        st.info(
-            "💡 **症状填写提示**：请尽量详细描述，至少包括：\n\n"
-            "1. **呼吸道**：咳嗽/呼噜/甩鼻/流涕/流泪/张口呼吸/伸颈喘/怪叫；\n"
-            "2. **消化道**：采食量/饮水量变化、粪便颜色形状（绿便/血便/水便/过料）；\n"
-            "3. **精神状态**：沉郁、扎堆、羽毛松乱、运动障碍、神经症状；\n"
-            "4. **死淘情况**：日死淘数、死亡率趋势、发病日龄；\n"
-            "5. **其他**：体温、产蛋变化、皮肤/冠髯异常等。"
-        )
-        auto_symptom = st.session_state.get('auto_symptom', '')
-        symptom = st.text_area(
-            "🤒 主要症状（请详细描述）",
-            value=auto_symptom,
-            placeholder="请尽量详细：咳嗽/呼噜/甩鼻/流涕/流泪/张口呼吸/减料/发热/粪便异常/死淘情况等",
-            help="描述动物的主要症状，越详细推荐越准确。建议不少于20字。",
-            height=100
-        )
-        if symptom:
-            symptom_len = len(symptom.strip())
-            if symptom_len < 10:
-                st.warning("⚠️ 症状描述较简略，建议补充咳嗽频率、呼吸方式、精神状态、采食量、粪便等细节，推荐会更准确。")
-            elif symptom_len < 20:
-                st.info("ℹ️ 症状描述尚可，如能补充发病日龄、死淘数、粪便/产蛋细节，推荐会更精准。")
-        
-        # 发病类型：二级分类，先选大类，再选具体疾病
-        auto_disease_type = st.session_state.get('auto_disease_type', '')
-        disease_categories = list(DISEASE_TYPE_CATEGORIES.keys())
-        category_display_options = [DISEASE_CATEGORY_DISPLAY.get(cat, cat) for cat in disease_categories]
-        
-        # 根据自动识别或旧数据尝试反推大类
-        auto_category = None
-        if auto_disease_type:
-            for cat, diseases in DISEASE_TYPE_CATEGORIES.items():
-                if auto_disease_type == cat or auto_disease_type in diseases:
-                    auto_category = cat
-                    break
-        
-        category_index = disease_categories.index(auto_category) if auto_category in disease_categories else 0
-        disease_category_display = st.selectbox(
-            "🏥 发病大类",
-            category_display_options,
-            index=category_index,
-            help="先选择疾病大类，具体疾病会随大类自动调整",
-            key="disease_category_mobile"
-        )
-        disease_category = DISEASE_CATEGORY_DISPLAY_REVERSE.get(disease_category_display, disease_category_display)
-        
-        specific_diseases = DISEASE_TYPE_CATEGORIES.get(disease_category, [])
-        specific_index = 0
-        if auto_disease_type in specific_diseases:
-            specific_index = specific_diseases.index(auto_disease_type)
-        disease_type = st.selectbox(
-            "🔍 具体疾病",
-            specific_diseases,
-            index=specific_index,
-            key="disease_type_mobile"
-        )
-        
         # 用途
         usage = st.radio(
             "💊 用途",
             ["治疗", "预防"],
             horizontal=True
         )
-        
+
         # 产蛋期是否可用
         egg_period_safe = st.checkbox(
             "🥚 产蛋期可用",
             value=True if "蛋鸡" in animal_type or "蛋鸭" in animal_type else False
         )
-        
+
         # 养殖规模
         farm_scale = st.selectbox(
             "📐 养殖规模",
             ["小规模(1000只以下)", "中规模(1000-10000只)", "大规模(10000只以上)"],
             index=["小规模(1000只以下)", "中规模(1000-10000只)", "大规模(10000只以上)"].index(scale_default)
         )
-        
+
         # 耐药性药物排除
         drug_options = sorted(
             [f"{_display_name(d)} ({d.brand_name or '—'})" for d in valid_drugs],
@@ -1002,7 +1044,7 @@ elif page == 'recommend':
             help="选择养殖场中已经产生耐药性或效果下降的药物，系统将在推荐时排除这些药物",
             key="mobile_excluded_drugs"
         )
-        
+
         # 棚舍环境信息补充
         with st.expander("🌡️ 补充棚舍环境信息（让推荐更准确）", expanded=False):
             env_col1, env_col2 = st.columns(2)
@@ -1056,7 +1098,7 @@ elif page == 'recommend':
                     index=0,
                     key="mobile_env_water"
                 )
-        
+
         # 提交按钮
         submitted = st.form_submit_button("🔍 获取用药推荐", use_container_width=True)
     
@@ -1090,7 +1132,7 @@ elif page == 'recommend':
                             update_shed(selected_shed.id, **env_updates)
                             selected_shed = get_shed(selected_shed.id)
 
-                    recommender = get_recommender("v20260706_2")
+                    recommender = get_recommender("v20260706_3")
 
                     medication_history = []
                     if selected_shed:

@@ -702,6 +702,7 @@ def show_recommend():
     from disease_knowledge import get_disease_knowledge_base
     from key_matters import get_key_matters, get_summary_points
     from environment_adjustment import get_environment_adjustment_engine, ShedEnvironment
+    from diagnosis_engine import get_symptoms_by_disease_category
     from src.utils.data_manager import (
         get_all_farmer_profiles, get_sheds_by_farmer, get_shed, update_shed,
         get_medication_history, add_medication_history, delete_medication_history,
@@ -711,7 +712,7 @@ def show_recommend():
     from src.utils.lab_report_parser import parse_lab_report
 
     @st.cache_resource
-    def get_recommender_cache(_version="v20260706_2"):
+    def get_recommender_cache(_version="v20260706_3"):
         json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
         recommender = create_recommender(json_path)
         return recommender
@@ -904,6 +905,10 @@ def show_recommend():
             "4. **死淘情况**：日死淘数、死亡率趋势、发病日龄；\n"
             "5. **其他**：体温、产蛋变化、皮肤/冠髯异常等。"
         )
+        # 若典型症状选择器要求回填，则在实例化 text_area 前先设置其 key 值
+        if 'app_pending_symptom_fill' in st.session_state:
+            st.session_state['app_symptom_input'] = st.session_state['app_pending_symptom_fill']
+            del st.session_state['app_pending_symptom_fill']
         auto_symptom = st.session_state.get('app_auto_symptom', '')
         symptom = st.text_area(
             "主要症状（请详细描述）",
@@ -948,6 +953,40 @@ def show_recommend():
             help="再选择具体疾病",
             key="app_disease_type"
         )
+
+        # 根据发病大类联动展示典型症状选项，供用户快速填充主要症状
+        category_symptoms = get_symptoms_by_disease_category(disease_category)
+        if category_symptoms:
+            with st.expander("🩺 选择典型症状（自动填充到上方主要症状）", expanded=True):
+                st.caption("勾选与本群发病相关的典型症状，点击“填入主要症状”即可追加到上方输入框")
+                symptoms_by_cat = {}
+                for s in category_symptoms:
+                    symptoms_by_cat.setdefault(s.category, []).append(s)
+
+                selected_symptom_names = []
+                for cat_name, syms in symptoms_by_cat.items():
+                    option_labels = [f"{s.name}（{s.description}）" for s in syms]
+                    label_to_name = {f"{s.name}（{s.description}）": s.name for s in syms}
+                    picked = st.multiselect(
+                        f"{cat_name}症状",
+                        options=option_labels,
+                        key=f"app_symptom_sel_{cat_name}"
+                    )
+                    selected_symptom_names.extend([label_to_name[p] for p in picked])
+
+                if selected_symptom_names:
+                    st.markdown(f"**已选症状：** {'、'.join(selected_symptom_names)}")
+                    if st.button("➕ 将选中症状填入主要症状", key="app_add_symptoms_btn"):
+                        current = st.session_state.get('app_auto_symptom', '')
+                        to_add = [s for s in selected_symptom_names if s not in current]
+                        if to_add:
+                            new_text = current + ('，' if current else '') + '、'.join(to_add)
+                            st.session_state['app_auto_symptom'] = new_text
+                            st.session_state['app_pending_symptom_fill'] = new_text
+                        # 清空已选症状，便于继续选择
+                        for cat_name in symptoms_by_cat:
+                            st.session_state.pop(f"app_symptom_sel_{cat_name}", None)
+                        st.rerun()
 
         usage = st.radio(
             "用途",
@@ -1286,7 +1325,7 @@ def show_recommend():
                             update_shed(selected_shed.id, **env_updates)
                             selected_shed = get_shed(selected_shed.id)
 
-                    recommender = get_recommender_cache("v20260706_2")
+                    recommender = get_recommender_cache("v20260706_3")
 
                     excluded_drug_names = [d.split(' (')[0] for d in excluded_drugs] if excluded_drugs else []
 

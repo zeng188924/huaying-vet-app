@@ -718,3 +718,57 @@ def get_questionnaire() -> SymptomQuestionnaire:
 def get_safety_guardian() -> MedicationSafetyGuardian:
     """获取用药安全保障实例"""
     return MedicationSafetyGuardian()
+
+
+# 疾病大类 -> 相关症状 ID 映射
+# 用于智能推荐页面：选择发病大类后自动展示该类疾病相关的典型症状选项
+CATEGORY_SYMPTOM_MAP = {
+    "呼吸道疾病": [
+        "resp_cough", "resp_sneeze", "resp_nasal_discharge", "resp_rhonchus",
+        "resp_open_mouth", "resp_dyspnea", "resp_gasping", "sys_depression",
+        "sys_anorexia", "sys_fever"
+    ],
+    "消化道疾病": [
+        "other_diarrhea", "feces_white", "feces_green", "feces_yellow",
+        "feces_watery", "feces_unformed", "feces_bloody_mucus", "feces_blood_red",
+        "feces_blood_dark", "sys_depression", "sys_anorexia", "sys_weight_loss"
+    ],
+    "寄生虫病": [
+        "feces_blood_red", "feces_blood_dark", "sys_weight_loss", "comb_pale",
+        "sys_depression", "sys_anorexia", "feather_ruffled"
+    ],
+    "细菌性疾病": [
+        "other_diarrhea", "sys_depression", "sys_anorexia", "sys_fever",
+        "resp_dyspnea", "comb_cyanosis", "feces_yellow", "feces_green"
+    ],
+    "病毒性疾病": [
+        "resp_dyspnea", "feces_green", "sys_tremor", "other_egg_drop",
+        "sys_depression", "sys_anorexia", "sys_fever", "neck_twisting", "sys_death"
+    ],
+    "营养代谢病": [
+        "sys_weight_loss", "feather_ruffled", "feather_loss_severe", "sys_paralysis",
+        "other_egg_drop", "other_deformed_egg", "sys_depression", "sys_anorexia"
+    ],
+    "混合感染": [
+        "resp_dyspnea", "feces_green", "other_diarrhea", "sys_depression",
+        "sys_anorexia", "sys_fever", "sys_death", "other_egg_drop", "feces_blood_dark"
+    ],
+    "生殖系统疾病": [
+        "other_egg_drop", "other_deformed_egg", "other_sand_egg", "other_blood_spot",
+        "other_abdominal_distension", "sys_depression", "sys_anorexia"
+    ],
+}
+
+
+def get_symptoms_by_disease_category(category: str) -> List[SymptomItem]:
+    """根据疾病大类获取相关典型症状选项
+
+    Args:
+        category: 疾病大类名称，如 "呼吸道疾病"
+
+    Returns:
+        与该大类相关的症状项列表，包含症状名称、分类、描述和权重
+    """
+    engine = get_diagnosis_engine()
+    symptom_ids = CATEGORY_SYMPTOM_MAP.get(category, [])
+    return [engine.symptom_database[sid] for sid in symptom_ids if sid in engine.symptom_database]
