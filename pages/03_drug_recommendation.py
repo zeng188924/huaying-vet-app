@@ -16,7 +16,7 @@ from drug_recommendation_system_full import (
 from disease_knowledge import get_disease_knowledge_base
 from key_matters import get_key_matters, get_summary_points
 from environment_adjustment import get_environment_adjustment_engine, ShedEnvironment
-from diagnosis_engine import get_diagnosis_engine, get_safety_guardian, get_symptoms_by_disease_category
+from src.core.diagnosis_engine import get_diagnosis_engine, get_safety_guardian, get_symptoms_by_disease_category
 from src.utils.data_manager import (
     get_all_farmer_profiles, get_sheds_by_farmer, get_shed, update_shed,
     get_medication_history, add_medication_history, delete_medication_history,
@@ -32,7 +32,7 @@ st.set_page_config(
 )
 
 @st.cache_resource
-def get_recommender(_version="v20260706_3"):
+def get_recommender(_version="v20260706_4"):
     json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
     recommender = create_recommender(json_path)
     return recommender

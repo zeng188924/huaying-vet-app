@@ -65,7 +65,7 @@ from src.utils.lab_report_parser import parse_lab_report
 from environment_adjustment import get_environment_adjustment_engine, ShedEnvironment
 from key_matters import get_key_matters, get_summary_points
 from src.admin.content_extractor import extract_product_info
-from diagnosis_engine import (
+from src.core.diagnosis_engine import (
     get_diagnosis_engine, get_questionnaire, get_safety_guardian,
     SymptomBasedDiagnosisEngine, SymptomQuestionnaire, MedicationSafetyGuardian,
     get_symptoms_by_disease_category
@@ -74,7 +74,7 @@ from diagnosis_engine import (
 # 初始化推荐器 - 使用JSON文件加载数据
 # _version 参数用于强制使旧缓存失效，当推荐逻辑更新时请修改版本号
 @st.cache_resource
-def get_recommender(_version="v20260706_3"):
+def get_recommender(_version="v20260706_4"):
     # 优先使用JSON文件，数据更新更可靠
     json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
     if os.path.exists(json_path):
