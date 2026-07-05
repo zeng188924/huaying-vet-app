@@ -111,8 +111,6 @@ class CombinationRationale:
     combination_basis: str = ""           # 组合依据
     drug_roles: List[Dict] = None         # 各产品在组合中的作用
     synergy_effect: str = ""              # 产品间协同效应
-    clinical_effectiveness: str = ""      # 临床有效性
-    expected_outcome: str = ""            # 预期治疗效果
     mechanism: str = ""                   # 解决病症的具体机制
     low_resistance_analysis: str = ""     # 低耐药风险分析
     resistance_prevention_guide: str = "" # 耐药预防操作指导
