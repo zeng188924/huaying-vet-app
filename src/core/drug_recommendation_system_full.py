@@ -108,12 +108,14 @@ class DrugRecommendationReason:
 @dataclass
 class CombinationRationale:
     """组合方案推荐理由详情"""
-    combination_basis: str = ""      # 组合依据
-    drug_roles: List[Dict] = None    # 各产品在组合中的作用
-    synergy_effect: str = ""         # 产品间协同效应
-    clinical_effectiveness: str = "" # 临床有效性
-    expected_outcome: str = ""       # 预期治疗效果
-    mechanism: str = ""              # 解决病症的具体机制
+    combination_basis: str = ""           # 组合依据
+    drug_roles: List[Dict] = None         # 各产品在组合中的作用
+    synergy_effect: str = ""              # 产品间协同效应
+    clinical_effectiveness: str = ""      # 临床有效性
+    expected_outcome: str = ""            # 预期治疗效果
+    mechanism: str = ""                   # 解决病症的具体机制
+    low_resistance_analysis: str = ""     # 低耐药风险分析
+    resistance_prevention_guide: str = "" # 耐药预防操作指导
 
     def to_dict(self):
         result = asdict(self)
@@ -688,6 +690,141 @@ def _get_history_excluded_drugs(history: List[str], all_drugs: List[DrugInfo]) -
     return excluded
 
 
+def _get_drug_resistance_groups(drug: DrugInfo) -> List[str]:
+    """获取药物涉及的所有交叉耐药类别"""
+    if not drug:
+        return []
+    return list(set(_get_resistance_groups(drug.main_component) + _get_resistance_groups(drug.name)))
+
+
+def _analyze_low_resistance(drug_details: List[Dict]) -> Dict:
+    """分析组合方案的耐药风险并给出低耐药说明
+
+    返回字段：
+      - risk_level: "低" / "中" / "高"
+      - same_class_chemicals: 同类别化药名称列表
+      - mechanism_groups: 所有化药作用机制类别列表
+      - has_tcm: 是否包含中兽药
+      - description: 面向用户的低耐药分析文案
+    """
+    chemicals = [d for d in drug_details if d.get("drug_type") == "化药"]
+    tcm_count = sum(1 for d in drug_details if d.get("drug_type") == "中兽药")
+
+    group_to_drugs: Dict[str, List[str]] = {}
+    for d in chemicals:
+        name = d.get("name", "")
+        groups = list(set(_get_resistance_groups(d.get("component", "")) + _get_resistance_groups(name)))
+        for g in groups:
+            group_to_drugs.setdefault(g, []).append(name)
+
+    same_class_drugs = []
+    seen_names = set()
+    for g, names in group_to_drugs.items():
+        if len(names) >= 2:
+            for n in names:
+                if n not in seen_names:
+                    same_class_drugs.append(n)
+                    seen_names.add(n)
+
+    mechanism_groups = sorted(group_to_drugs.keys())
+    has_tcm = tcm_count > 0
+
+    if same_class_drugs:
+        risk_level = "高"
+    elif len(chemicals) >= 2 and len(mechanism_groups) >= 2:
+        risk_level = "低"
+    elif len(chemicals) == 1 and has_tcm:
+        risk_level = "低"
+    elif len(chemicals) == 0 and has_tcm:
+        risk_level = "低"
+    else:
+        risk_level = "中"
+
+    # 生成文案
+    drug_names = [d.get("name", "") for d in drug_details if d.get("name")]
+    if risk_level == "低":
+        if len(chemicals) >= 2 and len(mechanism_groups) >= 2:
+            desc = (
+                f"{'、'.join(drug_names)} 采用不同作用机制的化药搭配（{ '、'.join(mechanism_groups) }），"
+                f"可通过多靶点杀菌显著降低耐药菌存活概率；同时包含中兽药/保健类产品，可调理机体、减少化药用量，"
+                f"从而延缓耐药性产生。"
+            )
+        elif len(chemicals) == 1 and has_tcm:
+            desc = (
+                f"{'、'.join(drug_names)} 采用“1种化药 + 中兽药/保健”模式：化药快速控制病原，"
+                f"中兽药调理机体、增强免疫力；中兽药作用靶点多、不易耐药，可辅助减少化药使用强度，"
+                f"整体耐药风险较低。"
+            )
+        elif len(chemicals) == 0 and has_tcm:
+            desc = (
+                f"{'、'.join(drug_names)} 均为中兽药/保健类产品，作用靶点多元，天然不易产生耐药性，"
+                f"适合用于预防、调理及产蛋期安全用药。"
+            )
+        else:
+            desc = "本方案药物作用机制互补，联合使用可降低耐药菌被筛选出来的风险。"
+    elif risk_level == "高":
+        desc = (
+            f"⚠️ 本方案中包含同类别化药（{ '、'.join(same_class_drugs) }），作用机制相近，"
+            f"容易交叉耐药。建议优先选择不同作用机制的药物搭配，或增加中兽药辅助，"
+            f"以降低耐药风险。"
+        )
+    else:
+        if has_tcm:
+            desc = "本方案含中兽药辅助，可在一定程度上降低耐药风险；建议足量足疗程使用并定期轮换。"
+        else:
+            desc = "本方案以化药为主，按推荐剂量和疗程规范使用，并注意后续轮换用药以延缓耐药。"
+
+    return {
+        "risk_level": risk_level,
+        "same_class_chemicals": same_class_drugs,
+        "mechanism_groups": mechanism_groups,
+        "has_tcm": has_tcm,
+        "description": desc,
+    }
+
+
+def _generate_resistance_prevention_guide(disease_type: str, has_chemical: bool) -> str:
+    """根据疾病类型和是否含化药生成耐药预防操作指导"""
+    guides = []
+
+    if has_chemical:
+        guides.append(
+            "**严格足量足疗程**：细菌感染常规疗程 3～5 天，抗病毒化药/提取物需按完整周期使用，"
+            "即使症状当天好转也必须用完规定天数，杜绝残留活菌变异。"
+        )
+        guides.append(
+            "**禁止低剂量长期添加**：无发病迹象时不用抗生素做日常保健；保健优先选用中兽药、益生菌、微生态制剂。"
+        )
+        guides.append(
+            "**轮换用药制度**：同一种抗菌化药连续治疗不超过 2 批家禽，下一批换用不同作用机制的药物；"
+            "例如本批大肠杆菌用氟苯尼考，下批可换头孢类或恩诺沙星。"
+        )
+        guides.append(
+            "**联合用药降低耐药概率**：两种不同机理药物搭配可双重杀菌，大幅降低耐药菌存活概率；"
+            "但必须遵守兽药配伍禁忌。"
+        )
+
+    if disease_type == "VIRAL":
+        guides.append(
+            "**抗病毒药不宜单一长期使用**：病毒变异快，频繁单一用药 3～4 次流行周期后可能出现毒株耐药，"
+            "建议不同抗病毒机制药物轮换或与中药免疫增强剂搭配。"
+        )
+    elif disease_type == "PARASITIC":
+        guides.append(
+            "**驱虫药定期轮换**：球虫药、驱虫药全年只用同一款，半年～1 年药效会明显下降，"
+            "建议不同作用机制产品轮换使用。"
+        )
+
+    guides.append(
+        "**定期药敏检测**：大型养殖场每 2～3 批次做一次细菌药敏试验，直接筛选本场敏感药物，避开已耐药药品。"
+    )
+    guides.append(
+        "**生物安全减少发病**：加强消毒、通风、控密度，降低发病频次，从根源减少用药次数，延缓耐药产生。"
+    )
+
+    return "\n\n".join(guides)
+
+
 def classify_drug_type(drug: "DrugInfo") -> str:
     """根据药物的类别与成分判定其类型
 
@@ -1048,6 +1185,14 @@ def _generate_combination_rationale(scheme_name: str, description: str,
         f"本方案通过“直接杀灭/抑制病原 + 调理机体 + 改善症状”的多重机制共同作用："
         f"化药成分针对致病微生物发挥作用，中兽药/保健成分帮助提高机体自身抵抗力，"
         f"两者配合可更全面地应对{disease_type_cn}。"
+    )
+
+    # 低耐药风险分析与预防指导
+    low_resistance = _analyze_low_resistance(drug_details)
+    rationale.low_resistance_analysis = low_resistance["description"]
+    has_chemical = any(d.get("drug_type") == "化药" for d in drug_details)
+    rationale.resistance_prevention_guide = _generate_resistance_prevention_guide(
+        disease_type, has_chemical
     )
 
     return rationale

@@ -576,6 +576,12 @@ if st.session_state.get('show_results', False):
                     combination_basis = combo_desc
                 if combination_basis:
                     st.info(f"**📖 推荐理由：** {combination_basis}")
+
+                # 低耐药风险分析（突出展示）
+                low_resistance_analysis = rationale.get('low_resistance_analysis', '') if rationale else ''
+                if low_resistance_analysis:
+                    st.success(f"**🛡️ 低耐药组合说明：** {low_resistance_analysis}")
+
                 # 查看完整推荐理由（始终展示，字段缺失时自动生成兜底内容）
                 with st.expander("📖 查看完整推荐理由", expanded=False):
                     # 组合依据
@@ -624,6 +630,12 @@ if st.session_state.get('show_results', False):
                             st.markdown(f"**🎯 预期效果：** {rationale.get('expected_outcome', '')}")
                         if rationale.get('mechanism'):
                             st.markdown(f"**⚙️ 作用机制：** {rationale.get('mechanism', '')}")
+
+                    # 耐药预防实操指导
+                    prevention_guide = rationale.get('resistance_prevention_guide', '') if rationale else ''
+                    if prevention_guide:
+                        st.markdown("**🛡️ 耐药预防实操指导：**")
+                        st.markdown(prevention_guide)
 
                 if not is_safe:
                     conflicts = compatibility_check.get('conflicts', [])

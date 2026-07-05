@@ -1075,6 +1075,11 @@ elif page == 'recommend':
                     if combination_basis:
                         st.info(f"**📖 推荐理由：** {combination_basis}")
 
+                    # 低耐药风险分析（突出展示）
+                    low_resistance_analysis = rationale.get('low_resistance_analysis', '') if rationale else ''
+                    if low_resistance_analysis:
+                        st.success(f"**🛡️ 低耐药组合说明：** {low_resistance_analysis}")
+
                     # 类型构成详细展示
                     if type_labels:
                         st.markdown("**🧪 组合类型构成：**")
@@ -1157,6 +1162,12 @@ elif page == 'recommend':
                                 st.markdown(f"**🎯 预期效果：** {rationale.get('expected_outcome', '')}")
                             if rationale.get('mechanism'):
                                 st.markdown(f"**⚙️ 作用机制：** {rationale.get('mechanism', '')}")
+
+                        # 耐药预防实操指导
+                        prevention_guide = rationale.get('resistance_prevention_guide', '') if rationale else ''
+                        if prevention_guide:
+                            st.markdown("**🛡️ 耐药预防实操指导：**")
+                            st.markdown(prevention_guide)
 
                     with st.expander("💊 查看组合药品详情", expanded=True):
                         for j, drug in enumerate(combo.get('drugs', []), 1):
