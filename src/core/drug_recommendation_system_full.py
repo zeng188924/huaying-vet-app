@@ -793,9 +793,6 @@ def _generate_resistance_prevention_guide(disease_type: str, has_chemical: bool)
             "即使症状当天好转也必须用完规定天数，杜绝残留活菌变异。"
         )
         guides.append(
-            "**禁止低剂量长期添加**：无发病迹象时不用抗生素做日常保健；保健优先选用中兽药、益生菌、微生态制剂。"
-        )
-        guides.append(
             "**轮换用药制度**：同一种抗菌化药连续治疗不超过 2 批家禽，下一批换用不同作用机制的药物；"
             "例如本批大肠杆菌用氟苯尼考，下批可换头孢类或恩诺沙星。"
         )
@@ -814,13 +811,6 @@ def _generate_resistance_prevention_guide(disease_type: str, has_chemical: bool)
             "**驱虫药定期轮换**：球虫药、驱虫药全年只用同一款，半年～1 年药效会明显下降，"
             "建议不同作用机制产品轮换使用。"
         )
-
-    guides.append(
-        "**定期药敏检测**：大型养殖场每 2～3 批次做一次细菌药敏试验，直接筛选本场敏感药物，避开已耐药药品。"
-    )
-    guides.append(
-        "**生物安全减少发病**：加强消毒、通风、控密度，降低发病频次，从根源减少用药次数，延缓耐药产生。"
-    )
 
     return "\n\n".join(guides)
 
@@ -1162,23 +1152,6 @@ def _generate_combination_rationale(scheme_name: str, description: str,
             )
     else:
         rationale.synergy_effect = "单一药物按推荐方案使用，针对当前病症进行治疗。"
-
-    # 临床有效性
-    rationale.clinical_effectiveness = (
-        f"该组合方案中各药物的适应症均与当前{disease_type_cn}相关，"
-        f"符合兽医临床常用的联合用药思路。按推荐剂量和疗程使用，"
-        f"能够在多数病例中取得较满意的治疗效果。"
-    )
-
-    # 预期治疗效果
-    first_indications = _plain_indications_text(
-        drug_details[0].get("indications", []) if drug_details else [], max_items=2
-    )
-    target_symptoms = first_indications if first_indications else "相关"
-    rationale.expected_outcome = (
-        f"预期在规范用药2-3天后，患病禽群的{target_symptoms}症状可逐步减轻，"
-        f"采食量、饮水量和精神状态逐步恢复；坚持用完整个疗程有助于巩固疗效、降低复发风险。"
-    )
 
     # 作用机制
     rationale.mechanism = (

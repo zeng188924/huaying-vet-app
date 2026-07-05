@@ -1030,10 +1030,6 @@ def show_recommend():
 
                         # 其他详细字段（有则显示）
                         if rationale:
-                            if rationale.get('clinical_effectiveness'):
-                                st.markdown(f"**📊 临床有效性：** {rationale.get('clinical_effectiveness', '')}")
-                            if rationale.get('expected_outcome'):
-                                st.markdown(f"**🎯 预期效果：** {rationale.get('expected_outcome', '')}")
                             if rationale.get('mechanism'):
                                 st.markdown(f"**⚙️ 作用机制：** {rationale.get('mechanism', '')}")
 
