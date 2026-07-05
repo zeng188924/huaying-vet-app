@@ -6,7 +6,7 @@ _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(_root, 'src'))
 sys.path.insert(0, os.path.join(_root, 'src', 'utils'))
 
-from utils.data_manager import (
+from src.utils.data_manager import (
     create_shed, get_sheds_by_farmer, get_shed, update_shed, delete_shed,
     get_all_farmer_profiles
 )

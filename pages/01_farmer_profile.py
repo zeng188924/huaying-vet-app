@@ -6,11 +6,11 @@ _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(_root, 'src'))
 sys.path.insert(0, os.path.join(_root, 'src', 'utils'))
 
-from utils.data_manager import (
+from src.utils.data_manager import (
     create_farmer_profile, get_all_farmer_profiles, 
     get_farmer_profile, update_farmer_profile, delete_farmer_profile
 )
-from utils.encryption import hash_id_card
+from src.utils.encryption import hash_id_card
 
 st.set_page_config(
     page_title="用户档案管理",

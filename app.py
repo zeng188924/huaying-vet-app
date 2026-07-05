@@ -194,11 +194,11 @@ def show_home():
     """, unsafe_allow_html=True)
 
 def show_profile():
-    from utils.data_manager import (
+    from src.utils.data_manager import (
         create_farmer_profile, get_all_farmer_profiles,
         get_farmer_profile, update_farmer_profile, delete_farmer_profile
     )
-    from utils.encryption import hash_id_card
+    from src.utils.encryption import hash_id_card
 
     st.markdown("""
     <style>
@@ -331,7 +331,7 @@ def show_profile():
     st.caption("💡 提示：身份证号采用加密存储，系统不会保存明文信息")
 
 def show_shed():
-    from utils.data_manager import (
+    from src.utils.data_manager import (
         create_shed, get_sheds_by_farmer, get_shed, update_shed, delete_shed,
         get_all_farmer_profiles
     )
@@ -527,7 +527,7 @@ def show_recommend():
     from drug_recommendation_system_full import create_recommender, quick_recommend, DrugDatabase
     from disease_knowledge import get_disease_knowledge_base
     from key_matters import get_key_matters, get_summary_points
-    from utils.data_manager import (
+    from src.utils.data_manager import (
         get_all_farmer_profiles, get_sheds_by_farmer,
         get_medication_history, add_medication_history, delete_medication_history
     )
