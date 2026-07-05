@@ -694,7 +694,11 @@ def show_shed():
     st.caption("💡 提示：完善的棚舍信息有助于系统提供更精准的用药推荐")
 
 def show_recommend():
-    from drug_recommendation_system_full import create_recommender, quick_recommend, DrugDatabase, DISEASE_TYPE_CATEGORIES
+    from drug_recommendation_system_full import (
+        create_recommender, quick_recommend, DrugDatabase,
+        DISEASE_TYPE_CATEGORIES, DISEASE_CATEGORY_DISPLAY,
+        DISEASE_CATEGORY_DISPLAY_REVERSE
+    )
     from disease_knowledge import get_disease_knowledge_base
     from key_matters import get_key_matters, get_summary_points
     from environment_adjustment import get_environment_adjustment_engine, ShedEnvironment
@@ -919,6 +923,7 @@ def show_recommend():
         # 发病类型：二级分类
         auto_disease = st.session_state.get('app_auto_disease', '')
         disease_categories = list(DISEASE_TYPE_CATEGORIES.keys())
+        category_display_options = [DISEASE_CATEGORY_DISPLAY.get(cat, cat) for cat in disease_categories]
         auto_category = None
         if auto_disease:
             for cat, diseases in DISEASE_TYPE_CATEGORIES.items():
@@ -926,13 +931,14 @@ def show_recommend():
                     auto_category = cat
                     break
         category_index = disease_categories.index(auto_category) if auto_category in disease_categories else 0
-        disease_category = st.selectbox(
+        disease_category_display = st.selectbox(
             "发病大类",
-            disease_categories,
+            category_display_options,
             index=category_index,
-            help="先选择疾病大类",
+            help="先选择疾病大类，具体疾病会随大类自动调整",
             key="app_disease_category"
         )
+        disease_category = DISEASE_CATEGORY_DISPLAY_REVERSE.get(disease_category_display, disease_category_display)
         specific_diseases = DISEASE_TYPE_CATEGORIES.get(disease_category, [])
         specific_index = specific_diseases.index(auto_disease) if auto_disease in specific_diseases else 0
         disease_type = st.selectbox(

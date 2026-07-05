@@ -48,7 +48,8 @@ st.set_page_config(
 # 导入推荐系统
 from drug_recommendation_system_full import (
     create_recommender, quick_recommend, DrugDatabase,
-    DISEASE_TYPE_CATEGORIES
+    DISEASE_TYPE_CATEGORIES, DISEASE_CATEGORY_DISPLAY,
+    DISEASE_CATEGORY_DISPLAY_REVERSE
 )
 from disease_knowledge import get_disease_knowledge_base, get_online_searcher
 from db_admin import render_admin_tab
@@ -938,6 +939,7 @@ elif page == 'recommend':
         # 发病类型：二级分类，先选大类，再选具体疾病
         auto_disease_type = st.session_state.get('auto_disease_type', '')
         disease_categories = list(DISEASE_TYPE_CATEGORIES.keys())
+        category_display_options = [DISEASE_CATEGORY_DISPLAY.get(cat, cat) for cat in disease_categories]
         
         # 根据自动识别或旧数据尝试反推大类
         auto_category = None
@@ -948,12 +950,14 @@ elif page == 'recommend':
                     break
         
         category_index = disease_categories.index(auto_category) if auto_category in disease_categories else 0
-        disease_category = st.selectbox(
+        disease_category_display = st.selectbox(
             "🏥 发病大类",
-            disease_categories,
+            category_display_options,
             index=category_index,
+            help="先选择疾病大类，具体疾病会随大类自动调整",
             key="disease_category_mobile"
         )
+        disease_category = DISEASE_CATEGORY_DISPLAY_REVERSE.get(disease_category_display, disease_category_display)
         
         specific_diseases = DISEASE_TYPE_CATEGORIES.get(disease_category, [])
         specific_index = 0
