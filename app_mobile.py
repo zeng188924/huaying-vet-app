@@ -66,7 +66,7 @@ from diagnosis_engine import (
 )
 
 # 初始化推荐器 - 使用JSON文件加载数据
-@st.cache_resource
+# 临时禁用缓存，验证代码更新是否生效
 def get_recommender():
     # 优先使用JSON文件，数据更新更可靠
     json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
