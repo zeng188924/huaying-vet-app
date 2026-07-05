@@ -35,6 +35,16 @@ def classify_label(drug_name, indications, category):
     return "其他"
 
 
+def assert_combination_size(result):
+    """断言最终组合方案药物总数不超过4种"""
+    for combo in result.get("combination_recommendations", []):
+        drugs = combo.get("drugs", [])
+        assert len(drugs) <= 4, (
+            f"组合方案药物数量超限: {combo.get('scheme_name')} 包含 {len(drugs)} 种药物，"
+            f"超过4种上限。"
+        )
+
+
 def print_result(title, result):
     print(f"\n{'=' * 60}")
     print(f"【{title}】")
@@ -82,6 +92,7 @@ def main():
         egg_period_safe=False,
         farm_scale="小规模"
     )
+    assert_combination_size(result1)
     print_result("场景1：精神沉郁（病毒/混合感染为主）", result1)
 
     # 场景2：呼吸道疾病 —— 应显示有效化药+中兽药
@@ -95,6 +106,7 @@ def main():
         egg_period_safe=False,
         farm_scale="小规模"
     )
+    assert_combination_size(result2)
     print_result("场景2：咳嗽（呼吸道疾病）", result2)
 
     # 场景3：消化道疾病 —— 应显示有效化药
@@ -108,6 +120,7 @@ def main():
         egg_period_safe=False,
         farm_scale="小规模"
     )
+    assert_combination_size(result3)
     print_result("场景3：拉稀（消化道疾病）", result3)
 
     # 场景4：产蛋期安全模式下的呼吸道 —— 应过滤掉产蛋期禁用的化药
@@ -121,6 +134,7 @@ def main():
         egg_period_safe=True,
         farm_scale="小规模"
     )
+    assert_combination_size(result4)
     print_result("场景4：产蛋期咳嗽（过滤禁用化药）", result4)
 
     # 场景5：病毒性疾病（流感）—— 应主要显示中兽药，不强制添加无适应症化药
@@ -134,7 +148,10 @@ def main():
         egg_period_safe=False,
         farm_scale="小规模"
     )
+    assert_combination_size(result5)
     print_result("场景5：流感（病毒性疾病）", result5)
+
+    print("\n✅ 所有场景组合药物数量均不超过4种，验证通过。")
 
 
 if __name__ == "__main__":

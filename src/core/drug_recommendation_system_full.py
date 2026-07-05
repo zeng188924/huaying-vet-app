@@ -1821,6 +1821,19 @@ class DrugRecommender:
                 for dd in drug_details:
                     dd["drug_type"] = type_label_map.get(dd.get("name", ""), "未知")
 
+                # ===== 核心用药理念：最终组合药物总数严格不超过4种 =====
+                if len(drug_details) > 4:
+                    drug_details = drug_details[:4]
+                    type_labels = type_labels[:4]
+                    total_price = sum(dd.get("price", 0) for dd in drug_details)
+                    # 重新统计类型构成
+                    chem_count = sum(1 for tl in type_labels if tl.get("drug_type") == "化药")
+                    tcm_count = sum(1 for tl in type_labels if tl.get("drug_type") == "中兽药")
+                    compliance["chem_count"] = chem_count
+                    compliance["tcm_count"] = tcm_count
+                    compliance["types"] = [tl.get("drug_type", "未知") for tl in type_labels]
+                    compliance["type_set"] = sorted(set(tl.get("drug_type", "未知") for tl in type_labels))
+
                 # 生成组合方案推荐理由
                 combination_rationale = _generate_combination_rationale(
                     scheme_name=scheme["name"],
@@ -1840,7 +1853,7 @@ class DrugRecommender:
                         **compliance,
                         "drug_type_labels": type_labels,
                         "adjusted": adjusted,
-                        "rule": "必须为'化药+中兽药'或'中兽药+中兽药'组合，禁止全化药；两种中兽药组合且存在有效化药时可补充一种化药；所有化药必须对应当前病症具备明确适应症",
+                        "rule": "必须为'化药+中兽药'或'中兽药+中兽药'组合，禁止全化药；最终组合药物总数严格不超过4种；两种中兽药组合且存在有效化药时可补充一种化药；所有化药必须对应当前病症具备明确适应症",
                     },
                     "rationale": combination_rationale.to_dict(),
                 })
@@ -1867,7 +1880,7 @@ class DrugRecommender:
                     **compliance,
                     "drug_type_labels": type_labels,
                     "adjusted": False,
-                    "rule": "必须为'化药+中兽药'或'中兽药+中兽药'组合，禁止全化药；所有化药必须对应当前病症具备明确适应症",
+                    "rule": "必须为'化药+中兽药'或'中兽药+中兽药'组合，禁止全化药；最终组合药物总数严格不超过4种；所有化药必须对应当前病症具备明确适应症",
                 }
 
                 # 为默认组合药品补充 drug_type 并生成推荐理由
