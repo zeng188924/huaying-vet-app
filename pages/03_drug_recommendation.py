@@ -252,13 +252,33 @@ with st.sidebar:
             st.info("暂无历史用药记录。如果是刚开始使用软件，请手动添加之前使用过的药物。")
 
         st.markdown("**手动添加历史用药**")
-        history_options = sorted([d.name for d in all_drugs], key=lambda x: x.lower())
-        selected_history = st.multiselect(
-            "从药品库选择",
-            history_options,
-            key=f"history_select_{selected_shed.id}",
-            help="选择该棚舍之前使用过的药物"
+        used_drug_names = {entry['drug_name'] for entry in medication_history}
+        available_drugs = sorted(
+            [d for d in all_drugs if d.name not in used_drug_names],
+            key=lambda x: x.name.lower()
         )
+        available_names = [d.name for d in available_drugs]
+
+        selected_history = []
+        if not available_names:
+            st.info("🎉 药品库中所有药物均已记录在历史用药中，暂无新的可选药物。如需补充，可在下方手动输入药品名称。")
+        else:
+            selected_history = st.multiselect(
+                "从药品库选择（已自动排除已记录药物）",
+                available_names,
+                key=f"history_select_{selected_shed.id}",
+                help="列表已自动排除该棚舍已记录的药物，避免重复添加"
+            )
+
+            with st.expander("📋 查看可选药物详细信息", expanded=False):
+                for d in available_drugs:
+                    st.markdown(f"**{d.name}** ｜ 主要成分：{d.main_component or '—'}")
+                    if d.indications:
+                        st.caption(f"适应症/功效：{', '.join(d.indications)}")
+                    if d.usage_info:
+                        st.caption(f"用法用量：{d.usage_info}")
+                    st.divider()
+
         custom_history = st.text_input(
             "或手动输入其他药物（多个用逗号分隔）",
             key=f"custom_history_{selected_shed.id}",
@@ -267,12 +287,16 @@ with st.sidebar:
         if st.button("➕ 添加历史用药", key=f"add_history_{selected_shed.id}"):
             added = []
             for drug_name in selected_history:
-                add_medication_history(selected_shed.id, drug_name, source="manual")
-                added.append(drug_name)
-            if custom_history:
-                for drug_name in [x.strip() for x in custom_history.replace('，', ',').split(',') if x.strip()]:
+                if drug_name not in used_drug_names:
                     add_medication_history(selected_shed.id, drug_name, source="manual")
                     added.append(drug_name)
+            if custom_history:
+                for drug_name in [x.strip() for x in custom_history.replace('，', ',').split(',') if x.strip()]:
+                    if drug_name not in used_drug_names:
+                        add_medication_history(selected_shed.id, drug_name, source="manual")
+                        added.append(drug_name)
+                    else:
+                        st.toast(f"{drug_name} 已存在于历史用药记录中，已跳过", icon="⚠️")
             if added:
                 st.success(f"已添加历史用药：{', '.join(added)}")
                 st.rerun()

@@ -691,13 +691,33 @@ elif page == 'recommend':
                 all_drugs = db.get_all_drugs()
 
             st.markdown("**添加历史用药**")
-            history_options = sorted([d.name for d in all_drugs], key=lambda x: x.lower())
-            mobile_selected_history = st.multiselect(
-                "选择药品",
-                history_options,
-                key=f"mobile_history_select_{selected_shed.id}",
-                help="选择该棚舍之前使用过的药物"
+            used_drug_names = {entry['drug_name'] for entry in medication_history}
+            available_drugs = sorted(
+                [d for d in all_drugs if d.name not in used_drug_names],
+                key=lambda x: x.name.lower()
             )
+            available_names = [d.name for d in available_drugs]
+
+            mobile_selected_history = []
+            if not available_names:
+                st.info("🎉 药品库中所有药物均已记录，暂无新的可选药物。可在下方手动输入补充。")
+            else:
+                mobile_selected_history = st.multiselect(
+                    "选择药品（已排除已记录药物）",
+                    available_names,
+                    key=f"mobile_history_select_{selected_shed.id}",
+                    help="列表已自动排除该棚舍已记录的药物"
+                )
+
+                with st.expander("📋 可选药物详情", expanded=False):
+                    for d in available_drugs:
+                        st.markdown(f"**{d.name}** ｜ 主要成分：{d.main_component or '—'}")
+                        if d.indications:
+                            st.caption(f"适应症：{', '.join(d.indications)}")
+                        if d.usage_info:
+                            st.caption(f"用法：{d.usage_info}")
+                        st.divider()
+
             mobile_custom_history = st.text_input(
                 "或手动输入（多个用逗号分隔）",
                 key=f"mobile_custom_history_{selected_shed.id}",
@@ -706,12 +726,16 @@ elif page == 'recommend':
             if st.button("➕ 添加", key=f"mobile_add_history_{selected_shed.id}"):
                 added = []
                 for drug_name in mobile_selected_history:
-                    add_medication_history(selected_shed.id, drug_name, source="manual")
-                    added.append(drug_name)
-                if mobile_custom_history:
-                    for drug_name in [x.strip() for x in mobile_custom_history.replace('，', ',').split(',') if x.strip()]:
+                    if drug_name not in used_drug_names:
                         add_medication_history(selected_shed.id, drug_name, source="manual")
                         added.append(drug_name)
+                if mobile_custom_history:
+                    for drug_name in [x.strip() for x in mobile_custom_history.replace('，', ',').split(',') if x.strip()]:
+                        if drug_name not in used_drug_names:
+                            add_medication_history(selected_shed.id, drug_name, source="manual")
+                            added.append(drug_name)
+                        else:
+                            st.toast(f"{drug_name} 已存在，已跳过", icon="⚠️")
                 if added:
                     st.success(f"已添加：{', '.join(added)}")
                     st.rerun()
