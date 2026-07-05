@@ -690,13 +690,21 @@ elif page == 'recommend':
                 db = DrugDatabase(json_path)
                 all_drugs = db.get_all_drugs()
 
+            def _display_name(d):
+                for field in [d.product_name, d.content, d.name]:
+                    if field and str(field).strip() not in ('', '/', 'nan', 'None'):
+                        return str(field).strip()
+                return d.name or "未命名药品"
+
+            valid_drugs = [d for d in all_drugs if _display_name(d) not in ('/', '')]
+
             st.markdown("**添加历史用药**")
             used_drug_names = {entry['drug_name'] for entry in medication_history}
             available_drugs = sorted(
-                [d for d in all_drugs if d.name not in used_drug_names],
-                key=lambda x: x.name.lower()
+                [d for d in valid_drugs if _display_name(d) not in used_drug_names],
+                key=lambda x: _display_name(x).lower()
             )
-            available_names = [d.name for d in available_drugs]
+            available_names = [_display_name(d) for d in available_drugs]
 
             mobile_selected_history = []
             if not available_names:
@@ -711,7 +719,7 @@ elif page == 'recommend':
 
                 with st.expander("📋 可选药物详情", expanded=False):
                     for d in available_drugs:
-                        st.markdown(f"**{d.name}** ｜ 主要成分：{d.main_component or '—'}")
+                        st.markdown(f"**{_display_name(d)}** ｜ 主要成分：{d.main_component or '—'}")
                         if d.indications:
                             st.caption(f"适应症：{', '.join(d.indications)}")
                         if d.usage_info:

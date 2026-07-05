@@ -483,13 +483,9 @@ class DrugDatabase:
                     self.drugs.append(drug)
     
     def get_drug_by_name(self, name: str) -> Optional[DrugInfo]:
-        """根据名称获取药物（支持产品名称和商品名匹配）"""
+        """根据名称获取药物（支持 product_name / content / name / brand_name 匹配）"""
         for drug in self.drugs:
-            # 首先匹配产品名称
-            if drug.name == name:
-                return drug
-            # 然后匹配商品名（支持部分匹配）
-            if drug.brand_name and name in drug.brand_name:
+            if _drug_name_matches(drug, name):
                 return drug
         return None
     
@@ -628,6 +624,19 @@ def _get_resistance_groups(component: str) -> List[str]:
     return groups
 
 
+def _drug_name_matches(drug: DrugInfo, query: str) -> bool:
+    """检查药物名称是否与查询字符串匹配，支持 name / brand_name / product_name / content 多个字段"""
+    if not query or not str(query).strip():
+        return False
+    q = str(query).strip()
+    for field in (drug.name, drug.brand_name, drug.product_name, drug.content):
+        if field and str(field).strip():
+            f = str(field).strip()
+            if f == q or q in f or f in q:
+                return True
+    return False
+
+
 def _get_history_excluded_drugs(history: List[str], all_drugs: List[DrugInfo]) -> set:
     """根据历史用药记录，计算需要避免重复或交叉耐药的药物名称集合
 
@@ -649,7 +658,7 @@ def _get_history_excluded_drugs(history: List[str], all_drugs: List[DrugInfo]) -
         # 尝试在数据库中匹配完整药物
         matched = None
         for d in all_drugs:
-            if d.name == hist_name or (d.brand_name and d.brand_name == hist_name) or (hist_name in d.name) or (d.brand_name and hist_name in d.brand_name):
+            if _drug_name_matches(d, hist_name):
                 matched = d
                 break
         if matched:
@@ -1139,11 +1148,11 @@ class DrugRecommender:
 
         for drug in self.db.get_all_drugs():
             # 排除用户指定的耐药性药物
-            if drug.name in excluded_drugs_set or drug.brand_name in excluded_drugs_set:
+            if any(_drug_name_matches(drug, ex) for ex in excluded_drugs_set):
                 continue
 
             # 排除历史用药及易产生交叉耐药的同类药物
-            if drug.name in history_excluded_set or (drug.brand_name and drug.brand_name in history_excluded_set):
+            if any(_drug_name_matches(drug, hx) for hx in history_excluded_set):
                 continue
 
             # 产蛋期安全检查
@@ -1192,9 +1201,9 @@ class DrugRecommender:
                 break
             if drug.name in existing_names:
                 continue
-            if drug.name in excluded_drugs_set or drug.brand_name in excluded_drugs_set:
+            if any(_drug_name_matches(drug, ex) for ex in excluded_drugs_set):
                 continue
-            if drug.name in history_excluded_set or (drug.brand_name and drug.brand_name in history_excluded_set):
+            if any(_drug_name_matches(drug, hx) for hx in history_excluded_set):
                 continue
             if request.egg_period_safe and not drug.egg_period_safe:
                 continue
@@ -1479,11 +1488,11 @@ class DrugRecommender:
             has_excluded = False
             for drug_name in scheme["drugs"]:
                 drug = self.db.get_drug_by_name(drug_name)
-                if drug and (drug.name in excluded_set or drug.brand_name in excluded_set):
+                if drug and any(_drug_name_matches(drug, ex) for ex in excluded_set):
                     has_excluded = True
                     break
                 # 排除历史用药及易产生交叉耐药的同类药物
-                if drug and (drug.name in history_excluded_set or (drug.brand_name and drug.brand_name in history_excluded_set)):
+                if drug and any(_drug_name_matches(drug, hx) for hx in history_excluded_set):
                     has_excluded = True
                     break
             if has_excluded:
