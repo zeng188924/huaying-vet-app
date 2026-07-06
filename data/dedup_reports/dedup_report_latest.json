@@ -1,0 +1,689 @@
+{
+  "timestamp": "2026-07-06T11:47:27.266383",
+  "original_count": 110,
+  "retained_count": 89,
+  "deleted_count": 21,
+  "group_count": 89,
+  "deduplicated_group_count": 21,
+  "criteria": {
+    "same_product_definition": "以 product_group_id 作为同一产品判定键；缺失时按 normalize_group_key （产品名称去末尾规格/营销标注 + 主要成分）自动生成",
+    "spec_comparison_method": "解析规格字段中首个数值+单位，质量统一换算为克(g)，体积统一换算为毫升(ml)；无质量/体积单位时以容器数量作为兜底参考",
+    "retention_rule": "仅保留同一产品组内包装规格解析值最大的产品记录；解析值相同时保留原列表中先出现的记录"
+  },
+  "groups": [
+    {
+      "product_group_id": "氟苯尼考::氟苯尼考粉",
+      "product_name": "氟苯尼考粉",
+      "variant_count": 2,
+      "retained_id": "B01",
+      "retained_name": "氟苯尼考粉",
+      "retained_spec": "500g/袋*20袋/箱",
+      "retained_parsed_size": 500.0,
+      "retained_parsed_unit": "g",
+      "deleted_count": 1,
+      "deleted_records": [
+        {
+          "id": "B02",
+          "name": "氟苯尼考粉",
+          "spec": "100g/袋*100袋/箱",
+          "parsed_size": 100.0,
+          "parsed_unit": "g"
+        }
+      ],
+      "selection_basis": "按包装规格大小排序，保留解析值最大的记录 （500g/袋*20袋/箱，解析值 500.0000 g）"
+    },
+    {
+      "product_group_id": "盐酸多西环素::盐酸多西环素可溶性粉",
+      "product_name": "盐酸多西环素可溶性粉",
+      "variant_count": 2,
+      "retained_id": "B03",
+      "retained_name": "盐酸多西环素可溶性粉",
+      "retained_spec": "500g/袋*20袋/箱",
+      "retained_parsed_size": 500.0,
+      "retained_parsed_unit": "g",
+      "deleted_count": 1,
+      "deleted_records": [
+        {
+          "id": "B04",
+          "name": "盐酸多西环素可溶性粉",
+          "spec": "100g/袋*100袋/箱",
+          "parsed_size": 100.0,
+          "parsed_unit": "g"
+        }
+      ],
+      "selection_basis": "按包装规格大小排序，保留解析值最大的记录 （500g/袋*20袋/箱，解析值 500.0000 g）"
+    },
+    {
+      "product_group_id": "卡巴匹林钙::卡巴匹林钙粉",
+      "product_name": "卡巴匹林钙粉",
+      "variant_count": 2,
+      "retained_id": "B05",
+      "retained_name": "卡巴匹林钙粉",
+      "retained_spec": "500g/袋*20袋/箱",
+      "retained_parsed_size": 500.0,
+      "retained_parsed_unit": "g",
+      "deleted_count": 1,
+      "deleted_records": [
+        {
+          "id": "B06",
+          "name": "卡巴匹林钙粉",
+          "spec": "100g/袋*100袋/箱",
+          "parsed_size": 100.0,
+          "parsed_unit": "g"
+        }
+      ],
+      "selection_basis": "按包装规格大小排序，保留解析值最大的记录 （500g/袋*20袋/箱，解析值 500.0000 g）"
+    },
+    {
+      "product_group_id": "阿莫西林::阿莫西林可溶性粉",
+      "product_name": "阿莫西林可溶性粉",
+      "variant_count": 2,
+      "retained_id": "B07",
+      "retained_name": "阿莫西林可溶性粉",
+      "retained_spec": "500g/袋*20袋/箱",
+      "retained_parsed_size": 500.0,
+      "retained_parsed_unit": "g",
+      "deleted_count": 1,
+      "deleted_records": [
+        {
+          "id": "B08",
+          "name": "阿莫西林可溶性粉",
+          "spec": "100g/袋*100袋/箱",
+          "parsed_size": 100.0,
+          "parsed_unit": "g"
+        }
+      ],
+      "selection_basis": "按包装规格大小排序，保留解析值最大的记录 （500g/袋*20袋/箱，解析值 500.0000 g）"
+    },
+    {
+      "product_group_id": "硫酸黏菌素::硫酸黏菌素预混剂1000g",
+      "product_name": "硫酸黏菌素预混剂",
+      "variant_count": 2,
+      "retained_id": "B09",
+      "retained_name": "硫酸黏菌素预混剂1000g",
+      "retained_spec": "1000g/袋*10袋/箱",
+      "retained_parsed_size": 1000.0,
+      "retained_parsed_unit": "g",
+      "deleted_count": 1,
+      "deleted_records": [
+        {
+          "id": "B10",
+          "name": "硫酸黏菌素预混剂1000g",
+          "spec": "100g/袋*100袋/箱",
+          "parsed_size": 100.0,
+          "parsed_unit": "g"
+        }
+      ],
+      "selection_basis": "按包装规格大小排序，保留解析值最大的记录 （1000g/袋*10袋/箱，解析值 1000.0000 g）"
+    },
+    {
+      "product_group_id": "硫酸黏菌素::硫酸黏菌素预混剂500g",
+      "product_name": "硫酸黏菌素预混剂",
+      "variant_count": 2,
+      "retained_id": "B11",
+      "retained_name": "硫酸黏菌素预混剂500g",
+      "retained_spec": "500g/袋*20袋/箱",
+      "retained_parsed_size": 500.0,
+      "retained_parsed_unit": "g",
+      "deleted_count": 1,
+      "deleted_records": [
+        {
+          "id": "B12",
+          "name": "硫酸黏菌素预混剂500g",
+          "spec": "100g/袋*100袋/箱",
+          "parsed_size": 100.0,
+          "parsed_unit": "g"
+        }
+      ],
+      "selection_basis": "按包装规格大小排序，保留解析值最大的记录 （500g/袋*20袋/箱，解析值 500.0000 g）"
+    },
+    {
+      "product_group_id": "硫酸新霉素::硫酸新霉素可溶性粉",
+      "product_name": "硫酸新霉素可溶性粉",
+      "variant_count": 2,
+      "retained_id": "B13",
+      "retained_name": "硫酸新霉素可溶性粉",
+      "retained_spec": "500g/袋*20袋/箱",
+      "retained_parsed_size": 500.0,
+      "retained_parsed_unit": "g",
+      "deleted_count": 1,
+      "deleted_records": [
+        {
+          "id": "B14",
+          "name": "硫酸新霉素可溶性粉",
+          "spec": "100g/袋*100袋/箱",
+          "parsed_size": 100.0,
+          "parsed_unit": "g"
+        }
+      ],
+      "selection_basis": "按包装规格大小排序，保留解析值最大的记录 （500g/袋*20袋/箱，解析值 500.0000 g）"
+    },
+    {
+      "product_group_id": "盐酸林可霉素::盐酸林可霉素可溶性粉",
+      "product_name": "盐酸林可霉素可溶性粉",
+      "variant_count": 2,
+      "retained_id": "B17",
+      "retained_name": "盐酸林可霉素可溶性粉",
+      "retained_spec": "1000g/袋*10袋/箱",
+      "retained_parsed_size": 1000.0,
+      "retained_parsed_unit": "g",
+      "deleted_count": 1,
+      "deleted_records": [
+        {
+          "id": "B18",
+          "name": "盐酸林可霉素可溶性粉",
+          "spec": "100g/袋*100袋/箱",
+          "parsed_size": 100.0,
+          "parsed_unit": "g"
+        }
+      ],
+      "selection_basis": "按包装规格大小排序，保留解析值最大的记录 （1000g/袋*10袋/箱，解析值 1000.0000 g）"
+    },
+    {
+      "product_group_id": "地美硝唑::地美硝唑预混剂",
+      "product_name": "地美硝唑预混剂",
+      "variant_count": 2,
+      "retained_id": "B19",
+      "retained_name": "地美硝唑预混剂",
+      "retained_spec": "1000g/袋*10袋/箱",
+      "retained_parsed_size": 1000.0,
+      "retained_parsed_unit": "g",
+      "deleted_count": 1,
+      "deleted_records": [
+        {
+          "id": "B20",
+          "name": "地美硝唑预混剂",
+          "spec": "100g/袋*100袋/箱",
+          "parsed_size": 100.0,
+          "parsed_unit": "g"
+        }
+      ],
+      "selection_basis": "按包装规格大小排序，保留解析值最大的记录 （1000g/袋*10袋/箱，解析值 1000.0000 g）"
+    },
+    {
+      "product_group_id": "单硫酸卡那霉素::单硫酸卡那霉素可溶性粉",
+      "product_name": "单硫酸卡那霉素可溶性粉",
+      "variant_count": 2,
+      "retained_id": "B21",
+      "retained_name": "单硫酸卡那霉素可溶性粉",
+      "retained_spec": "500g/袋*20袋/箱",
+      "retained_parsed_size": 500.0,
+      "retained_parsed_unit": "g",
+      "deleted_count": 1,
+      "deleted_records": [
+        {
+          "id": "B22",
+          "name": "单硫酸卡那霉素可溶性粉",
+          "spec": "100g/袋*100袋/箱",
+          "parsed_size": 100.0,
+          "parsed_unit": "g"
+        }
+      ],
+      "selection_basis": "按包装规格大小排序，保留解析值最大的记录 （500g/袋*20袋/箱，解析值 500.0000 g）"
+    },
+    {
+      "product_group_id": "替米考星::替米考星溶液",
+      "product_name": "替米考星溶液",
+      "variant_count": 2,
+      "retained_id": "B23",
+      "retained_name": "替米考星溶液",
+      "retained_spec": "250ml/瓶*40瓶/箱",
+      "retained_parsed_size": 250.0,
+      "retained_parsed_unit": "ml",
+      "deleted_count": 1,
+      "deleted_records": [
+        {
+          "id": "B24",
+          "name": "替米考星溶液",
+          "spec": "100ml/瓶*40瓶/箱",
+          "parsed_size": 100.0,
+          "parsed_unit": "ml"
+        }
+      ],
+      "selection_basis": "按包装规格大小排序，保留解析值最大的记录 （250ml/瓶*40瓶/箱，解析值 250.0000 ml）"
+    },
+    {
+      "product_group_id": "硫酸安普霉素::硫酸安普霉素可溶性粉",
+      "product_name": "硫酸安普霉素可溶性粉",
+      "variant_count": 2,
+      "retained_id": "B25",
+      "retained_name": "硫酸安普霉素可溶性粉",
+      "retained_spec": "500g/袋*20袋/箱",
+      "retained_parsed_size": 500.0,
+      "retained_parsed_unit": "g",
+      "deleted_count": 1,
+      "deleted_records": [
+        {
+          "id": "B26",
+          "name": "硫酸安普霉素可溶性粉",
+          "spec": "100g/袋*100袋/箱",
+          "parsed_size": 100.0,
+          "parsed_unit": "g"
+        }
+      ],
+      "selection_basis": "按包装规格大小排序，保留解析值最大的记录 （500g/袋*20袋/箱，解析值 500.0000 g）"
+    },
+    {
+      "product_group_id": "替米考星::替米考星预混剂",
+      "product_name": "替米考星预混剂",
+      "variant_count": 2,
+      "retained_id": "B27",
+      "retained_name": "替米考星预混剂",
+      "retained_spec": "500g/袋*20袋/箱",
+      "retained_parsed_size": 500.0,
+      "retained_parsed_unit": "g",
+      "deleted_count": 1,
+      "deleted_records": [
+        {
+          "id": "B28",
+          "name": "替米考星预混剂",
+          "spec": "100g/袋*100袋/箱",
+          "parsed_size": 100.0,
+          "parsed_unit": "g"
+        }
+      ],
+      "selection_basis": "按包装规格大小排序，保留解析值最大的记录 （500g/袋*20袋/箱，解析值 500.0000 g）"
+    },
+    {
+      "product_group_id": "磺胺间甲氧嘧啶钠+甲氧苄啶::复方磺胺间甲氧嘧啶钠可溶性粉（毒性大不宜过量用）",
+      "product_name": "复方磺胺间甲氧嘧啶钠可溶性粉（毒性大不宜过量用）",
+      "variant_count": 2,
+      "retained_id": "B29",
+      "retained_name": "复方磺胺间甲氧嘧啶钠可溶性粉（毒性大不宜过量用）",
+      "retained_spec": "500g/袋*20袋/箱",
+      "retained_parsed_size": 500.0,
+      "retained_parsed_unit": "g",
+      "deleted_count": 1,
+      "deleted_records": [
+        {
+          "id": "B30",
+          "name": "复方磺胺间甲氧嘧啶钠可溶性粉（毒性大不宜过量用）",
+          "spec": "100g/袋*100袋/箱",
+          "parsed_size": 100.0,
+          "parsed_unit": "g"
+        }
+      ],
+      "selection_basis": "按包装规格大小排序，保留解析值最大的记录 （500g/袋*20袋/箱，解析值 500.0000 g）"
+    },
+    {
+      "product_group_id": "桑仁清肺口服液::奇美诺",
+      "product_name": "奇美诺",
+      "variant_count": 2,
+      "retained_id": "H6",
+      "retained_name": "奇美诺500ml",
+      "retained_spec": "500ml/瓶*30瓶/箱",
+      "retained_parsed_size": 500.0,
+      "retained_parsed_unit": "ml",
+      "deleted_count": 1,
+      "deleted_records": [
+        {
+          "id": "H5",
+          "name": "奇美诺250ml",
+          "spec": "250ml/瓶*40瓶/箱",
+          "parsed_size": 250.0,
+          "parsed_unit": "ml"
+        }
+      ],
+      "selection_basis": "按包装规格大小排序，保留解析值最大的记录 （500ml/瓶*30瓶/箱，解析值 500.0000 ml）"
+    },
+    {
+      "product_group_id": "鱼腥草提取液::热感清",
+      "product_name": "热感清",
+      "variant_count": 2,
+      "retained_id": "H27",
+      "retained_name": "热感清250ml（明星产品）",
+      "retained_spec": "250ml/瓶*40瓶/箱",
+      "retained_parsed_size": 250.0,
+      "retained_parsed_unit": "ml",
+      "deleted_count": 1,
+      "deleted_records": [
+        {
+          "id": "H26",
+          "name": "热感清100ml（明星产品）",
+          "spec": "100ml/瓶*40瓶/箱",
+          "parsed_size": 100.0,
+          "parsed_unit": "ml"
+        }
+      ],
+      "selection_basis": "按包装规格大小排序，保留解析值最大的记录 （250ml/瓶*40瓶/箱，解析值 250.0000 ml）"
+    },
+    {
+      "product_group_id": "混合型饲料添加剂牛磺酸::（中药）金舒利（小柴胡）",
+      "product_name": "（中药）金舒利（小柴胡）",
+      "variant_count": 2,
+      "retained_id": "H28",
+      "retained_name": "（中药）金舒利（小柴胡）500g（明星产品）",
+      "retained_spec": "500g/袋*20袋/箱",
+      "retained_parsed_size": 500.0,
+      "retained_parsed_unit": "g",
+      "deleted_count": 1,
+      "deleted_records": [
+        {
+          "id": "H29",
+          "name": "（中药）金舒利（小柴胡）100g（明星产品）",
+          "spec": "100g/袋*100袋/箱",
+          "parsed_size": 100.0,
+          "parsed_unit": "g"
+        }
+      ],
+      "selection_basis": "按包装规格大小排序，保留解析值最大的记录 （500g/袋*20袋/箱，解析值 500.0000 g）"
+    },
+    {
+      "product_group_id": "鸡传染性法氏囊病精制蛋黄抗体::卡迪欧",
+      "product_name": "卡迪欧",
+      "variant_count": 2,
+      "retained_id": "H33",
+      "retained_name": "卡迪欧250ml（明星产品）",
+      "retained_spec": "250ml/瓶*40瓶/箱",
+      "retained_parsed_size": 250.0,
+      "retained_parsed_unit": "ml",
+      "deleted_count": 1,
+      "deleted_records": [
+        {
+          "id": "H32",
+          "name": "卡迪欧100ml（明星产品）",
+          "spec": "100ml/瓶*40瓶/箱",
+          "parsed_size": 100.0,
+          "parsed_unit": "ml"
+        }
+      ],
+      "selection_basis": "按包装规格大小排序，保留解析值最大的记录 （250ml/瓶*40瓶/箱，解析值 250.0000 ml）"
+    },
+    {
+      "product_group_id": "清瘟解毒口服液::（中药）利达美（第二天见效）",
+      "product_name": "（中药）利达美（第二天见效）",
+      "variant_count": 2,
+      "retained_id": "H44",
+      "retained_name": "（中药）利达美（第二天见效）500ml",
+      "retained_spec": "500ml/瓶*30瓶/箱",
+      "retained_parsed_size": 500.0,
+      "retained_parsed_unit": "ml",
+      "deleted_count": 1,
+      "deleted_records": [
+        {
+          "id": "H43",
+          "name": "（中药）利达美（第二天见效）250ml",
+          "spec": "250ml/瓶*40瓶/箱",
+          "parsed_size": 250.0,
+          "parsed_unit": "ml"
+        }
+      ],
+      "selection_basis": "按包装规格大小排序，保留解析值最大的记录 （500ml/瓶*30瓶/箱，解析值 500.0000 ml）"
+    },
+    {
+      "product_group_id": "甘露寡糖::甘舒乐",
+      "product_name": "甘舒乐",
+      "variant_count": 2,
+      "retained_id": "H47",
+      "retained_name": "甘舒乐1000g（明星产品）",
+      "retained_spec": "1000g/袋*20袋/箱",
+      "retained_parsed_size": 1000.0,
+      "retained_parsed_unit": "g",
+      "deleted_count": 1,
+      "deleted_records": [
+        {
+          "id": "H46",
+          "name": "甘舒乐500g（明星产品）",
+          "spec": "500g/袋*20袋/箱",
+          "parsed_size": 500.0,
+          "parsed_unit": "g"
+        }
+      ],
+      "selection_basis": "按包装规格大小排序，保留解析值最大的记录 （1000g/袋*20袋/箱，解析值 1000.0000 g）"
+    },
+    {
+      "product_group_id": "天然植物饲料原料干姜粗提物::(中药)羡康",
+      "product_name": "(中药)羡康",
+      "variant_count": 2,
+      "retained_id": "H60",
+      "retained_name": "(中药) 羡康500g（明星产品）",
+      "retained_spec": "500g/袋*20袋/箱",
+      "retained_parsed_size": 500.0,
+      "retained_parsed_unit": "g",
+      "deleted_count": 1,
+      "deleted_records": [
+        {
+          "id": "H59",
+          "name": "(中药)羡康100g（明星产品）",
+          "spec": "100g/袋*100袋/箱",
+          "parsed_size": 100.0,
+          "parsed_unit": "g"
+        }
+      ],
+      "selection_basis": "按包装规格大小排序，保留解析值最大的记录 （500g/袋*20袋/箱，解析值 500.0000 g）"
+    }
+  ],
+  "deleted_records": [
+    {
+      "id": "B02",
+      "name": "氟苯尼考粉",
+      "spec": "100g/袋*100袋/箱",
+      "product_group_id": "氟苯尼考::氟苯尼考粉",
+      "parsed_size": 100.0,
+      "parsed_unit": "g",
+      "retention_id": "B01",
+      "retention_spec": "500g/袋*20袋/箱",
+      "reason": "同一产品组内存在规格更大的记录，仅保留规格最大者"
+    },
+    {
+      "id": "B04",
+      "name": "盐酸多西环素可溶性粉",
+      "spec": "100g/袋*100袋/箱",
+      "product_group_id": "盐酸多西环素::盐酸多西环素可溶性粉",
+      "parsed_size": 100.0,
+      "parsed_unit": "g",
+      "retention_id": "B03",
+      "retention_spec": "500g/袋*20袋/箱",
+      "reason": "同一产品组内存在规格更大的记录，仅保留规格最大者"
+    },
+    {
+      "id": "B06",
+      "name": "卡巴匹林钙粉",
+      "spec": "100g/袋*100袋/箱",
+      "product_group_id": "卡巴匹林钙::卡巴匹林钙粉",
+      "parsed_size": 100.0,
+      "parsed_unit": "g",
+      "retention_id": "B05",
+      "retention_spec": "500g/袋*20袋/箱",
+      "reason": "同一产品组内存在规格更大的记录，仅保留规格最大者"
+    },
+    {
+      "id": "B08",
+      "name": "阿莫西林可溶性粉",
+      "spec": "100g/袋*100袋/箱",
+      "product_group_id": "阿莫西林::阿莫西林可溶性粉",
+      "parsed_size": 100.0,
+      "parsed_unit": "g",
+      "retention_id": "B07",
+      "retention_spec": "500g/袋*20袋/箱",
+      "reason": "同一产品组内存在规格更大的记录，仅保留规格最大者"
+    },
+    {
+      "id": "B10",
+      "name": "硫酸黏菌素预混剂1000g",
+      "spec": "100g/袋*100袋/箱",
+      "product_group_id": "硫酸黏菌素::硫酸黏菌素预混剂1000g",
+      "parsed_size": 100.0,
+      "parsed_unit": "g",
+      "retention_id": "B09",
+      "retention_spec": "1000g/袋*10袋/箱",
+      "reason": "同一产品组内存在规格更大的记录，仅保留规格最大者"
+    },
+    {
+      "id": "B12",
+      "name": "硫酸黏菌素预混剂500g",
+      "spec": "100g/袋*100袋/箱",
+      "product_group_id": "硫酸黏菌素::硫酸黏菌素预混剂500g",
+      "parsed_size": 100.0,
+      "parsed_unit": "g",
+      "retention_id": "B11",
+      "retention_spec": "500g/袋*20袋/箱",
+      "reason": "同一产品组内存在规格更大的记录，仅保留规格最大者"
+    },
+    {
+      "id": "B14",
+      "name": "硫酸新霉素可溶性粉",
+      "spec": "100g/袋*100袋/箱",
+      "product_group_id": "硫酸新霉素::硫酸新霉素可溶性粉",
+      "parsed_size": 100.0,
+      "parsed_unit": "g",
+      "retention_id": "B13",
+      "retention_spec": "500g/袋*20袋/箱",
+      "reason": "同一产品组内存在规格更大的记录，仅保留规格最大者"
+    },
+    {
+      "id": "B18",
+      "name": "盐酸林可霉素可溶性粉",
+      "spec": "100g/袋*100袋/箱",
+      "product_group_id": "盐酸林可霉素::盐酸林可霉素可溶性粉",
+      "parsed_size": 100.0,
+      "parsed_unit": "g",
+      "retention_id": "B17",
+      "retention_spec": "1000g/袋*10袋/箱",
+      "reason": "同一产品组内存在规格更大的记录，仅保留规格最大者"
+    },
+    {
+      "id": "B20",
+      "name": "地美硝唑预混剂",
+      "spec": "100g/袋*100袋/箱",
+      "product_group_id": "地美硝唑::地美硝唑预混剂",
+      "parsed_size": 100.0,
+      "parsed_unit": "g",
+      "retention_id": "B19",
+      "retention_spec": "1000g/袋*10袋/箱",
+      "reason": "同一产品组内存在规格更大的记录，仅保留规格最大者"
+    },
+    {
+      "id": "B22",
+      "name": "单硫酸卡那霉素可溶性粉",
+      "spec": "100g/袋*100袋/箱",
+      "product_group_id": "单硫酸卡那霉素::单硫酸卡那霉素可溶性粉",
+      "parsed_size": 100.0,
+      "parsed_unit": "g",
+      "retention_id": "B21",
+      "retention_spec": "500g/袋*20袋/箱",
+      "reason": "同一产品组内存在规格更大的记录，仅保留规格最大者"
+    },
+    {
+      "id": "B24",
+      "name": "替米考星溶液",
+      "spec": "100ml/瓶*40瓶/箱",
+      "product_group_id": "替米考星::替米考星溶液",
+      "parsed_size": 100.0,
+      "parsed_unit": "ml",
+      "retention_id": "B23",
+      "retention_spec": "250ml/瓶*40瓶/箱",
+      "reason": "同一产品组内存在规格更大的记录，仅保留规格最大者"
+    },
+    {
+      "id": "B26",
+      "name": "硫酸安普霉素可溶性粉",
+      "spec": "100g/袋*100袋/箱",
+      "product_group_id": "硫酸安普霉素::硫酸安普霉素可溶性粉",
+      "parsed_size": 100.0,
+      "parsed_unit": "g",
+      "retention_id": "B25",
+      "retention_spec": "500g/袋*20袋/箱",
+      "reason": "同一产品组内存在规格更大的记录，仅保留规格最大者"
+    },
+    {
+      "id": "B28",
+      "name": "替米考星预混剂",
+      "spec": "100g/袋*100袋/箱",
+      "product_group_id": "替米考星::替米考星预混剂",
+      "parsed_size": 100.0,
+      "parsed_unit": "g",
+      "retention_id": "B27",
+      "retention_spec": "500g/袋*20袋/箱",
+      "reason": "同一产品组内存在规格更大的记录，仅保留规格最大者"
+    },
+    {
+      "id": "B30",
+      "name": "复方磺胺间甲氧嘧啶钠可溶性粉（毒性大不宜过量用）",
+      "spec": "100g/袋*100袋/箱",
+      "product_group_id": "磺胺间甲氧嘧啶钠+甲氧苄啶::复方磺胺间甲氧嘧啶钠可溶性粉（毒性大不宜过量用）",
+      "parsed_size": 100.0,
+      "parsed_unit": "g",
+      "retention_id": "B29",
+      "retention_spec": "500g/袋*20袋/箱",
+      "reason": "同一产品组内存在规格更大的记录，仅保留规格最大者"
+    },
+    {
+      "id": "H5",
+      "name": "奇美诺250ml",
+      "spec": "250ml/瓶*40瓶/箱",
+      "product_group_id": "桑仁清肺口服液::奇美诺",
+      "parsed_size": 250.0,
+      "parsed_unit": "ml",
+      "retention_id": "H6",
+      "retention_spec": "500ml/瓶*30瓶/箱",
+      "reason": "同一产品组内存在规格更大的记录，仅保留规格最大者"
+    },
+    {
+      "id": "H26",
+      "name": "热感清100ml（明星产品）",
+      "spec": "100ml/瓶*40瓶/箱",
+      "product_group_id": "鱼腥草提取液::热感清",
+      "parsed_size": 100.0,
+      "parsed_unit": "ml",
+      "retention_id": "H27",
+      "retention_spec": "250ml/瓶*40瓶/箱",
+      "reason": "同一产品组内存在规格更大的记录，仅保留规格最大者"
+    },
+    {
+      "id": "H29",
+      "name": "（中药）金舒利（小柴胡）100g（明星产品）",
+      "spec": "100g/袋*100袋/箱",
+      "product_group_id": "混合型饲料添加剂牛磺酸::（中药）金舒利（小柴胡）",
+      "parsed_size": 100.0,
+      "parsed_unit": "g",
+      "retention_id": "H28",
+      "retention_spec": "500g/袋*20袋/箱",
+      "reason": "同一产品组内存在规格更大的记录，仅保留规格最大者"
+    },
+    {
+      "id": "H32",
+      "name": "卡迪欧100ml（明星产品）",
+      "spec": "100ml/瓶*40瓶/箱",
+      "product_group_id": "鸡传染性法氏囊病精制蛋黄抗体::卡迪欧",
+      "parsed_size": 100.0,
+      "parsed_unit": "ml",
+      "retention_id": "H33",
+      "retention_spec": "250ml/瓶*40瓶/箱",
+      "reason": "同一产品组内存在规格更大的记录，仅保留规格最大者"
+    },
+    {
+      "id": "H43",
+      "name": "（中药）利达美（第二天见效）250ml",
+      "spec": "250ml/瓶*40瓶/箱",
+      "product_group_id": "清瘟解毒口服液::（中药）利达美（第二天见效）",
+      "parsed_size": 250.0,
+      "parsed_unit": "ml",
+      "retention_id": "H44",
+      "retention_spec": "500ml/瓶*30瓶/箱",
+      "reason": "同一产品组内存在规格更大的记录，仅保留规格最大者"
+    },
+    {
+      "id": "H46",
+      "name": "甘舒乐500g（明星产品）",
+      "spec": "500g/袋*20袋/箱",
+      "product_group_id": "甘露寡糖::甘舒乐",
+      "parsed_size": 500.0,
+      "parsed_unit": "g",
+      "retention_id": "H47",
+      "retention_spec": "1000g/袋*20袋/箱",
+      "reason": "同一产品组内存在规格更大的记录，仅保留规格最大者"
+    },
+    {
+      "id": "H59",
+      "name": "(中药)羡康100g（明星产品）",
+      "spec": "100g/袋*100袋/箱",
+      "product_group_id": "天然植物饲料原料干姜粗提物::(中药)羡康",
+      "parsed_size": 100.0,
+      "parsed_unit": "g",
+      "retention_id": "H60",
+      "retention_spec": "500g/袋*20袋/箱",
+      "reason": "同一产品组内存在规格更大的记录，仅保留规格最大者"
+    }
+  ]
+}

@@ -19,8 +19,15 @@
 
 import pandas as pd
 import json
+import os
+import sys
 from typing import List, Dict, Optional
 from dataclasses import dataclass, asdict
+
+# 确保 src/utils 在路径中，以便导入 product_utils
+_utils_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'utils')
+if _utils_dir not in sys.path:
+    sys.path.insert(0, _utils_dir)
 
 # 导入配伍禁忌检测模块
 from drug_compatibility import (
@@ -33,6 +40,12 @@ from drug_compatibility import (
 from disease_drug_validator import (
     DiseaseDrugValidator,
     get_disease_drug_validator,
+)
+
+# 导入产品去重工具
+from product_utils import (
+    deduplicate_products_by_spec,
+    save_deduplication_report,
 )
 
 
@@ -289,12 +302,32 @@ class DrugDatabase:
             self.load_all_products(data_path)
     
     def load_from_json(self, json_path: str):
-        """从JSON文件加载产品数据"""
+        """从JSON文件加载产品数据，并按包装规格去重"""
         import json
         with open(json_path, 'r', encoding='utf-8') as f:
             products = json.load(f)
-        
-        for p in products:
+
+        # 按包装规格去重：同一产品仅保留规格最大者
+        deduped_products, report = deduplicate_products_by_spec(products)
+
+        if report["deleted_count"] > 0:
+            try:
+                report_dir = os.path.join(
+                    os.path.dirname(os.path.dirname(os.path.dirname(json_path))),
+                    "data", "dedup_reports"
+                )
+                report_path = save_deduplication_report(report, output_dir=report_dir)
+                print(f"[数据库] 产品去重完成：原始 {report['original_count']} 个，"
+                      f"保留 {report['retained_count']} 个，删除 {report['deleted_count']} 个。"
+                      f"报告已保存：{report_path}")
+            except Exception as e:
+                print(f"[数据库] 产品去重完成：原始 {report['original_count']} 个，"
+                      f"保留 {report['retained_count']} 个，删除 {report['deleted_count']} 个。"
+                      f"保存报告失败：{e}")
+        else:
+            print(f"[数据库] 从JSON加载 {len(deduped_products)} 个产品，未发现重复规格")
+
+        for p in deduped_products:
             drug = DrugInfo(
                 id=p.get('id', ''),
                 name=p.get('name', ''),
@@ -314,8 +347,6 @@ class DrugDatabase:
                 product_name=p.get('product_name', '')
             )
             self.drugs.append(drug)
-        
-        print(f"[数据库] 从JSON加载 {len(self.drugs)} 个产品")
     
     def _parse_price(self, value) -> float:
         """解析价格字段"""
