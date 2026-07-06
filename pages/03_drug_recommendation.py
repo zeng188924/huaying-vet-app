@@ -32,7 +32,7 @@ st.set_page_config(
 )
 
 @st.cache_resource
-def get_recommender(_version="v20260706_11"):
+def get_recommender(_version="v20260706_12"):
     json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
     recommender = create_recommender(json_path)
     return recommender
@@ -627,7 +627,7 @@ if recommend_clicked:
                         update_shed(selected_shed.id, **env_updates)
                         selected_shed = get_shed(selected_shed.id)
 
-                recommender = get_recommender("v20260706_11")
+                recommender = get_recommender("v20260706_12")
                 
                 environment_factors = {}
                 if selected_shed:

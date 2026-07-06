@@ -317,6 +317,24 @@ class DiseaseDrugValidator:
 
         return score > 0, min(score, 10.0), matched_terms
 
+    def _has_disease_domain_keyword(self, drug: Any, disease_type: str) -> bool:
+        """检查药物适应症是否包含当前疾病大类的领域关键词
+
+        用于防止仅因疾病名称字面匹配（如'细菌'命中'大肠杆菌'）而被误判为有效。
+        要求适应症必须明确出现该疾病大类的典型关键词。
+        """
+        indications = getattr(drug, "indications", []) or []
+        if not indications:
+            return False
+        keywords = DISEASE_INDICATION_KEYWORDS.get(disease_type, [])
+        if not keywords:
+            return True  # 无配置时放宽
+        for indication in indications:
+            for kw in keywords:
+                if kw in indication:
+                    return True
+        return False
+
     def _check_therapeutic_match(self, drug: Any, disease_type: str) -> tuple:
         """检查治疗领域（疾病类型）匹配"""
         drug_types = getattr(drug, "disease_types", []) or []
@@ -362,18 +380,20 @@ class DiseaseDrugValidator:
             level = AssociationLevel.NONE.value
 
         # 判定是否有效：所有药物必须以"适应症匹配"作为核心依据，
-        # 确保推荐药物与当前诊断病症存在明确医学关联。
-        # 化药额外要求治疗领域或作用机制至少一项匹配；
-        # 非化药至少要有明确的适应症匹配。
+        # 且适应症必须包含当前疾病大类的领域关键词，确保推荐药物与当前
+        # 诊断病症存在明确医学关联（选项 B：仅允许适应症含明确领域关键词的药物）。
+        has_domain_keyword = self._has_disease_domain_keyword(drug, disease_type)
         if drug_type == DrugTypeCategory.CHEMICAL.value:
-            is_valid = indication_match and (therapeutic_match or mechanism_match)
+            is_valid = indication_match and has_domain_keyword and (therapeutic_match or mechanism_match)
         else:
-            is_valid = indication_match
+            is_valid = indication_match and has_domain_keyword
 
         # 生成原因说明
         reasons = []
         if indication_match:
             reasons.append(f"适应症匹配：{', '.join(indication_matched_terms[:3])}")
+        if not has_domain_keyword:
+            reasons.append("未命中疾病领域关键词，缺乏明确关联依据")
         if therapeutic_match:
             reasons.append(f"治疗领域匹配：{DISEASE_TYPE_CN.get(disease_type, disease_type)}")
         if mechanism_match:

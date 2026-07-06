@@ -712,7 +712,7 @@ def show_recommend():
     from src.utils.lab_report_parser import parse_lab_report
 
     @st.cache_resource
-    def get_recommender_cache(_version="v20260706_11"):
+    def get_recommender_cache(_version="v20260706_12"):
         json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
         recommender = create_recommender(json_path)
         return recommender
@@ -1335,7 +1335,7 @@ def show_recommend():
                             update_shed(selected_shed.id, **env_updates)
                             selected_shed = get_shed(selected_shed.id)
 
-                    recommender = get_recommender_cache("v20260706_11")
+                    recommender = get_recommender_cache("v20260706_12")
 
                     excluded_drug_names = [d.split(' (')[0] for d in excluded_drugs] if excluded_drugs else []
 
