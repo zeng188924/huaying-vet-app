@@ -42,7 +42,7 @@ def parse_key_matters(content: str) -> List[Dict]:
     
     sections = [
         {
-            "title": "一、用药方式与操作细节",
+            "title": "用药方式与操作细节",
             "description": "直接影响药效",
             "items": [
                 {"title": "给药途径", "content": "严格区分饮水、拌料、注射、喷雾、灌服、点眼滴鼻，不能混用"},
@@ -55,7 +55,7 @@ def parse_key_matters(content: str) -> List[Dict]:
             ]
         },
         {
-            "title": "二、家禽饲养环境同步调整",
+            "title": "家禽饲养环境同步调整",
             "description": "治病七分靠环境",
             "items": [
                 {"title": "通风管控", "content": "呼吸道病：加大通风但杜绝冷风直吹，降低氨气、粉尘；肠道、球虫病：降低湿度，勤换垫料"},
@@ -65,7 +65,7 @@ def parse_key_matters(content: str) -> List[Dict]:
             ]
         },
         {
-            "title": "三、消毒与生物安全",
+            "title": "消毒与生物安全",
             "description": "阻断传播，防止复发扩散",
             "items": [
                 {"title": "场内同步消毒", "content": "带禽消毒频次、消毒剂种类；棚舍过道、器具、排水沟每日消杀"},
@@ -74,7 +74,7 @@ def parse_key_matters(content: str) -> List[Dict]:
             ]
         },
         {
-            "title": "四、休药期与合规残留",
+            "title": "休药期与合规残留",
             "description": "养殖最容易踩红线",
             "items": [
                 {"title": "休药天数", "content": "肉鸡、肉鸭出栏前停药天数，蛋禽产蛋期禁用/可用药物，产蛋禁止使用的抗生素、抗病毒药必须重点提醒"},
@@ -83,7 +83,7 @@ def parse_key_matters(content: str) -> List[Dict]:
             ]
         },
         {
-            "title": "五、应激防护与辅助保健",
+            "title": "应激防护与辅助保健",
             "description": "增强体质，辅助恢复",
             "items": [
                 {"title": "抗应激措施", "content": "转群、免疫、高温、降温、用药期间，搭配多维、VC、电解质"},
@@ -92,7 +92,7 @@ def parse_key_matters(content: str) -> List[Dict]:
             ]
         },
         {
-            "title": "六、观察复诊判断标准",
+            "title": "观察复诊判断标准",
             "description": "判断药效，及时调整方案",
             "items": [
                 {"title": "观察指标", "content": "采食量、饮水量变化、粪便形态、呼吸道声音、伤亡数量"},
@@ -101,7 +101,7 @@ def parse_key_matters(content: str) -> List[Dict]:
             ]
         },
         {
-            "title": "七、储存与用量安全",
+            "title": "储存与用量安全",
             "description": "避免中毒",
             "items": [
                 {"title": "储存条件", "content": "避光、冷藏、防潮，疫苗冷冻保存"},
@@ -110,14 +110,14 @@ def parse_key_matters(content: str) -> List[Dict]:
             ]
         },
         {
-            "title": "八、免疫搭配注意事项",
+            "title": "免疫搭配注意事项",
             "description": "避免加重病情",
             "items": [
                 {"title": "免疫暂缓", "content": "病毒病治疗阶段，暂缓活疫苗免疫，避免加重发病"}
             ]
         },
         {
-            "title": "九、源头预防方案",
+            "title": "源头预防方案",
             "description": "本次治好后防复发",
             "items": [
                 {"title": "诱因分析", "content": "温差、霉菌、氨气、引种带毒、消毒不到位"},
@@ -140,9 +140,6 @@ def get_key_matters() -> List[Dict]:
 def get_summary_points() -> List[str]:
     """获取精简总结要点"""
     return [
-        "怎么用、用几天、哪些药不能混",
-        "棚舍温湿度、通风、密度怎么调",
-        "同步消毒隔离怎么做",
         "严格休药期，合规出栏卖蛋",
         "配合多维、益生菌保肝护肠",
         "观察采食伤亡，无效及时复诊，后期做好预防"

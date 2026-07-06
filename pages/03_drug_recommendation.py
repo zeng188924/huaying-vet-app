@@ -32,7 +32,7 @@ st.set_page_config(
 )
 
 @st.cache_resource
-def get_recommender(_version="v20260706_8"):
+def get_recommender(_version="v20260706_9"):
     json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
     recommender = create_recommender(json_path)
     return recommender
