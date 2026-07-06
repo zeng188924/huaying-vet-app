@@ -32,7 +32,7 @@ st.set_page_config(
 )
 
 @st.cache_resource
-def get_recommender(_version="v20260706_6"):
+def get_recommender(_version="v20260706_8"):
     json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
     recommender = create_recommender(json_path)
     return recommender
@@ -165,12 +165,17 @@ with st.sidebar:
     st.header("📝 病情信息录入")
     
     if selected_shed:
+        shed_type_mapping = {
+            "肉鸡舍": "肉鸡", "蛋鸡舍": "蛋鸡", "种鸡舍": "种鸡",
+            "肉鸭舍": "肉鸭", "蛋鸭舍": "蛋鸭", "鹅舍": "鹅",
+            "火鸡舍": "火鸡", "鸽子舍": "鸽子", "鹌鹑舍": "鹌鹑"
+        }
         breed_mapping = {
             "白羽肉鸡": "肉鸡", "黄羽肉鸡": "肉鸡", "蛋鸡": "蛋鸡",
             "种鸡": "种鸡", "樱桃谷鸭": "肉鸭", "麻鸭": "蛋鸭",
             "鹅": "鹅", "火鸡": "火鸡", "鸽子": "鸽子", "鹌鹑": "鹌鹑"
         }
-        animal_type_default = breed_mapping.get(selected_shed.breed, selected_shed.breed)
+        animal_type_default = shed_type_mapping.get(selected_shed.type, breed_mapping.get(selected_shed.breed, "肉鸡"))
         scale_default = selected_shed.scale
     else:
         animal_type_default = "肉鸡"
@@ -616,7 +621,7 @@ if recommend_clicked:
                         update_shed(selected_shed.id, **env_updates)
                         selected_shed = get_shed(selected_shed.id)
 
-                recommender = get_recommender("v20260706_3")
+                recommender = get_recommender("v20260706_8")
                 
                 environment_factors = {}
                 if selected_shed:
@@ -658,6 +663,7 @@ if recommend_clicked:
                             )
 
                 st.session_state['recommendation_result'] = result
+                st.session_state['recommendation_medication_history'] = medication_history
                 st.session_state['show_results'] = True
 
             except Exception as e:
@@ -730,7 +736,7 @@ if st.session_state.get('show_results', False):
     st.subheader("💊 用药推荐")
 
     if selected_shed:
-        medication_history = [entry['drug_name'] for entry in get_medication_history(selected_shed.id)]
+        medication_history = st.session_state.get('recommendation_medication_history', [])
         if medication_history:
             st.info(f"📜 本次推荐已参考该棚舍历史用药记录，已自动排除或规避同类/交叉耐药药物：{', '.join(medication_history)}")
 

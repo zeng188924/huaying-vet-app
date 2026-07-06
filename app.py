@@ -712,7 +712,7 @@ def show_recommend():
     from src.utils.lab_report_parser import parse_lab_report
 
     @st.cache_resource
-    def get_recommender_cache(_version="v20260706_6"):
+    def get_recommender_cache(_version="v20260706_8"):
         json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
         recommender = create_recommender(json_path)
         return recommender
@@ -819,12 +819,17 @@ def show_recommend():
         st.header("📝 病情信息录入")
 
         if selected_shed:
+            shed_type_mapping = {
+                "肉鸡舍": "肉鸡", "蛋鸡舍": "蛋鸡", "种鸡舍": "种鸡",
+                "肉鸭舍": "肉鸭", "蛋鸭舍": "蛋鸭", "鹅舍": "鹅",
+                "火鸡舍": "火鸡", "鸽子舍": "鸽子", "鹌鹑舍": "鹌鹑"
+            }
             breed_mapping = {
                 "白羽肉鸡": "肉鸡", "黄羽肉鸡": "肉鸡", "蛋鸡": "蛋鸡",
                 "种鸡": "种鸡", "樱桃谷鸭": "肉鸭", "麻鸭": "蛋鸭",
                 "鹅": "鹅", "火鸡": "火鸡", "鸽子": "鸽子", "鹌鹑": "鹌鹑"
             }
-            animal_type_default = breed_mapping.get(selected_shed.breed, selected_shed.breed)
+            animal_type_default = shed_type_mapping.get(selected_shed.type, breed_mapping.get(selected_shed.breed, "肉鸡"))
             scale_default = selected_shed.scale
         else:
             animal_type_default = "肉鸡"
@@ -1325,7 +1330,7 @@ def show_recommend():
                             update_shed(selected_shed.id, **env_updates)
                             selected_shed = get_shed(selected_shed.id)
 
-                    recommender = get_recommender_cache("v20260706_3")
+                    recommender = get_recommender_cache("v20260706_8")
 
                     excluded_drug_names = [d.split(' (')[0] for d in excluded_drugs] if excluded_drugs else []
 
@@ -1358,6 +1363,7 @@ def show_recommend():
                                 )
 
                     st.session_state['recommendation_result'] = result
+                    st.session_state['recommendation_medication_history'] = medication_history
                     st.session_state['show_results'] = True
 
                 except Exception as e:
@@ -1382,7 +1388,7 @@ def show_recommend():
         st.subheader("💊 单药推荐（性价比TOP 3）")
 
         if selected_shed:
-            medication_history = [entry['drug_name'] for entry in get_medication_history(selected_shed.id)]
+            medication_history = st.session_state.get('recommendation_medication_history', [])
             if medication_history:
                 st.info(f"📜 本次推荐已参考该棚舍历史用药记录，已自动排除或规避同类/交叉耐药药物：{', '.join(medication_history)}")
 

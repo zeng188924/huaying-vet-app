@@ -73,9 +73,9 @@ from src.core.diagnosis_engine import (
 
 # 初始化推荐器 - 使用JSON文件加载数据
 # _version 参数用于强制使旧缓存失效，当推荐逻辑更新时请修改版本号
-# Cloud 部署触发标记: v20260706_6
+# Cloud 部署触发标记: v20260706_8
 @st.cache_resource
-def get_recommender(_version="v20260706_6"):
+def get_recommender(_version="v20260706_8"):
     # 优先使用JSON文件，数据更新更可靠
     json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
     if os.path.exists(json_path):
@@ -888,12 +888,17 @@ elif page == 'recommend':
 
     # 养殖户默认值
     if selected_shed:
+        shed_type_mapping = {
+            "肉鸡舍": "肉鸡", "蛋鸡舍": "蛋鸡", "种鸡舍": "种鸡",
+            "肉鸭舍": "肉鸭", "蛋鸭舍": "蛋鸭", "鹅舍": "鹅",
+            "火鸡舍": "火鸡", "鸽子舍": "鸽子", "鹌鹑舍": "鹌鹑"
+        }
         breed_mapping = {
             "白羽肉鸡": "肉鸡", "黄羽肉鸡": "肉鸡", "蛋鸡": "蛋鸡",
             "种鸡": "种鸡", "樱桃谷鸭": "肉鸭", "麻鸭": "蛋鸭",
             "鹅": "鹅", "火鸡": "火鸡", "鸽子": "鸽子", "鹌鹑": "鹌鹑"
         }
-        animal_type_default = breed_mapping.get(selected_shed.breed, selected_shed.breed)
+        animal_type_default = shed_type_mapping.get(selected_shed.type, breed_mapping.get(selected_shed.breed, "肉鸡"))
         scale_default = selected_shed.scale
     else:
         animal_type_default = "肉鸡"
@@ -1133,7 +1138,7 @@ elif page == 'recommend':
                             update_shed(selected_shed.id, **env_updates)
                             selected_shed = get_shed(selected_shed.id)
 
-                    recommender = get_recommender("v20260706_3")
+                    recommender = get_recommender("v20260706_8")
 
                     medication_history = []
                     if selected_shed:
@@ -1166,6 +1171,7 @@ elif page == 'recommend':
                                 )
 
                     st.session_state.recommendation_result = result
+                    st.session_state.recommendation_medication_history = medication_history
                     st.session_state.show_results = True
                     st.session_state.selected_shed = selected_shed
                     st.session_state.selected_farmer = selected_farmer
@@ -1269,7 +1275,7 @@ elif page == 'recommend':
         st.subheader("💊 推荐药品 (TOP 3)")
 
         if selected_shed:
-            medication_history = [entry['drug_name'] for entry in get_medication_history(selected_shed.id)]
+            medication_history = st.session_state.get('recommendation_medication_history', [])
             if medication_history:
                 st.info(f"📜 已参考历史用药，已排除/规避同类交叉耐药药物：{', '.join(medication_history)}")
 
