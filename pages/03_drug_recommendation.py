@@ -32,7 +32,7 @@ st.set_page_config(
 )
 
 @st.cache_resource
-def get_recommender(_version="v20260706_5"):
+def get_recommender(_version="v20260706_6"):
     json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
     recommender = create_recommender(json_path)
     return recommender
@@ -780,12 +780,8 @@ if st.session_state.get('show_results', False):
                 reason_detail = rec.get('reason_detail', {})
                 if reason_detail:
                     with st.expander("📖 查看详细推荐理由", expanded=False):
-                        st.markdown(f"**🎯 核心功效：** {reason_detail.get('core_efficacy', '')}")
                         st.markdown(f"**✅ 适用症状：** {reason_detail.get('applicable_symptoms', '')}")
                         st.markdown(f"**🔬 成分优势：** {reason_detail.get('component_advantage', '')}")
-                        st.markdown(f"**📊 临床依据：** {reason_detail.get('clinical_support', '')}")
-                        st.markdown(f"**💬 用户反馈：** {reason_detail.get('user_feedback', '')}")
-                        st.markdown(f"**⚠️ 安全提示：** {reason_detail.get('safety_notes', '')}")
                 else:
                     st.info(f"**推荐理由:** {rec_reason}")
 

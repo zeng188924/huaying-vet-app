@@ -73,9 +73,9 @@ from src.core.diagnosis_engine import (
 
 # 初始化推荐器 - 使用JSON文件加载数据
 # _version 参数用于强制使旧缓存失效，当推荐逻辑更新时请修改版本号
-# Cloud 部署触发标记: v20260706_5
+# Cloud 部署触发标记: v20260706_6
 @st.cache_resource
-def get_recommender(_version="v20260706_5"):
+def get_recommender(_version="v20260706_6"):
     # 优先使用JSON文件，数据更新更可靠
     json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
     if os.path.exists(json_path):
@@ -1319,12 +1319,8 @@ elif page == 'recommend':
                         if reason_detail:
                             st.markdown("---")
                             st.markdown("**📖 详细推荐理由**")
-                            st.markdown(f"- **核心功效：** {reason_detail.get('core_efficacy', '')}")
                             st.markdown(f"- **适用症状：** {reason_detail.get('applicable_symptoms', '')}")
                             st.markdown(f"- **成分优势：** {reason_detail.get('component_advantage', '')}")
-                            st.markdown(f"- **临床依据：** {reason_detail.get('clinical_support', '')}")
-                            st.markdown(f"- **用户反馈：** {reason_detail.get('user_feedback', '')}")
-                            st.markdown(f"- **安全提示：** {reason_detail.get('safety_notes', '')}")
 
         # 组合方案推荐
         st.markdown("---")

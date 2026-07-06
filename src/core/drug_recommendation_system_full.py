@@ -246,13 +246,9 @@ class DrugRecommendation:
 @dataclass
 class DrugRecommendationReason:
     """单个药品推荐理由详情（通俗化、结构化展示）"""
-    core_efficacy: str = ""          # 核心功效
     applicable_symptoms: str = ""    # 适用症状
     component_advantage: str = ""    # 成分优势
-    clinical_support: str = ""       # 临床数据支持
-    user_feedback: str = ""          # 用户反馈
     usage_summary: str = ""          # 用法概要
-    safety_notes: str = ""           # 安全提示
 
     def to_dict(self):
         return asdict(self)
@@ -1183,20 +1179,6 @@ def _generate_single_drug_reason(drug: DrugInfo, diseases: List[str],
     all_indications_text = _plain_indications_text(drug.indications, max_items=4)
     matched_text = _plain_indications_text(matched, max_items=2) if matched else all_indications_text
 
-    drug_type = classify_drug_type(drug)
-
-    # 核心功效
-    if drug_type == "化药":
-        reason.core_efficacy = (
-            f"本品属于化药类制剂，主要用于抑制或杀灭致病微生物，"
-            f"对{all_indications_text}等具有针对性的治疗作用，可帮助控制感染、减轻炎症反应。"
-        )
-    else:
-        reason.core_efficacy = (
-            f"本品属于中兽药/保健调理类产品，主要通过调理机体功能、增强抵抗力来发挥作用，"
-            f"对{all_indications_text}等症状具有辅助改善作用，适合配合治疗或用于日常调理。"
-        )
-
     # 适用症状
     reason.applicable_symptoms = (
         f"根据您描述的病情，本产品适用于{matched_text}相关症状。"
@@ -1209,31 +1191,8 @@ def _generate_single_drug_reason(drug: DrugInfo, diseases: List[str],
         f"针对当前病症类型具有明确的作用特点，能够帮助改善相关症状。"
     )
 
-    # 临床数据支持
-    reason.clinical_support = (
-        f"本产品为正规兽药/饲料添加剂产品，成分及适应症信息来源于产品说明书及国家相关标准，"
-        f"在{drug.category}类产品中具有规范的临床应用依据。"
-    )
-
-    # 用户反馈
-    reason.user_feedback = (
-        f"在实际养殖使用中，按说明书推荐剂量和疗程使用，"
-        f"多数养殖户反馈患病禽群的{matched_text}症状可在用药后逐步缓解，"
-        f"采食、精神状态等生产指标趋于恢复。具体效果因病情严重程度和管理条件而异。"
-    )
-
     # 用法概要
     reason.usage_summary = dosage_recommendation if dosage_recommendation else drug.usage_info
-
-    # 安全提示
-    if drug.egg_period_safe:
-        reason.safety_notes = (
-            "本产品标注为产蛋期可用，但仍建议严格按照推荐剂量和疗程使用，避免超量或长期连续使用。"
-        )
-    else:
-        reason.safety_notes = (
-            "⚠️ 本产品为产蛋期禁用药物，在蛋鸡、蛋鸭产蛋期严禁使用；肉禽使用需遵守相应休药期规定。"
-        )
 
     return reason
 
