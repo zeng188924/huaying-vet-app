@@ -207,12 +207,13 @@ def get_sheds_by_farmer(farmer_id: str) -> List[ShedInfo]:
     return [ShedInfo(**item) for item in data if item['farmer_id'] == farmer_id]
 
 
-def get_medication_history(shed_id: str, batch_id: str = None) -> List[Dict]:
+def get_medication_history(shed_id: str, batch_id: str = None, drug_type: str = None) -> List[Dict]:
     """获取指定棚舍的历史用药记录
 
     Args:
         shed_id: 棚舍ID
         batch_id: 指定批次ID，None 则只返回当前批次记录
+        drug_type: 按药物类型过滤，如 "化药"、"中兽药"，None 返回全部
     """
     shed = get_shed(shed_id)
     if not shed or not shed.medication_history:
@@ -224,12 +225,13 @@ def get_medication_history(shed_id: str, batch_id: str = None) -> List[Dict]:
         # 兼容旧数据：没有 batch_id 的记录视为默认批次
         entry_batch = entry.get("batch_id", "default")
         if entry_batch == current_batch:
-            history.append(entry)
+            if drug_type is None or entry.get("drug_type") == drug_type:
+                history.append(entry)
     return history
 
 
 def add_medication_history(shed_id: str, drug_name: str, notes: str = "", source: str = "manual",
-                           batch_id: str = None) -> Optional[ShedInfo]:
+                           batch_id: str = None, drug_type: str = None) -> Optional[ShedInfo]:
     """为指定棚舍添加一条历史用药记录
 
     Args:
@@ -238,6 +240,7 @@ def add_medication_history(shed_id: str, drug_name: str, notes: str = "", source
         notes: 备注信息
         source: 记录来源，如 'manual'（手动录入）或 'recommendation'（系统推荐）
         batch_id: 批次ID，None 则使用棚舍当前批次
+        drug_type: 药物类型，如 "化药"、"中兽药"，用于后续按类型过滤
     """
     data = _load_json(SHED_DATA_FILE)
     for item in data:
@@ -251,7 +254,8 @@ def add_medication_history(shed_id: str, drug_name: str, notes: str = "", source
                 "usage_date": datetime.now().isoformat(),
                 "notes": notes,
                 "source": source,
-                "batch_id": batch_id
+                "batch_id": batch_id,
+                "drug_type": drug_type
             }
             item['medication_history'].append(entry)
             item['update_time'] = datetime.now().isoformat()

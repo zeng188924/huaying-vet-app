@@ -798,7 +798,9 @@ def _get_history_excluded_drugs(history: List[str], all_drugs: List[DrugInfo]) -
     规则：
       1. 历史用药本身一定排除；
       2. 化药若与历史用药属于同一交叉耐药类别，则排除；
-      3. 中兽药/保健类产品仅排除与历史用药名称完全相同的品种。
+      3. 中兽药/保健类产品仅排除与历史用药名称完全相同的品种；
+      4. 交叉耐药分析仅基于化药历史数据进行，未明确识别为化药的记录
+         不纳入耐药类别推断。
     """
     excluded = set()
     if not history:
@@ -817,12 +819,11 @@ def _get_history_excluded_drugs(history: List[str], all_drugs: List[DrugInfo]) -
                 matched = d
                 break
         if matched:
+            # 仅对化药进行交叉耐药类别分析
             if classify_drug_type(matched) == "化药":
                 affected_groups.update(_get_resistance_groups(matched.main_component))
                 affected_groups.update(_get_resistance_groups(matched.name))
-        else:
-            # 未匹配到产品时，把历史用药名称本身当作自由文本进行类别关键词匹配
-            affected_groups.update(_get_resistance_groups(hist_name))
+        # 未匹配到产品时，不根据自由文本推断耐药类别，避免中兽药/非化药名称被误判
 
     if not affected_groups:
         # 没有命中耐药类别时，仅做精确名称排除

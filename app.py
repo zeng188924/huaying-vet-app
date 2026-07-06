@@ -697,7 +697,7 @@ def show_recommend():
     from drug_recommendation_system_full import (
         create_recommender, quick_recommend, DrugDatabase,
         DISEASE_TYPE_CATEGORIES, DISEASE_CATEGORY_DISPLAY,
-        DISEASE_CATEGORY_DISPLAY_REVERSE
+        DISEASE_CATEGORY_DISPLAY_REVERSE, classify_drug_type
     )
     from disease_knowledge import get_disease_knowledge_base
     from key_matters import get_key_matters, get_summary_points
@@ -712,7 +712,7 @@ def show_recommend():
     from src.utils.lab_report_parser import parse_lab_report
 
     @st.cache_resource
-    def get_recommender_cache(_version="v20260706_12"):
+    def get_recommender_cache(_version="v20260706_13"):
         json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
         recommender = create_recommender(json_path)
         return recommender
@@ -1088,6 +1088,15 @@ def show_recommend():
                     return str(field).strip()
             return d.name or "未命名药品"
 
+        def _get_drug_type_by_name(drug_name: str) -> str:
+            """根据药品显示名称或产品名判断药物类型（化药/中兽药）"""
+            if not drug_name:
+                return "未知"
+            for d in valid_drugs:
+                if _display_name(d) == drug_name or d.name == drug_name or (d.brand_name and d.brand_name == drug_name):
+                    return classify_drug_type(d)
+            return "未知"
+
         valid_drugs = [d for d in all_drugs if _display_name(d) not in ('/', '')]
         drug_options = sorted(
             [f"{_display_name(d)} ({d.brand_name or '—'})" for d in valid_drugs],
@@ -1189,10 +1198,11 @@ def show_recommend():
         st.header("📜 历史用药记录")
 
         if selected_shed:
-            medication_history = get_medication_history(selected_shed.id)
+            medication_history = get_medication_history(selected_shed.id, drug_type="化药")
+            all_medication_history = get_medication_history(selected_shed.id)
 
             if medication_history:
-                st.info(f"当前批次已记录 {len(medication_history)} 条历史用药，系统推荐时将自动排除这些药物及同类易产生交叉耐药的药物")
+                st.info(f"当前批次已记录 {len(medication_history)} 条化药历史用药，系统推荐时将自动排除这些药物及同类易产生交叉耐药的药物")
                 for idx, entry in enumerate(medication_history):
                     cols = st.columns([3, 1])
                     with cols[0]:
@@ -1202,10 +1212,10 @@ def show_recommend():
                             delete_medication_history(selected_shed.id, idx)
                             st.rerun()
             else:
-                st.info("暂无历史用药记录。如果是刚开始使用软件，请手动添加之前使用过的药物。")
+                st.info("暂无化药历史用药记录。如果是刚开始使用软件，请手动添加之前使用过的化药。")
 
             st.markdown("**手动添加历史用药**")
-            used_drug_names = {entry['drug_name'] for entry in medication_history}
+            used_drug_names = {entry['drug_name'] for entry in all_medication_history}
             available_drugs = sorted(
                 [d for d in valid_drugs if _display_name(d) not in used_drug_names],
                 key=lambda x: _display_name(x).lower()
@@ -1241,12 +1251,14 @@ def show_recommend():
                 added = []
                 for drug_name in selected_history:
                     if drug_name not in used_drug_names:
-                        add_medication_history(selected_shed.id, drug_name, source="manual")
+                        drug_type = _get_drug_type_by_name(drug_name)
+                        add_medication_history(selected_shed.id, drug_name, source="manual", drug_type=drug_type)
                         added.append(drug_name)
                 if custom_history:
                     for drug_name in [x.strip() for x in custom_history.replace('，', ',').split(',') if x.strip()]:
                         if drug_name not in used_drug_names:
-                            add_medication_history(selected_shed.id, drug_name, source="manual")
+                            drug_type = _get_drug_type_by_name(drug_name)
+                            add_medication_history(selected_shed.id, drug_name, source="manual", drug_type=drug_type)
                             added.append(drug_name)
                         else:
                             st.toast(f"{drug_name} 已存在于历史用药记录中，已跳过", icon="⚠️")
@@ -1335,13 +1347,14 @@ def show_recommend():
                             update_shed(selected_shed.id, **env_updates)
                             selected_shed = get_shed(selected_shed.id)
 
-                    recommender = get_recommender_cache("v20260706_12")
+                    recommender = get_recommender_cache("v20260706_13")
 
                     excluded_drug_names = [d.split(' (')[0] for d in excluded_drugs] if excluded_drugs else []
 
                     medication_history = []
                     if selected_shed:
-                        medication_history = [entry['drug_name'] for entry in get_medication_history(selected_shed.id)]
+                        # 耐药性分析仅基于化药历史用药数据
+                        medication_history = [entry['drug_name'] for entry in get_medication_history(selected_shed.id, drug_type="化药")]
 
                     result = quick_recommend(
                         recommender,
@@ -1360,11 +1373,13 @@ def show_recommend():
                     if selected_shed:
                         for combo in result.get('combination_recommendations', []):
                             for drug in combo.get('drugs', []):
+                                drug_type = _get_drug_type_by_name(drug['name'])
                                 add_medication_history(
                                     selected_shed.id,
                                     drug['name'],
                                     notes=f"推荐方案：{combo.get('scheme_name', '')}",
-                                    source="recommendation"
+                                    source="recommendation",
+                                    drug_type=drug_type
                                 )
 
                     st.session_state['recommendation_result'] = result
