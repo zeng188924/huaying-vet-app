@@ -1217,7 +1217,7 @@ def show_recommend():
             st.markdown("**手动添加历史用药**")
             used_drug_names = {entry['drug_name'] for entry in all_medication_history}
             available_drugs = sorted(
-                [d for d in valid_drugs if _display_name(d) not in used_drug_names],
+                [d for d in valid_drugs if _display_name(d) not in used_drug_names and classify_drug_type(d) == "化药"],
                 key=lambda x: _display_name(x).lower()
             )
             available_names = [_display_name(d) for d in available_drugs]
