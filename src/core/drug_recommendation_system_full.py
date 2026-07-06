@@ -244,9 +244,10 @@ def _normalize_usage_water(usage_info: str, water: str) -> str:
 
     replacement = f"{water_num}{water_unit}" if water_unit else water_num
 
-    # 替换 "兑水/饮水 + 数量 + 单位"，不触碰拌料等与兑水量无关的用量
+    # 替换 "兑水/饮水 + 数量 + 单位"，要求原用法用量中水量必须带单位，
+    # 避免误改 "饮水8小时"、"兑水3-5日" 等无关内容，也不触碰拌料量。
     result = re.sub(
-        r"([兑饮]\s*水)\s*(\d+(?:\.\d+)?)\s*(斤|g|kg|ml|l|升|克|千克|毫克|毫升)?",
+        r"([兑饮]\s*水)\s*(\d+(?:\.\d+)?)\s*(斤|g|kg|ml|l|升|克|千克|毫克|毫升)",
         lambda m: f"{m.group(1)}{replacement}",
         usage_info,
         flags=re.IGNORECASE,

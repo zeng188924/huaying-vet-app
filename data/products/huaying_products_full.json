@@ -49,7 +49,7 @@
       "BACTERIAL",
       "RESPIRATORY"
     ],
-    "usage_info": "混饮：每袋兑水1500斤，连用3-5日",
+    "usage_info": "混饮：每袋兑水4000斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "盐酸多西环素可溶性粉",
@@ -106,7 +106,7 @@
       "BACTERIAL",
       "DIGESTIVE"
     ],
-    "usage_info": "混饮：每袋兑水900斤，连用3-5日",
+    "usage_info": "混饮：每袋兑水4500斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "阿莫西林可溶性粉",
@@ -191,7 +191,7 @@
       "BACTERIAL",
       "DIGESTIVE"
     ],
-    "usage_info": "混饮：每袋兑水800斤，连用3-5日",
+    "usage_info": "混饮：每袋兑水4500斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "硫酸新霉素可溶性粉",
@@ -221,7 +221,7 @@
       "RESPIRATORY",
       "DIGESTIVE"
     ],
-    "usage_info": "混饮：每袋兑水1000斤，连用3-5日",
+    "usage_info": "混饮：每袋兑水2500斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "盐酸恩诺沙星可溶性粉",
@@ -249,7 +249,7 @@
       "BACTERIAL",
       "DIGESTIVE"
     ],
-    "usage_info": "混饮：每袋兑水800斤，连用3-5日",
+    "usage_info": "混饮：每袋兑水2000斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "硫酸庆大霉素可溶性粉",
@@ -278,7 +278,7 @@
       "DIGESTIVE",
       "RESPIRATORY"
     ],
-    "usage_info": "混饮：每袋兑水1000斤，连用3-5日",
+    "usage_info": "混饮：每袋兑水1500斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "盐酸林可霉素可溶性粉",
@@ -336,7 +336,7 @@
       "DIGESTIVE",
       "RESPIRATORY"
     ],
-    "usage_info": "混饮：每袋兑水800斤，连用3-5日",
+    "usage_info": "混饮：每袋兑水2000斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "单硫酸卡那霉素可溶性粉",
@@ -364,7 +364,7 @@
       "RESPIRATORY",
       "BACTERIAL"
     ],
-    "usage_info": "混饮：每瓶兑水1000斤，连用3-5日",
+    "usage_info": "混饮：每瓶兑水1800斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "替米考星溶液",
@@ -392,7 +392,7 @@
       "BACTERIAL",
       "DIGESTIVE"
     ],
-    "usage_info": "混饮：每袋兑水800斤，连用3-5日",
+    "usage_info": "混饮：每袋兑水2500斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "硫酸安普霉素可溶性粉",
@@ -450,7 +450,7 @@
       "DIGESTIVE",
       "PARASITIC"
     ],
-    "usage_info": "混饮：每袋兑水800斤，连用3-5日",
+    "usage_info": "混饮：每袋兑水2000斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "复方磺胺间甲氧嘧啶钠可溶性粉（毒性大不宜过量用）",
@@ -505,7 +505,7 @@
     "disease_types": [
       "PARASITIC"
     ],
-    "usage_info": "混饮：每袋兑水1000斤，连用3日",
+    "usage_info": "混饮：每袋兑水300斤，连用3日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "磺胺喹噁啉钠可溶性粉（去球虫病）",
@@ -534,7 +534,7 @@
       "PARASITIC",
       "BACTERIAL"
     ],
-    "usage_info": "混饮：每袋兑水800斤，连用3日",
+    "usage_info": "混饮：每袋兑水300斤，连用3日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "磺胺氯吡嗪钠可溶性粉（去球虫病）",
@@ -563,7 +563,7 @@
       "BACTERIAL",
       "RESPIRATORY"
     ],
-    "usage_info": "混饮：每袋兑水1500斤，连用3-5日",
+    "usage_info": "混饮：每袋兑水600斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "30%氟苯尼考可溶性粉",
@@ -592,7 +592,7 @@
       "BACTERIAL",
       "RESPIRATORY"
     ],
-    "usage_info": "混饮：每袋兑水1200斤，连用3-5日",
+    "usage_info": "混饮：每袋兑水800斤，连用3-5日",
     "source": "底价目录",
     "timing": "发病期间治疗使用",
     "brand_name": "10%盐酸多西环素可溶性粉",
@@ -670,7 +670,7 @@
     "disease_types": [
       "MIXED"
     ],
-    "usage_info": "混饮：每瓶兑水150kg，连用3~5日；\n注射：禽：每瓶按600-800kg体重；猪、牛、羊、每瓶按800-1000kg体重。",
+    "usage_info": "混饮：每瓶兑水600kg，连用3~5日；\n注射：禽：每瓶按600-800kg体重；猪、牛、羊、每瓶按800-1000kg体重。",
     "source": "产品信息_华英",
     "timing": "",
     "brand_name": "新达罗（明星产品）",
@@ -970,7 +970,7 @@
     "disease_types": [
       "MIXED"
     ],
-    "usage_info": "本品500g/袋兑水3000斤，全天量集中3-4小时饮完，连用3天。",
+    "usage_info": "本品500g/袋兑水2000斤，全天量集中3-4小时饮完，连用3天。",
     "source": "产品信息_华英",
     "timing": "",
     "brand_name": "/",
@@ -1045,7 +1045,7 @@
     "disease_types": [
       "MIXED"
     ],
-    "usage_info": "本品 500ml/瓶兑水 500斤，全天量集中饮用 5-6小时，连用 2天。",
+    "usage_info": "本品 500ml/瓶兑水800斤，全天量集中饮用 5-6小时，连用 2天。",
     "source": "产品信息_华英",
     "timing": "",
     "brand_name": "/（明星产品）",
@@ -1145,7 +1145,7 @@
     "disease_types": [
       "MIXED"
     ],
-    "usage_info": "治疗新城疫本品兑水2000斤、用一次即可；治疗非劣性病毒疾病，兑水2500-3000斤，连用3天。",
+    "usage_info": "治疗新城疫本品兑水2500斤、用一次即可；治疗非劣性病毒疾病，兑水2500-3000斤，连用3天。",
     "source": "产品信息_华英",
     "timing": "",
     "brand_name": "舒感康",
@@ -1295,7 +1295,7 @@
     "disease_types": [
       "MIXED"
     ],
-    "usage_info": "1、注射：每公斤体重0.2ml。2、饮水：本品100ml兑水500斤，全天量集中饮用5-6小时，连用3天。",
+    "usage_info": "1、注射：每公斤体重0.2ml。2、饮水：本品100ml兑水400斤，全天量集中饮用5-6小时，连用3天。",
     "source": "产品信息_华英",
     "timing": "",
     "brand_name": "帝菲特",
@@ -2045,7 +2045,7 @@
     "disease_types": [
       "MIXED"
     ],
-    "usage_info": "本品500g/袋，兑水1000斤，全天量集中饮水8小时，连用4天。",
+    "usage_info": "本品500g/袋，兑水750斤，全天量集中饮水8小时，连用4天。",
     "source": "产品信息_华英",
     "timing": "",
     "brand_name": "/",
@@ -2170,7 +2170,7 @@
     "disease_types": [
       "MIXED"
     ],
-    "usage_info": "本品500g 拌料500kg或饮水1000kg。",
+    "usage_info": "本品500g 拌料500kg或饮水2000斤。",
     "source": "产品信息_华英",
     "timing": "",
     "brand_name": "活力佳(蛋禽）",
@@ -2195,7 +2195,7 @@
     "disease_types": [
       "MIXED"
     ],
-    "usage_info": "本品500g兑水1500斤，全天量集中上午10点到下午16点饮用。",
+    "usage_info": "本品500g兑水1000斤，全天量集中上午10点到下午16点饮用。",
     "source": "产品信息_华英",
     "timing": "",
     "brand_name": "冰爽",
