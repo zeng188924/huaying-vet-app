@@ -887,6 +887,7 @@ elif page == 'recommend':
             st.info("未能从报告中识别到明确疾病，请手动填写")
 
     # 养殖户默认值
+    animal_type_options = ["肉鸡", "蛋鸡", "种鸡", "肉鸭", "蛋鸭", "鹅", "火鸡", "鸽子", "鹌鹑"]
     if selected_shed:
         shed_type_mapping = {
             "肉鸡舍": "肉鸡", "蛋鸡舍": "蛋鸡", "种鸡舍": "种鸡",
@@ -900,6 +901,10 @@ elif page == 'recommend':
         }
         animal_type_default = shed_type_mapping.get(selected_shed.type, breed_mapping.get(selected_shed.breed, "肉鸡"))
         scale_default = selected_shed.scale
+        # 切换棚舍时自动同步动物种类
+        if st.session_state.get("mobile_prev_shed_id") != selected_shed.id:
+            st.session_state["animal_type_mobile"] = animal_type_default
+            st.session_state["mobile_prev_shed_id"] = selected_shed.id
     else:
         animal_type_default = "肉鸡"
         scale_default = "中规模(1000-10000只)"
@@ -907,8 +912,8 @@ elif page == 'recommend':
     # 动物种类
     animal_type = st.selectbox(
         "🐔 动物种类",
-        ["肉鸡", "蛋鸡", "种鸡", "肉鸭", "蛋鸭", "鹅", "火鸡", "鸽子", "鹌鹑"],
-        index=["肉鸡", "蛋鸡", "种鸡", "肉鸭", "蛋鸭", "鹅", "火鸡", "鸽子", "鹌鹑"].index(animal_type_default),
+        animal_type_options,
+        index=animal_type_options.index(st.session_state.get("animal_type_mobile", animal_type_default)),
         key="animal_type_mobile"
     )
 
