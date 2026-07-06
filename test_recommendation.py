@@ -176,11 +176,62 @@ def test_batch_isolation():
     print("✅ 养殖批次隔离历史用药测试通过\n")
 
 
+def test_disease_drug_validation():
+    print("=" * 60)
+    print("测试5：病症-药物关联验证与审计日志")
+    print("=" * 60)
+    json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
+    recommender = create_recommender(json_path)
+
+    # 呼吸道症状场景
+    result_resp = quick_recommend(
+        recommender,
+        animal_type="蛋鸭",
+        age_stage="育成期(15-35日龄)",
+        symptom="大群咳嗽、呼噜、甩鼻、流泪，部分张口呼吸",
+        disease_type="慢性呼吸道病（支原体/慢呼）",
+        usage="治疗",
+        egg_period_safe=False,
+        farm_scale="大规模(10000只以上)",
+        excluded_drugs=[],
+        medication_history=[]
+    )
+
+    assert 'validation_summary' in result_resp, "结果中缺少 validation_summary"
+    assert 'audit_log' in result_resp, "结果中缺少 audit_log"
+
+    summary = result_resp['validation_summary']
+    assert summary.get('total_candidates', 0) > 0, "候选药物总数应为正数"
+    assert summary.get('valid_candidates', 0) > 0, "应至少有一个候选药物通过验证"
+    assert summary.get('valid_candidates', 0) <= summary.get('total_candidates', 0)
+    assert "适应症匹配" in summary.get('check_dimensions', [])
+    assert "治疗领域匹配" in summary.get('check_dimensions', [])
+    assert "作用机制匹配" in summary.get('check_dimensions', [])
+
+    audit = result_resp['audit_log']
+    assert audit.get('timestamp', '') != ""
+    assert len(audit.get('filtering_decisions', [])) > 0
+    assert len(audit.get('final_recommendations', [])) > 0
+
+    # 验证最终推荐的药物都通过了验证
+    final_names = set(audit.get('final_recommendations', []))
+    retained = [d for d in audit.get('filtering_decisions', []) if d.get('decision') == '保留']
+    retained_names = {d.get('drug_name') for d in retained}
+    for name in final_names:
+        assert name in retained_names, f"最终推荐药物 {name} 未在保留决策中"
+
+    print(f"候选药物：{summary['total_candidates']}，通过验证：{summary['valid_candidates']}，排除：{summary['invalid_candidates']}")
+    print(f"校验维度：{'、'.join(summary['check_dimensions'])}")
+    print(f"最终推荐：{', '.join(audit['final_recommendations'])}")
+    print("✅ 病症-药物关联验证与审计日志测试通过\n")
+
+
 if __name__ == "__main__":
     test_lab_report_parser()
     test_recommendation_output()
     test_excluded_drugs_and_history()
     test_batch_isolation()
+    test_disease_drug_validation()
     print("=" * 60)
     print("全部本地核心测试通过")
     print("=" * 60)

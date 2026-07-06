@@ -32,7 +32,7 @@ st.set_page_config(
 )
 
 @st.cache_resource
-def get_recommender(_version="v20260706_10"):
+def get_recommender(_version="v20260706_11"):
     json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
     recommender = create_recommender(json_path)
     return recommender
@@ -627,7 +627,7 @@ if recommend_clicked:
                         update_shed(selected_shed.id, **env_updates)
                         selected_shed = get_shed(selected_shed.id)
 
-                recommender = get_recommender("v20260706_8")
+                recommender = get_recommender("v20260706_11")
                 
                 environment_factors = {}
                 if selected_shed:
@@ -737,7 +737,62 @@ if st.session_state.get('show_results', False):
         
         for factor in etiological_factors:
             st.markdown(f"- {factor}")
-    
+
+    # 病症-药物关联验证结果展示
+    validation_summary = result.get('validation_summary', {})
+    if validation_summary:
+        st.markdown("---")
+        st.subheader("✅ 病症-药物关联验证")
+
+        total = validation_summary.get('total_candidates', 0)
+        valid = validation_summary.get('valid_candidates', 0)
+        invalid = validation_summary.get('invalid_candidates', 0)
+        valid_rate = validation_summary.get('valid_rate', 0.0)
+        disease_type_cn = validation_summary.get('disease_type_cn', '')
+        dimensions = validation_summary.get('check_dimensions', [])
+
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("候选药物总数", total)
+        with col2:
+            st.metric("通过验证", valid, delta=f"{valid_rate * 100:.0f}%")
+        with col3:
+            st.metric("已排除", invalid)
+        with col4:
+            st.metric("当前病症类型", disease_type_cn)
+
+        st.caption(f"多维度校验项：{'、'.join(dimensions)}")
+
+        audit_log = result.get('audit_log', {})
+        if audit_log:
+            with st.expander("📋 查看推荐决策审计日志", expanded=False):
+                st.markdown(f"**请求时间：** {audit_log.get('timestamp', '')}")
+                st.markdown(f"**动物种类：** {audit_log.get('animal_type', '')} | **养殖阶段：** {audit_log.get('age_stage', '')}")
+                st.markdown(f"**主诉症状：** {audit_log.get('symptom', '')}")
+                st.markdown(f"**可能疾病：** {', '.join(audit_log.get('diseases', []))}")
+
+                filtering = audit_log.get('filtering_decisions', [])
+                if filtering:
+                    st.markdown("**🧪 候选药物过滤决策：**")
+                    for decision in filtering:
+                        if decision.get('decision') == '排除':
+                            st.error(
+                                f"❌ 排除 **{decision.get('drug_name', '')}** "
+                                f"（{decision.get('drug_type', '')}）- "
+                                f"关联度：{decision.get('association_level', '')}，得分：{decision.get('score', 0)}，"
+                                f"原因：{decision.get('reason', '')}"
+                            )
+                        else:
+                            st.success(
+                                f"✅ 保留 **{decision.get('drug_name', '')}** "
+                                f"（{decision.get('drug_type', '')}）- "
+                                f"关联度：{decision.get('association_level', '')}，得分：{decision.get('score', 0)}"
+                            )
+
+                final_recs = audit_log.get('final_recommendations', [])
+                if final_recs:
+                    st.markdown(f"**💊 最终推荐药物：** {', '.join(final_recs)}")
+
     st.markdown("---")
     st.subheader("💊 用药推荐")
 

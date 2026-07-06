@@ -29,6 +29,12 @@ from drug_compatibility import (
     check_drug_compatibility
 )
 
+# 导入病症-药物关联验证模块
+from disease_drug_validator import (
+    DiseaseDrugValidator,
+    get_disease_drug_validator,
+)
+
 
 # 发病类型二级分类映射：大类 + 具体疾病 -> 内部疾病类型编码
 # 设计原则：
@@ -1081,6 +1087,9 @@ def _find_tcm_substitute(db: "DrugDatabase", original_drug: "DrugInfo",
     candidates: List["DrugInfo"] = []
 
     for d in all_drugs:
+        # 跳过名称异常的数据记录
+        if not d.name or d.name.strip() in ("", "/"):
+            continue
         if d.name in used_names:
             continue
         if d.name == original_drug.name:
@@ -1288,7 +1297,8 @@ class DrugRecommender:
         self.db = database
         self.symptom_mapper = SymptomDiseaseMapper()
         self.compatibility_checker = DrugCompatibilityChecker()
-        
+        self.disease_drug_validator = get_disease_drug_validator()
+
         self.disease_type_mapping = DISEASE_TYPE_MAPPING
     
     def recommend(self, request: RecommendationRequest) -> Dict:
@@ -1309,14 +1319,30 @@ class DrugRecommender:
         
         # 获取候选药物
         candidate_drugs = self._get_candidate_drugs(request, diseases, disease_type)
-        
-        # 确保至少有3个候选药物
-        if len(candidate_drugs) < 3:
-            candidate_drugs = self._supplement_drugs(candidate_drugs, request, disease_type, diseases)
-        
+
+        # 病症-药物关联验证：过滤掉与当前诊断无明确关联的药物
+        valid_candidate_drugs, validation_results = self.disease_drug_validator.filter_candidates(
+            candidate_drugs, disease_type, diseases
+        )
+
+        # 确保至少有3个有效候选药物；补充时也需通过验证
+        if len(valid_candidate_drugs) < 3:
+            supplemented = self._supplement_drugs(valid_candidate_drugs, request, disease_type, diseases)
+            # 对补充的药物再次验证
+            revalidated, revalidation_results = self.disease_drug_validator.filter_candidates(
+                supplemented, disease_type, diseases
+            )
+            valid_candidate_drugs = revalidated
+            # 合并验证结果：保留原有结果，并追加补充药物的新验证结果
+            existing_names = {v.drug_name for v in validation_results}
+            for v in revalidation_results:
+                if v.drug_name not in existing_names:
+                    validation_results.append(v)
+                    existing_names.add(v.drug_name)
+
         # 计算单药推荐
         single_recommendations = self._calculate_single_recommendations(
-            candidate_drugs, request, diseases, disease_type
+            valid_candidate_drugs, request, diseases, disease_type
         )
         
         # 获取组合推荐
@@ -1344,6 +1370,59 @@ class DrugRecommender:
                         'conflicts': compatibility_result.conflicts
                     })
         
+        # 生成推荐决策审计日志
+        final_recommendation_names = []
+        for rec in single_recommendations:
+            final_recommendation_names.append(rec.drug.name)
+        for combo in combination_recommendations:
+            for drug in combo.get("drugs", []):
+                final_recommendation_names.append(drug.get("name", ""))
+        # 去重，保持顺序
+        seen = set()
+        unique_names = []
+        for n in final_recommendation_names:
+            if n and n not in seen:
+                unique_names.append(n)
+                seen.add(n)
+        final_recommendation_names = unique_names
+
+        # 确保审计日志包含所有最终推荐药物的验证结果
+        # 组合方案中的药物可能未出现在候选药物验证结果中，需要补充
+        existing_names = {v.drug_name for v in validation_results}
+        for combo in combination_recommendations:
+            for drug_detail in combo.get("drugs", []):
+                drug_name = drug_detail.get("name", "")
+                if drug_name and drug_name not in existing_names:
+                    drug_obj = self.db.get_drug_by_name(drug_name)
+                    if drug_obj:
+                        combo_validation = self.disease_drug_validator.validate_drug(
+                            drug_obj, disease_type, diseases
+                        )
+                        validation_results.append(combo_validation)
+                        existing_names.add(drug_name)
+
+        audit_log = self.disease_drug_validator.generate_audit_log(
+            request=request,
+            disease_type=disease_type,
+            diseases=diseases,
+            candidates=candidate_drugs,
+            valid_candidates=valid_candidate_drugs,
+            validations=validation_results,
+            final_recommendations=final_recommendation_names,
+        )
+
+        # 汇总验证结果（用于前端展示）
+        validation_summary = {
+            "total_candidates": len(candidate_drugs),
+            "valid_candidates": len(valid_candidate_drugs),
+            "invalid_candidates": len(candidate_drugs) - len(valid_candidate_drugs),
+            "valid_rate": round(len(valid_candidate_drugs) / len(candidate_drugs), 2) if candidate_drugs else 0.0,
+            "disease_type_cn": self.disease_drug_validator._disease_type_cn_map.get(
+                disease_type, disease_type
+            ),
+            "check_dimensions": ["适应症匹配", "治疗领域匹配", "作用机制匹配"],
+        }
+
         return {
             "input_analysis": {
                 "symptom": request.symptom,
@@ -1354,7 +1433,9 @@ class DrugRecommender:
             },
             "single_recommendations": [r.to_dict() for r in single_recommendations],
             "combination_recommendations": combination_recommendations,
-            "compatibility_warnings": compatibility_warnings
+            "compatibility_warnings": compatibility_warnings,
+            "validation_summary": validation_summary,
+            "audit_log": audit_log.to_dict(),
         }
     
     def _get_candidate_drugs(self, request: RecommendationRequest,
@@ -1490,12 +1571,19 @@ class DrugRecommender:
         # 按匹配分数排序
         recommendations.sort(key=lambda x: x.match_score, reverse=True)
         
-        # 确保至少有1个推荐
+        # 确保至少有1个推荐（兜底候选仍需通过病症-药物关联验证）
         if len(recommendations) < 1:
             for drug in self.db.get_all_drugs():
                 if request.egg_period_safe and not drug.egg_period_safe:
                     continue
                 if drug.name in history_excluded_set or (drug.brand_name and drug.brand_name in history_excluded_set):
+                    continue
+
+                # 兜底药物也必须通过关联验证
+                validation = self.disease_drug_validator.validate_drug(
+                    drug, disease_type, diseases
+                )
+                if not validation.is_valid:
                     continue
 
                 fallback_dosage = self._generate_dosage(drug, request)
@@ -1511,22 +1599,28 @@ class DrugRecommender:
                 )
                 recommendations.append(rec)
                 break
-        
+
         # 筛选真正匹配的产品
         # 化药必须满足"明确具备治疗相应病症的适应症"这一核心条件；
         # 中兽药等可保留原有宽松逻辑（适应症匹配或综合匹配分数足够高）。
+        # 同时复用多维度验证器结果作为最终校验。
         truly_matched_recommendations = []
         for rec in recommendations:
             has_matching_indication = _has_matching_indication(rec.drug, diseases)
             drug_type = classify_drug_type(rec.drug)
 
+            # 最终把关：使用验证器确认关联性
+            final_validation = self.disease_drug_validator.validate_drug(
+                rec.drug, disease_type, diseases
+            )
+
             if drug_type == "化药":
-                # 化药严格门槛：必须有明确适应症匹配
-                if has_matching_indication:
+                # 化药严格门槛：必须有明确适应症匹配且通过验证器
+                if has_matching_indication and final_validation.is_valid:
                     truly_matched_recommendations.append(rec)
             else:
-                # 中兽药等保留原逻辑
-                if has_matching_indication or rec.match_score >= 3.0:
+                # 中兽药等保留原逻辑，并需通过验证器
+                if (has_matching_indication or rec.match_score >= 3.0) and final_validation.is_valid:
                     truly_matched_recommendations.append(rec)
 
         # 如果没有任何匹配的产品，返回空列表（不再做无明确依据的兜底推荐）
@@ -1747,15 +1841,20 @@ class DrugRecommender:
                     break
             
             if all_drugs_exist and drug_details:
-                # ===== 化药适应症校验：剔除对当前病症无明确治疗依据的化药 =====
+                # ===== 病症-药物关联校验：剔除与当前病症无明确医学关联的药物 =====
                 filtered_details = []
                 filtered_price = 0
+                combo_validations = []
                 for dd in drug_details:
                     tmp = self.db.get_drug_by_name(dd.get("name", ""))
                     if tmp is None:
                         continue
-                    # 化药必须满足明确适应症匹配，否则不纳入展示
-                    if classify_drug_type(tmp) == "化药" and not _has_matching_indication(tmp, diseases):
+                    # 使用多维度验证器判断药物与当前病症的关联性
+                    validation = self.disease_drug_validator.validate_drug(
+                        tmp, disease_type, diseases
+                    )
+                    combo_validations.append(validation.to_dict())
+                    if not validation.is_valid:
                         continue
                     filtered_details.append(dd)
                     filtered_price += dd.get("price", 0)
@@ -1775,17 +1874,36 @@ class DrugRecommender:
                 compliance = validate_combination_compliance(scheme_drugs)
 
                 # 若不合规，尝试将其中一款化药自动替换为中兽药
+                # 替代品必须通过病症-药物关联验证，确保替换后的药物仍与当前病症相关
                 adjusted = False
                 if not compliance["compliant"]:
                     used_names = {d.name for d in scheme_drugs}
                     for i, d in enumerate(scheme_drugs):
                         if classify_drug_type(d) != "化药":
                             continue
-                        substitute = _find_tcm_substitute(
-                            self.db, d, disease_type, used_names
-                        )
+                        # 对当前化药持续寻找有效替代品
+                        while True:
+                            substitute = _find_tcm_substitute(
+                                self.db, d, disease_type, used_names
+                            )
+                            if substitute is None:
+                                break
+
+                            # 验证替代品与当前病症的关联性
+                            sub_validation = self.disease_drug_validator.validate_drug(
+                                substitute, disease_type, diseases
+                            )
+                            if sub_validation.is_valid:
+                                break
+
+                            # 该替代品与当前病症无明确关联，跳过并继续寻找下一个
+                            used_names.add(substitute.name)
+
                         if substitute is None:
+                            # 当前化药找不到有效中兽药替代品，尝试下一款化药
+                            used_names.add(d.name)
                             continue
+
                         # 在 drug_details 中替换对应记录
                         old_name = d.name
                         new_name = substitute.name
@@ -1908,6 +2026,25 @@ class DrugRecommender:
                     compliance["types"] = [tl.get("drug_type", "未知") for tl in type_labels]
                     compliance["type_set"] = sorted(set(tl.get("drug_type", "未知") for tl in type_labels))
 
+                # 组合药物可能经过替换/补充，重新生成验证结果，确保与展示药物一致
+                combo_validations = []
+                all_valid = True
+                for dd in drug_details:
+                    tmp = self.db.get_drug_by_name(dd.get("name", ""))
+                    if tmp is None:
+                        all_valid = False
+                        continue
+                    validation = self.disease_drug_validator.validate_drug(
+                        tmp, disease_type, diseases
+                    )
+                    combo_validations.append(validation.to_dict())
+                    if not validation.is_valid:
+                        all_valid = False
+
+                # 若组合中存在与当前病症无明确关联的药物，则丢弃该组合
+                if not all_valid:
+                    continue
+
                 # 生成组合方案推荐理由
                 combination_rationale = _generate_combination_rationale(
                     scheme_name=scheme["name"],
@@ -1930,6 +2067,7 @@ class DrugRecommender:
                         "rule": "必须为'化药+中兽药'或'中兽药+中兽药'组合，禁止全化药；最终组合药物总数严格不超过4种；两种中兽药组合且存在有效化药时可补充一种化药；所有化药必须对应当前病症具备明确适应症",
                     },
                     "rationale": combination_rationale.to_dict(),
+                    "drug_validations": combo_validations,
                 })
 
         # 如果没有找到合适的组合，使用默认组合

@@ -73,9 +73,9 @@ from src.core.diagnosis_engine import (
 
 # 初始化推荐器 - 使用JSON文件加载数据
 # _version 参数用于强制使旧缓存失效，当推荐逻辑更新时请修改版本号
-# Cloud 部署触发标记: v20260706_10
+# Cloud 部署触发标记: v20260706_11
 @st.cache_resource
-def get_recommender(_version="v20260706_10"):
+def get_recommender(_version="v20260706_11"):
     # 优先使用JSON文件，数据更新更可靠
     json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
     if os.path.exists(json_path):
@@ -1143,7 +1143,7 @@ elif page == 'recommend':
                             update_shed(selected_shed.id, **env_updates)
                             selected_shed = get_shed(selected_shed.id)
 
-                    recommender = get_recommender("v20260706_8")
+                    recommender = get_recommender("v20260706_11")
 
                     medication_history = []
                     if selected_shed:
@@ -1274,7 +1274,36 @@ elif page == 'recommend':
         else:
             single_recs = result['single_recommendations']
             combo_recs = result['combination_recommendations']
-        
+
+        # 病症-药物关联验证摘要（移动端简化展示）
+        validation_summary = result.get('validation_summary', {})
+        if validation_summary:
+            st.markdown("---")
+            st.subheader("✅ 关联验证")
+            total = validation_summary.get('total_candidates', 0)
+            valid = validation_summary.get('valid_candidates', 0)
+            invalid = validation_summary.get('invalid_candidates', 0)
+            valid_rate = validation_summary.get('valid_rate', 0.0)
+            st.markdown(
+                f"<div style='background:#e8f5e9;color:#2e7d32;padding:10px;border-radius:8px;font-size:0.9em;'>"
+                f"✅ 已通过验证 {valid}/{total}（{valid_rate * 100:.0f}%），"
+                f"排除 {invalid} 个无明确关联药物"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
+            audit_log = result.get('audit_log', {})
+            if audit_log:
+                with st.expander("📋 审计日志", expanded=False):
+                    st.caption(f"请求时间：{audit_log.get('timestamp', '')}")
+                    st.caption(f"可能疾病：{', '.join(audit_log.get('diseases', []))}")
+                    filtering = audit_log.get('filtering_decisions', [])
+                    for decision in filtering:
+                        if decision.get('decision') == '排除':
+                            st.error(
+                                f"❌ 排除 {decision.get('drug_name', '')}：{decision.get('reason', '')}",
+                                icon=None,
+                            )
+
         # 单药推荐
         st.markdown("---")
         st.subheader("💊 推荐药品 (TOP 3)")
