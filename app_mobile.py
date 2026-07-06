@@ -73,9 +73,9 @@ from src.core.diagnosis_engine import (
 
 # 初始化推荐器 - 使用JSON文件加载数据
 # _version 参数用于强制使旧缓存失效，当推荐逻辑更新时请修改版本号
-# Cloud 部署触发标记: v20260706_14
+# Cloud 部署触发标记: v20260706_15
 @st.cache_resource
-def get_recommender(_version="v20260706_14"):
+def get_recommender(_version="v20260706_15"):
     # 优先使用JSON文件，数据更新更可靠
     json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
     if os.path.exists(json_path):
@@ -1155,7 +1155,7 @@ elif page == 'recommend':
                             update_shed(selected_shed.id, **env_updates)
                             selected_shed = get_shed(selected_shed.id)
 
-                    recommender = get_recommender("v20260706_14")
+                    recommender = get_recommender("v20260706_15")
 
                     medication_history = []
                     if selected_shed:
@@ -1362,8 +1362,6 @@ elif page == 'recommend':
                         st.write(f"**兑水量:** {drug.get('water', 'N/A')}")
                         st.write(f"**类别:** {drug.get('category', 'N/A')}")
                         st.write(f"**来源:** {drug.get('source', 'N/A')}")
-                        if drug.get('usage_info'):
-                            st.write(f"**用法信息:** {drug.get('usage_info')}")
                         st.write(f"**价格:** ¥{drug.get('price', 0):.1f}")
                         egg_status = "✅ 产蛋期可用" if drug.get('egg_period_safe', True) else "❌ 产蛋期禁用"
                         st.write(f"**产蛋期:** {egg_status}")

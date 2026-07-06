@@ -21,6 +21,7 @@ import pandas as pd
 import json
 import os
 import sys
+import re
 from typing import List, Dict, Optional
 from dataclasses import dataclass, asdict
 
@@ -202,6 +203,66 @@ for _category, _diseases in DISEASE_TYPE_CATEGORIES.items():
             DISEASE_TYPE_MAPPING[_disease] = DISEASE_TYPE_MAPPING[_category]
 
 
+def _normalize_usage_water(usage_info: str, water: str) -> str:
+    """根据产品实际兑水量改写用法用量中的水量，保留原有给药方式、疗程等信息。
+
+    当用法用量中的水量与产品信息中的兑水量不一致时，仅替换水量部分，
+    不会生成产品信息中不存在的全新用法用量。
+    """
+    if not usage_info or not water:
+        return usage_info
+
+    water = str(water).strip()
+    if not water or water in ("详见说明书", "N/A", "适量", "/", "无"):
+        return usage_info
+
+    # 若实际兑水量已在用法用量中出现，无需改写
+    if water in usage_info:
+        return usage_info
+
+    # 从实际兑水量中提取数值和单位
+    water_match = re.search(
+        r"(\d+(?:\.\d+)?)\s*(斤|g|kg|ml|l|升|克|千克|毫克|毫升)?",
+        water,
+        re.IGNORECASE,
+    )
+    if not water_match:
+        return usage_info
+
+    water_num = water_match.group(1)
+    water_unit = (water_match.group(2) or "").strip()
+
+    # 如果实际水量没有单位，尝试从原用法用量中的兑水/饮水表述提取单位
+    if not water_unit:
+        unit_match = re.search(
+            r"[兑饮]\s*水\s*(\d+(?:\.\d+)?)\s*(斤|g|kg|ml|l|升|克|千克|毫克|毫升)",
+            usage_info,
+            re.IGNORECASE,
+        )
+        if unit_match:
+            water_unit = unit_match.group(2)
+
+    replacement = f"{water_num}{water_unit}" if water_unit else water_num
+
+    # 替换 "兑水/饮水 + 数量 + 单位"，不触碰拌料等与兑水量无关的用量
+    result = re.sub(
+        r"([兑饮]\s*水)\s*(\d+(?:\.\d+)?)\s*(斤|g|kg|ml|l|升|克|千克|毫克|毫升)?",
+        lambda m: f"{m.group(1)}{replacement}",
+        usage_info,
+        flags=re.IGNORECASE,
+    )
+
+    # 替换形如 "200斤水/瓶" 的饮水模式
+    result = re.sub(
+        r"(\d+(?:\.\d+)?)\s*(斤|g|kg|ml|l|升|克|千克|毫克|毫升)\s*水\s*/\s*(袋|瓶|包|桶|盒)",
+        lambda m: f"{replacement}水/{m.group(3)}",
+        result,
+        flags=re.IGNORECASE,
+    )
+
+    return result
+
+
 @dataclass
 class DrugInfo:
     """药物信息"""
@@ -222,7 +283,10 @@ class DrugInfo:
     timing: str = ""  # 时机
     brand_name: str = ""  # 商品名
     product_name: str = ""  # 产品名（完整名称）
-    
+
+    def __post_init__(self):
+        self.usage_info = _normalize_usage_water(self.usage_info, self.water)
+
     def to_dict(self):
         return asdict(self)
 
