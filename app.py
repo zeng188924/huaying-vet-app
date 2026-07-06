@@ -712,7 +712,7 @@ def show_recommend():
     from src.utils.lab_report_parser import parse_lab_report
 
     @st.cache_resource
-    def get_recommender_cache(_version="v20260706_9"):
+    def get_recommender_cache(_version="v20260706_10"):
         json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
         recommender = create_recommender(json_path)
         return recommender

@@ -73,9 +73,9 @@ from src.core.diagnosis_engine import (
 
 # 初始化推荐器 - 使用JSON文件加载数据
 # _version 参数用于强制使旧缓存失效，当推荐逻辑更新时请修改版本号
-# Cloud 部署触发标记: v20260706_9
+# Cloud 部署触发标记: v20260706_10
 @st.cache_resource
-def get_recommender(_version="v20260706_9"):
+def get_recommender(_version="v20260706_10"):
     # 优先使用JSON文件，数据更新更可靠
     json_path = os.path.join(_root, 'data', 'products', 'huaying_products_full.json')
     if os.path.exists(json_path):
