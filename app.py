@@ -1078,7 +1078,7 @@ def show_recommend():
             all_drugs = db.get_all_drugs()
 
         def _display_name(d):
-            for field in [d.product_name, d.content, d.name]:
+            for field in [d.product_name, d.name]:
                 if field and str(field).strip() not in ('', '/', 'nan', 'None'):
                     return str(field).strip()
             return d.name or "未命名药品"
@@ -1828,7 +1828,7 @@ def show_product_catalog():
             if not base_name or base_name == '/':
                 continue
             is_multi = len(variants) > 1
-            content = primary.get('content', '')
+            main_component = primary.get('main_component', '')
             category = primary.get('category', '')
             source = primary.get('source', '')
             brand_name = primary.get('brand_name', '')
@@ -1853,7 +1853,7 @@ def show_product_catalog():
                 <div class="catalog-card">
                     <h3>{base_name} {badge}</h3>
                     <div class="catalog-row">
-                        <span class="catalog-item">📦 成分: {content}</span>
+                        <span class="catalog-item">📦 成分: {main_component}</span>
                         <span class="catalog-item">🏷️ 类别: {category}</span>
                         <span class="catalog-item">📦 来源: {source}</span>
                     </div>
@@ -2066,7 +2066,6 @@ def show_product_catalog():
                 if ql in str(p.get("name", "")).lower()
                 or ql in str(p.get("main_component", "")).lower()
                 or ql in str(p.get("category", "")).lower()
-                or ql in str(p.get("content", "")).lower()
             ]
             
             groups = group_products(results) if _PU_OK and group_products else OrderedDict(

@@ -777,7 +777,7 @@ elif page == 'recommend':
                 all_drugs = db.get_all_drugs()
 
             def _display_name(d):
-                for field in [d.product_name, d.content, d.name]:
+                for field in [d.product_name, d.name]:
                     if field and str(field).strip() not in ('', '/', 'nan', 'None'):
                         return str(field).strip()
                 return d.name or "未命名药品"
@@ -1305,7 +1305,6 @@ elif page == 'recommend':
                             st.write(f"**商品名:** {drug.get('brand_name')}")
                         if drug.get('product_name'):
                             st.write(f"**产品名:** {drug.get('product_name')}")
-                        st.write(f"**通用名称:** {drug.get('name', '')}")
                         st.write(f"**成分:** {drug.get('main_component', 'N/A')}")
                         st.write(f"**包装规格:** {drug.get('spec', 'N/A')}")
                         if drug.get('indications'):
@@ -1494,10 +1493,6 @@ elif page == 'recommend':
                                 st.write(f"  - **商品名:** {drug.get('brand_name')}")
                             if drug.get('product_name'):
                                 st.write(f"  - **产品名:** {drug.get('product_name')}")
-                            # 通用名称显示逻辑：优先使用content，如果为空则使用name
-                            content = drug.get('content', '')
-                            generic_name = content if content and content.strip() else drug.get('name', 'N/A')
-                            st.write(f"  - **通用名称:** {generic_name}")
                             # 成分显示逻辑：如果有成分才显示
                             component = drug.get('component') or drug.get('main_component')
                             if component and component.strip() and component != 'N/A':
@@ -1713,7 +1708,7 @@ elif page == 'catalog':
             if not base_name or base_name == '/':
                 continue
             is_multi = len(variants) > 1
-            content = primary.get('content', '')
+            main_component = primary.get('main_component', '')
             category = primary.get('category', '')
             source = primary.get('source', '')
             brand_name = primary.get('brand_name', '')
@@ -1740,7 +1735,7 @@ elif page == 'catalog':
                         <span class="info-tag">{category}</span>
                     </div>
                     <p style="color: #666; font-size: 0.85em; margin: 8px 0;">
-                        <b>成分:</b> {content}<br>
+                        <b>成分:</b> {main_component}<br>
                         <b>商品名:</b> {brand_name}
                     </p>
                     {f'<p style="color: #666; font-size: 0.85em; margin: 8px 0;"><b>适应症:</b> {efficacy}</p>' if efficacy else ''}

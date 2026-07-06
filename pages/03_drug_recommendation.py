@@ -413,7 +413,7 @@ with st.sidebar:
         all_drugs = db.get_all_drugs()
     
     def _display_name(d):
-        for field in [d.product_name, d.content, d.name]:
+        for field in [d.product_name, d.name]:
             if field and str(field).strip() not in ('', '/', 'nan', 'None'):
                 return str(field).strip()
         return d.name or "未命名药品"
